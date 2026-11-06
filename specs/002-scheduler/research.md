@@ -46,6 +46,14 @@ nhưng không dùng được thực tế (trọng số tải đỉnh 100 lấn �
 21 khối, 0 khối < 60 phút, vẫn 1 giờ/ngày; ca 4 tuần × 15 nhiệm vụ còn nhanh hơn (6 s → 3 s) vì
 không gian tìm kiếm hẹp lại. EDF không có ràng buộc này, nên bảng chỉ số có cột "Khối < 60 phút".
 
+**Khởi động ấm bằng lời giải EDF** (thêm trong feature 003, đo ngày 2026-11-06). Thí nghiệm thử
+với giới hạn 5 s ở kịch bản quá tải (18 nhiệm vụ, seed 0) cho CP-SAT kết quả *tệ hơn* EDF và dao
+động giữa các lần chạy (giờ thiếu 35,5 rồi 26 so với EDF 20; trạng thái `FEASIBLE`). Cùng dữ liệu,
+cho chạy 20–60 s thì đạt `OPTIMAL` với giờ thiếu có trọng số 27 < 29 của EDF: lỗi do hết giờ,
+không do mô hình. Thêm `AddHint` từ lời giải EDF: với 10 s, 3 seed quá tải cho 27 / 17,5 / 12
+(EDF: 29 / 27 / 12), hai lần chạy liên tiếp cho cùng kết quả. Lưu ý: gợi ý EDF có thể vi phạm
+ràng buộc khối tối thiểu nên CP-SAT không *bảo đảm* luôn ≤ EDF, chỉ bắt đầu gần nó.
+
 Mục tiêu (trọng số theo thứ bậc): `min 10 000·Σ w_t·short_t + 100·peak + Σ y[t,s]`.
 Thứ tự ưu tiên: đủ giờ cho việc quan trọng ≫ tải đều ≫ ít khối vụn.
 
