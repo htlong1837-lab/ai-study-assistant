@@ -36,7 +36,11 @@ def test_home_warns_ai_off():
     assert any("đang tắt" in w.value for w in at.warning)
 
 
-def test_scheduler_shows_only_confirmed_as_ready():
-    at = AppTest.from_file(str(ROOT / "views" / "scheduler.py"), default_timeout=30).run()
-    df = at.dataframe[0].value
-    assert (df["Xếp lịch"] == "✅").sum() == 3
+def test_scheduler_runs_both_algorithms():
+    at = AppTest.from_file(str(ROOT / "views" / "scheduler.py"), default_timeout=60).run()
+    assert not at.exception
+    at.button(key="run").click().run()
+    assert not at.exception, at.exception
+    metrics = at.dataframe[1].value  # [0] là bảng xác nhận nhiệm vụ
+    assert list(metrics.columns) == ["EDF", "CP-SAT"]
+    assert set(metrics.loc["Xung đột"]) == {"0"}
