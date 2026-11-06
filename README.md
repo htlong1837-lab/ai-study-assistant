@@ -28,6 +28,16 @@ lượt gọi: đặt `LLM_PROVIDER=fake`.
 
 Chạy kiểm thử (không cần mạng): `pytest`
 
+### Nhắc nhở qua Telegram (tuỳ chọn)
+
+1. Nhắn `/newbot` cho @BotFather để lấy token; nhắn @userinfobot để lấy chat id.
+2. Điền `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` vào `.env`, rồi nhắn một tin bất kỳ cho bot.
+3. Trên trang "Lập lịch & nhắc nhở": xếp lịch → "Gửi tin thử" để kiểm tra.
+4. Gửi tự động: bấm "Lưu nhắc nhở cho lệnh gửi định kỳ", rồi cho Windows Task Scheduler chạy
+   `.venv\Scripts\python -m modules.scheduler.notify` mỗi 5 phút trong thư mục repo.
+
+Không cần Telegram vẫn có thể tải file `.ics` và nhập vào Google Calendar / lịch điện thoại.
+
 ## Cấu trúc
 
 ```text
