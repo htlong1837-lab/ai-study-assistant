@@ -1,6 +1,6 @@
 # SP2 — Phần C: Lập lịch học và nhắc nhở
 
-*Người phụ trách: Long. Bản nháp do AI hỗ trợ soạn (xem nhật ký AI-002, AI-003); số liệu lấy từ
+*Người phụ trách: Long. Bản nháp do AI hỗ trợ soạn (xem nhật ký AI-002); số liệu lấy từ
 `experiments/results/` và phải được người phụ trách đọc, kiểm chứng và viết lại bằng lời của mình
 trước khi nộp.*
 
@@ -191,4 +191,58 @@ Cả hai thuật toán chạy trên đúng cùng dữ liệu; chỉ số tính b
 
 ## C.6. Khảo sát giải pháp hiện có (Google Calendar, Motion)
 
-*[Chưa làm — cần tra nguồn chính thức của từng sản phẩm, không dựa trên trí nhớ của AI.]*
+*Tra cứu ngày 06/11/2026 trên trang chính thức. Tính năng và giá có thể đã đổi; người phụ trách
+cần mở lại các liên kết để kiểm chứng trước khi nộp.*
+
+### Google Calendar
+
+- Có tạo **việc cần làm (Tasks)** trên lịch. Việc có ngày giờ sẽ hiện trên lịch, có thể đặt thời
+  lượng và đánh dấu bận ([Google Tasks][gtasks], [mẹo quản lý thời gian][gtips]).
+- Có **Focus time**: khối thời gian tập trung, tự tắt thông báo Chat và từ chối cuộc họp. Tính năng
+  này chỉ dành cho tài khoản công việc/trường học, và phải tạo trong chế độ xem Ngày hoặc Tuần với
+  giờ bắt đầu, kết thúc cụ thể ([Focus time][gfocus]).
+- Google khuyên người dùng **tự đặt** 2–3 khối tập trung mỗi tuần và xem lại bằng Time Insights
+  ([blog Google Workspace][gblog]).
+- Trong các trang trợ giúp đã đọc, **không thấy** tính năng tự động xếp việc vào giờ rảnh theo hạn
+  nộp. Người dùng phải tự chọn giờ.
+
+### Motion
+
+- **Tự động xếp lịch (Auto-Scheduling).** Motion dựa vào: ngày bắt đầu, thời lượng, hạn nộp, độ ưu
+  tiên, chia nhỏ việc, lịch làm việc và giờ nghỉ, sự kiện trên lịch. Việc hạn sớm hơn và ưu tiên cao
+  hơn được xếp trước; sự kiện bận được coi là không có sẵn
+  ([What Auto-Scheduling considers][mconsider]).
+- **Tự xếp lại** khi có cuộc họp mới hoặc xung đột. Việc quá hạn được đẩy sang ô trống kế tiếp
+  ([How Auto-Scheduling works][mhow]).
+- **Chia việc dài** thành khối nhỏ, có kích thước khối tối thiểu (trang không nêu con số). Chỉ xếp
+  trong giờ làm việc người dùng khai báo. Không thấy giới hạn số giờ mỗi ngày.
+- **Giá:** không có gói miễn phí, chỉ dùng thử. Pro AI 19 USD/người/tháng, Business AI
+  29 USD/người/tháng ([bảng giá][mprice]). *[Trang giá ghi "This plan is not available" cạnh cả hai
+  gói — cần mở lại để kiểm tra.]*
+- Motion **không công bố thuật toán** cụ thể, nên không so sánh định lượng được.
+
+### So sánh với hệ thống của nhóm
+
+| Tiêu chí | Google Calendar | Motion | Hệ thống của nhóm |
+|---|---|---|---|
+| Tự xếp việc vào giờ rảnh | Không (tự đặt tay) | Có | Có (EDF hoặc CP-SAT) |
+| Nguồn nhiệm vụ | Người dùng tự nhập | Người dùng tự nhập | **Tự trích từ email và đề bài** (module B), người dùng xác nhận |
+| Giới hạn giờ mỗi ngày | — | Không thấy | Có |
+| Khối tối thiểu | — | Có (không rõ giá trị) | Có, chỉnh được |
+| Tự xếp lại khi có thay đổi | — | Có, liên tục | **Không** — bấm xếp lại (hạn chế) |
+| Thuật toán công khai, đo được | — | Không | Có: mô hình CP-SAT, so sánh với EDF |
+| Chi phí | Miễn phí | Từ 19 USD/tháng | Miễn phí, chạy cục bộ |
+| Dành cho bối cảnh sinh viên | Không chuyên biệt | Không (hướng tới công việc, nhóm) | Có (thời khoá biểu, hạn nộp tiếng Việt) |
+
+**Kết luận:** thuật toán xếp lịch tự động không phải điểm mới, vì Motion đã làm tốt hơn ở khả năng
+tự xếp lại. Điểm khác biệt của hệ thống nằm ở **luồng**: email/đề bài → trích hạn nộp → xác nhận →
+xếp lịch, cộng với việc **công khai và đo được** phương pháp tối ưu. Điều này nhất quán với nhận định
+trong kế hoạch nhóm về NotebookLM ở module A.
+
+[gtasks]: https://workspace.google.com/products/tasks/
+[gtips]: https://support.google.com/a/users/answer/9282964?hl=en
+[gfocus]: https://support.google.com/calendar/answer/11190973?hl=en
+[gblog]: https://workspace.google.com/blog/productivity-collaboration/how-google-calendar-can-help-boost-your-productivity
+[mconsider]: https://www.usemotion.com/help/time-management/auto-scheduling/reference-auto-scheduling/what-auto-scheduling-considers
+[mhow]: https://www.usemotion.com/help/time-management/auto-scheduling/reference-auto-scheduling/how-auto-scheduling-works-behind-the-scenes
+[mprice]: https://www.usemotion.com/pricing

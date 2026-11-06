@@ -12,4 +12,4 @@ theo [TEMPLATE.md](TEMPLATE.md), ghi **ngay sau phiên**.
 | Mã | Người | Ngày | Công cụ | Mục đích |
 |---|---|---|---|---|
 | AI-001 | Long | 2026-10-27 | | Lập kế hoạch đồ án |
-| AI-002 | Long | 2026-11-06 | Claude Code (Opus 5.5) | Chiến lược, tạo repo, constitution, khung dự án (spec 001) |
+| AI-002 | Long | 2026-11-06 | Claude Code (Opus 5.5) | Chiến lược, repo, khung dự án, module C, thí nghiệm, nháp SP2 phần C — [chi tiết](AI-002-long-claude-code.md) |
