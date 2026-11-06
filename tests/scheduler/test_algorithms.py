@@ -94,3 +94,13 @@ def test_short_task_may_use_short_block(sessions, settings):
     tasks = [task("tiny", datetime(2026, 11, 12, 23, 59), 0.5)]
     r = schedule(tasks, sessions, settings, "CP-SAT")
     assert r.missing_hours == {} and r.blocks[0].hours == 0.5
+
+
+def test_cpsat_warm_start_not_worse_than_edf_on_overload():
+    """Kịch bản quá tải: nhờ gợi ý EDF, CP-SAT không thiếu nhiều hơn EDF (research.md)."""
+    from experiments.scenarios import base_settings, generate, sessions
+    tasks, sess, s = generate("Quá tải", 0), sessions(), base_settings(10)
+    edf, cp = (schedule(tasks, sess, s, a) for a in ("EDF", "CP-SAT"))
+    m_edf, m_cp = (evaluate(r, tasks, sess, s) for r in (edf, cp))
+    assert m_cp["Giờ thiếu (trọng số)"] <= m_edf["Giờ thiếu (trọng số)"]
+    assert validate(cp.blocks, tasks, sess, s) == []

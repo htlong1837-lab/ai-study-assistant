@@ -12,15 +12,31 @@ Mục tiêu   min 10000·Σ w_t·short_t + 100·peak + Σ y
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import timedelta
 
 from ortools.sat.python import cp_model
 
 from core.contracts import Task
 
+from . import edf
 from .model import PRIORITY_WEIGHT, ScheduleSettings, Slot
 from .slots import to_blocks
 
 W_SHORT, W_PEAK, W_BLOCK = 10_000, 100, 1
+
+
+def _edf_assignment(tasks, slots, settings) -> set[tuple[str, int]]:
+    """Các cặp (nhiệm vụ, ô) trong lời giải EDF — dùng làm gợi ý ban đầu."""
+    blocks, _ = edf.solve(tasks, slots, settings)
+    start_to_index = {s.start: s.index for s in slots}
+    step = timedelta(minutes=settings.slot_minutes)
+    pairs = set()
+    for b in blocks:
+        t = b.start
+        while t < b.end:
+            pairs.add((b.task_id, start_to_index[t]))
+            t += step
+    return pairs
 
 
 def solve(tasks: list[Task], slots: list[Slot], settings: ScheduleSettings):
@@ -81,6 +97,11 @@ def solve(tasks: list[Task], slots: list[Slot], settings: ScheduleSettings):
     model.minimize(
         W_SHORT * sum(PRIORITY_WEIGHT[t.priority] * short[t.id] for t in tasks)
         + W_PEAK * peak + W_BLOCK * sum(starts))
+
+    # Khởi động ấm: gợi ý lời giải EDF để solver bắt đầu từ một lịch tốt thay vì từ lịch rỗng.
+    hint = _edf_assignment(tasks, slots, settings)
+    for key, v in x.items():
+        model.add_hint(v, key in hint)
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = settings.time_limit_s
