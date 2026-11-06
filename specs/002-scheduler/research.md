@@ -37,6 +37,15 @@ Ràng buộc:
 4. Mở khối: `y[t,s] ≥ x[t,s] − x[t,prev(s)]` nếu `prev(s)` là ô liền trước trong cùng ngày,
    ngược lại `y[t,s] ≥ x[t,s]`.
 
+5. Khối tối thiểu `k` ô (mặc định 60 phút): `y[t,s] ⇒ x[t,s+j]` với `j < min(k, need_t)`, các ô
+   liền nhau; nếu không đủ ô liền sau thì `y[t,s] = 0`.
+
+Ràng buộc 5 được thêm sau lần chạy thử đầu tiên (2026-11-06, dữ liệu mẫu, 21 ngày): không có nó,
+CP-SAT đạt đỉnh tải 1 giờ/ngày nhưng cắt thành 37 khối, phần lớn 30 phút — đúng mục tiêu toán học
+nhưng không dùng được thực tế (trọng số tải đỉnh 100 lấn át phạt số khối 1). Thêm ràng buộc:
+21 khối, 0 khối < 60 phút, vẫn 1 giờ/ngày; ca 4 tuần × 15 nhiệm vụ còn nhanh hơn (6 s → 3 s) vì
+không gian tìm kiếm hẹp lại. EDF không có ràng buộc này, nên bảng chỉ số có cột "Khối < 60 phút".
+
 Mục tiêu (trọng số theo thứ bậc): `min 10 000·Σ w_t·short_t + 100·peak + Σ y[t,s]`.
 Thứ tự ưu tiên: đủ giờ cho việc quan trọng ≫ tải đều ≫ ít khối vụn.
 
