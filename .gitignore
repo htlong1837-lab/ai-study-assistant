@@ -7,6 +7,7 @@ venv/
 
 # Bí mật và dữ liệu thật — KHÔNG commit
 .env
+.env.*
 *.db
 data/real/
 *.eml
@@ -17,5 +18,10 @@ data/real/
 .DS_Store
 Thumbs.db
 
-# Cache LLM
+# Cache LLM & Module A
 .cache/
+src/.cache/
+src/.tmp_uploads/
+dist/
+.dist/
+*.egg-info/

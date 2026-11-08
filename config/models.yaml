@@ -1,0 +1,60 @@
+# Gemini model catalogue for Module A
+# -------------------------------------------------
+# tier: "paid"           – requires a billing-enabled Google account
+#       "paid_or_tier1"  – accessible on Tier 1 pay-as-you-go
+#       "free_tier"      – available for free via Google AI Studio (no credit card)
+#
+# Pricing is per 1,000 tokens (not per 1M) so the Python code can multiply
+# by the raw token count directly.
+# -------------------------------------------------
+
+# Default cascade order: first model is tried first; on 403/404/503/timeout
+# the system automatically falls through to the next one.
+cascade:
+  - gemini-4-argon
+  - gemini-3.8-flash
+  - gemini-2.5-flash
+  - gemini-2.0-flash
+  - gemini-1.5-flash
+
+models:
+  gemini-4-argon:
+    name: "Gemini 4 Argon (Flagship Reasoning — Mạnh nhất)"
+    tier: "paid"
+    input_per_1k: 0.002        # $2.00 / 1M tokens
+    output_per_1k: 0.010       # $10.00 / 1M tokens
+    cached_input_per_1k: 0.0001  # $0.10 / 1M tokens (implicit caching)
+    context_window: 1_000_000
+    pricing_known: true
+
+  gemini-3.8-flash:
+    name: "Gemini 3.8 Flash (High-Intelligence & Fast)"
+    tier: "paid_or_tier1"
+    input_per_1k: 0.00015      # $0.15 / 1M tokens
+    output_per_1k: 0.0006      # $0.60 / 1M tokens
+    context_window: 1_000_000
+    pricing_known: true
+
+  gemini-2.5-flash:
+    name: "Gemini 2.5 Flash (Miễn phí / Free Tier — Cân bằng & Mạnh)"
+    tier: "free_tier"
+    input_per_1k: 0.000075     # $0.075 / 1M tokens (paid tier rate)
+    output_per_1k: 0.0003      # $0.30 / 1M tokens
+    context_window: 1_000_000
+    pricing_known: true
+
+  gemini-2.0-flash:
+    name: "Gemini 2.0 Flash (Miễn phí / Free Tier — Tốc độ cao)"
+    tier: "free_tier"
+    input_per_1k: 0.000075
+    output_per_1k: 0.0003
+    context_window: 1_000_000
+    pricing_known: true
+
+  gemini-1.5-flash:
+    name: "Gemini 1.5 Flash (Miễn phí / Free Tier — Dự phòng)"
+    tier: "free_tier"
+    input_per_1k: 0.000075
+    output_per_1k: 0.0003
+    context_window: 1_000_000
+    pricing_known: true

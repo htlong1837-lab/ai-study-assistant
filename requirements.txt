@@ -1,7 +1,10 @@
 streamlit>=1.50
 python-dotenv>=1.0
 google-genai>=1.0
+google-generativeai>=0.8.0
 pandas>=2.0
 ortools>=9.10
 matplotlib>=3.8
 pytest>=8.0
+pymupdf>=1.24.0
+pyyaml>=6.0
