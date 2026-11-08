@@ -8,8 +8,13 @@ venv/
 # Bí mật và dữ liệu thật — KHÔNG commit
 .env
 *.db
+*.db-journal
+*.db-wal
 data/real/
+data/private/
 *.eml
+eval/gold/*.json
+!eval/gold/*.example.json
 
 # IDE / OS
 .vscode/
