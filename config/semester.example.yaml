@@ -1,0 +1,6 @@
+# Cấu hình học kỳ phục vụ chuẩn hóa mốc thời gian học vụ (ví dụ: "hết tuần 8", "tuần 10 môn CSDL")
+# Copy file này thành config/semester.yaml để kích hoạt trong môi trường chạy thật.
+
+start_date: 2026-09-07     # Thứ Hai của tuần 1 học kỳ (định dạng YYYY-MM-DD)
+timezone: Asia/Ho_Chi_Minh # Múi giờ chuẩn học viện
+weeks_in_semester: 15      # Tổng số tuần học kỳ
