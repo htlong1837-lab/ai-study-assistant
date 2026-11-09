@@ -10,6 +10,8 @@ venv/
 *.db
 data/real/
 *.eml
+# Ngoại lệ: email mẫu tự sinh để test (không phải email thật)
+!tests/**/fixtures/*.eml
 
 # IDE / OS
 .vscode/
