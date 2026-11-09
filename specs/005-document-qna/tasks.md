@@ -1,6 +1,6 @@
 # Tasks: Document Q&A via API
 
-**Input**: Design documents from `/specs/001-document-qna-api/`
+**Input**: Design documents from `/specs/005-document-qna/`
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
@@ -16,7 +16,7 @@
 
 **Purpose**: Initialize the Python project and shared tooling for the document Q&A feature
 
-- [x] T001 Create the project structure described in the implementation plan under `src/`, `tests/`, and feature docs
+- [x] T001 Create the project structure described in the implementation plan under `modules/qa/`, `tests/`, and feature docs
 - [x] T002 Initialize Python dependencies for document parsing, Streamlit UI, and validation (`PyMuPDF`, `streamlit`, `pytest`)
 - [x] T003 [P] Configure linting and formatting for the Python codebase in the repository root
 
@@ -28,10 +28,10 @@
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
-- [x] T004 Create the secure document intake contract and configuration model in `src/models/document.py` and `src/models/page.py`
-- [x] T005 [P] Implement the shared LLM wrapper skeleton in `src/llm_client.py` for token tracking, cost estimation, and cache keys
-- [x] T006 [P] Implement cache persistence and request deduplication logic in `src/services/cache_manager.py`
-- [x] T007 Implement application-level error handling and validation utilities in `src/services/validation.py`
+- [x] T004 Create the secure document intake contract and configuration model in `core/contracts.py` and `modules/qa/models/page.py`
+- [x] T005 [P] Implement the shared LLM wrapper skeleton in `core/llm_client.py` for token tracking, cost estimation, and cache keys
+- [x] T006 [P] Implement cache persistence and request deduplication logic in `core/llm_client.py`
+- [x] T007 Implement application-level error handling and validation utilities in `modules/qa/services/validation.py`
 - [x] T008 Create benchmark fixture scaffolding in `tests/benchmark/` for the 30-question evaluation dataset
 
 ---
@@ -44,12 +44,12 @@
 
 ### Implementation for User Story 1
 
-- [x] T009 [P] [US1] Implement page-by-page PDF extraction in `src/document_parser.py` using the secure `ParsedDocument` structure with ordered pages and `page_num` values
-- [x] T010 [P] [US1] Implement `src/qa_service.py` to combine the user question with relevant page text and send the request through the shared LLM wrapper
-- [x] T011 [US1] Implement citation validation and answer rejection logic in `src/citation_verifier.py` so unsupported or insufficient citations block final display
-- [x] T012 [US1] Implement the secure document intake loader in `src/services/pdf_loader.py` to preserve `doc_id`, `file_path`, and `source_email_id` through parsing
-- [x] T013 [US1] Add the validation and rejection path for weak evidence in `src/services/validation.py`, ensuring answers cannot be surfaced without verified page support
-- [x] T014 [US1] Add logging and cost visibility for each Q&A request in `src/llm_client.py` and `src/qa_service.py` to surface token and cache behavior
+- [x] T009 [P] [US1] Implement page-by-page PDF extraction in `modules/qa/document_parser.py` using the secure `ParsedDocument` structure with ordered pages and `page_num` values
+- [x] T010 [P] [US1] Implement `modules/qa/qa_service.py` to combine the user question with relevant page text and send the request through the shared LLM wrapper
+- [x] T011 [US1] Implement citation validation and answer rejection logic in `modules/qa/citation_verifier.py` so unsupported or insufficient citations block final display
+- [x] T012 [US1] Implement the secure document intake loader in `modules/qa/document_parser.py` to preserve `doc_id`, `file_path`, and `source_email_id` through parsing
+- [x] T013 [US1] Add the validation and rejection path for weak evidence in `modules/qa/services/validation.py`, ensuring answers cannot be surfaced without verified page support
+- [x] T014 [US1] Add logging and cost visibility for each Q&A request in `core/llm_client.py` and `modules/qa/qa_service.py` to surface token and cache behavior
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and independently testable
 
@@ -63,10 +63,10 @@
 
 ### Implementation for User Story 2
 
-- [x] T015 [P] [US2] Create the Streamlit Q&A interface shell in `src/streamlit_app.py` with document selection, question input, and answer display
-- [x] T016 [US2] Implement citation label navigation and page jump behavior in `src/streamlit_app.py` to open the correct document page behind each citation
-- [x] T017 [US2] Add loading, empty-state, and error handling in `src/streamlit_app.py` for unsupported citations, missing documents, and incomplete extraction results
-- [x] T018 [US2] Connect the UI to the verified answer service and ensure the application only renders `status="verified"` answers in `src/qa_service.py` and `src/streamlit_app.py`
+- [x] T015 [P] [US2] Create the Streamlit Q&A interface shell in `views/qa.py` with document selection, question input, and answer display
+- [x] T016 [US2] Implement citation label navigation and page jump behavior in `views/qa.py` to open the correct document page behind each citation
+- [x] T017 [US2] Add loading, empty-state, and error handling in `views/qa.py` for unsupported citations, missing documents, and incomplete extraction results
+- [x] T018 [US2] Connect the UI to the verified answer service and ensure the application only renders `status="verified"` answers in `modules/qa/qa_service.py` and `views/qa.py`
 
 **Checkpoint**: At this point, User Stories 1 and 2 should both work independently
 
@@ -80,9 +80,9 @@
 
 ### Implementation for User Story 3
 
-- [x] T019 [P] [US3] Implement the evaluation runner in `src/services/evaluation_runner.py` to execute the benchmark question set and capture results per question
-- [x] T020 [US3] Implement comparison logic in `src/services/evaluation_runner.py` for performance with and without reference material, including citation accuracy metrics
-- [x] T021 [US3] Create the benchmark summary output and reporting format in `src/services/evaluation_runner.py` and `tests/benchmark/`
+- [x] T019 [P] [US3] Implement the evaluation runner in `modules/qa/services/evaluation_runner.py` to execute the benchmark question set and capture results per question
+- [x] T020 [US3] Implement comparison logic in `modules/qa/services/evaluation_runner.py` for performance with and without reference material, including citation accuracy metrics
+- [x] T021 [US3] Create the benchmark summary output and reporting format in `modules/qa/services/evaluation_runner.py` and `tests/benchmark/`
 - [x] T022 [US3] Add validation for benchmark completeness and result integrity so the evaluation cannot pass unless citation accuracy is measured against the source content
 
 **Checkpoint**: All user stories should now be independently functional
@@ -93,9 +93,9 @@
 
 **Purpose**: Improve quality across all stories and validate the feature end-to-end
 
-- [x] T023 [P] Update documentation and validation guidance in `specs/001-document-qna-api/quickstart.md` to reflect the final flow and acceptance criteria
-- [x] T024 Review the secure contract and evidence flow across `src/models/`, `src/services/`, and `src/streamlit_app.py` to confirm `doc_id`, `source_email_id`, and page checks remain consistent
-- [x] T025 Run the end-to-end validation flow from `specs/001-document-qna-api/quickstart.md` and verify that unsupported citations are rejected and valid citations are accepted
+- [x] T023 [P] Update documentation and validation guidance in `specs/005-document-qna/quickstart.md` to reflect the final flow and acceptance criteria
+- [x] T024 Review the secure contract and evidence flow across `modules/qa/models/`, `modules/qa/services/`, and `views/qa.py` to confirm `doc_id`, `source_email_id`, and page checks remain consistent
+- [x] T025 Run the end-to-end validation flow from `specs/005-document-qna/quickstart.md` and verify that unsupported citations are rejected and valid citations are accepted
 - [x] T026 [P] Review token, cost, and cache metrics across the shared LLM wrapper and confirm the system reduces redundant work without bypassing citation checks
 
 ---

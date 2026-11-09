@@ -12,5 +12,5 @@ class Citation:
     def __post_init__(self) -> None:
         if self.page_num < 1:
             raise ValueError("page_num must be at least 1")
-        if not self.evidence_text:
+        if not self.evidence_text.strip():
             raise ValueError("evidence_text must not be empty")

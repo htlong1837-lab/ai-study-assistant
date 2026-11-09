@@ -2,6 +2,16 @@
 
 Nhật ký đối chiếu mã nguồn thực tế trước và sau khi thực hiện các Task gắn nhãn `[VERIFY]`.
 
+## Bổ sung kiểm tra lịch sử theo review PR — 2026-11-09
+
+- Thay fixture `fake_aiza` trong `tests/unit/test_api_key_lifecycle.py` bằng placeholder không mang hình thức API key.
+- Quét các refs Git local bằng tìm kiếm mẫu key, chỉ xuất commit và tên file. Có một commit chứa fixture key-like tại file test này; giá trị không được in ra hoặc lưu trong log.
+- Đọc snapshot `src/llm_client.py` của commit đó qua bộ lọc chỉ trả metadata: không có khai báo `DEFAULT_GEMINI_API_KEY` và không có chuỗi khớp mẫu Google `AIza`/`AQ.`. `.env` không nằm trong Git history local.
+- **Cập nhật từ người dùng:** `.env` cục bộ trước đây có key thật; hiện hai biến key đã để trống và người dùng xác nhận key cũ đã được xóa/thu hồi trên Google AI Studio. Người dùng không nhớ fixture lịch sử có trùng key thật hay không. Git xác nhận `.env` không nằm trong lịch sử local.
+- **Kết luận:** fixture trong test có hình thức giống key; chưa thể kết luận fixture là giả/thật hoặc trùng/khác key cũ. Không rewrite lịch sử khi chưa có căn cứ và thống nhất nhóm. Có thể kiểm tra credentials ở tất cả project liên quan; không khôi phục key chỉ để đối chiếu.
+- **Cập nhật cuối từ người dùng:** fixture lịch sử là dữ liệu giả, nhận biết qua chuỗi ký tự tuần tự. Key thật cũ trong `.env` đã được thu hồi. Do `.env` không được track và fixture được xác nhận giả, không có credential thật nào cần rewrite khỏi lịch sử local.
+- Lưu ý: các kết luận mạnh hơn trong ghi chú Task 0.1 cũ không được lịch sử Git hiện có xác nhận độc lập; phần bổ sung này là kết quả mới nhất của lần audit.
+
 ---
 
 ## Task 0.1: Loại bỏ key hardcode và chuyển sang "Người dùng tự nhập API key" `[VERIFY]`

@@ -1,6 +1,6 @@
 # Feature Specification: Document Q&A via API
 
-**Feature Branch**: `001-document-qna-api`
+**Feature Branch**: `005-document-qna`
 
 **Created**: 2026-11-07
 
