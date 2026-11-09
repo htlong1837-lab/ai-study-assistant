@@ -36,6 +36,11 @@ from .safety import aggregate_safety, can_forward_email, max_status
 
 logger = logging.getLogger(__name__)
 
+# Khi bộ quét URL/file đính kèm còn là stub (chưa có WP-06, WP-08), pipeline
+# "mặc định chặn": mọi email và file bị coi là SUSPICIOUS, chỉ chuyển cho A/B
+# sau khi người dùng xác nhận (approve_suspicious). Đặt False khi có scanner thật.
+SCANNERS_ARE_STUBS = True
+
 
 # ---------------------------------------------------------------------------
 # Classifier stub (WP-00) — sẽ được thay bằng WP-02b/03
@@ -56,12 +61,12 @@ def _stub_scan_urls(
     sender: str,
     settings: Settings,
 ) -> tuple[list[UrlFinding], list[Reason]]:
-    """Stub quét URL: trả rỗng (không phát hiện gì) để pipeline đi tiếp."""
+    """Stub quét URL: chưa quét được nên đánh SUSPICIOUS (mặc định chặn)."""
     findings = [
         UrlFinding(
             url=u,
             defanged=u,  # chưa defang — sẽ dùng urls.defang_url() ở WP-06
-            status=SafetyStatus.SAFE,
+            status=SafetyStatus.SUSPICIOUS,  # chưa quét → không coi là an toàn
             reasons=[],
             reputation=None,
         )
@@ -74,14 +79,14 @@ def _stub_scan_attachments(
     saved: list[SavedAttachment],
     settings: Settings,
 ) -> list[AttachmentFinding]:
-    """Stub quét file đính kèm: đánh SAFE tất cả để pipeline đi tiếp."""
+    """Stub quét file đính kèm: chưa quét được nên đánh SUSPICIOUS (mặc định chặn)."""
     return [
         AttachmentFinding(
             filename=sa.filename,
             path=sa.path,
             sha256=sa.sha256,
             size=sa.size,
-            status=SafetyStatus.SAFE,
+            status=SafetyStatus.SUSPICIOUS,  # chưa quét → không coi là an toàn
             reasons=[],
             reputation=None,
         )
@@ -157,6 +162,9 @@ def process_email(
         *attach_statuses,
         label_is_phishing=(label is EmailLabel.PHISHING),
     )
+    if SCANNERS_ARE_STUBS:
+        # Chưa quét được nội dung → không bao giờ kết luận SAFE (Constitution II)
+        safety_final = max_status(safety_final, SafetyStatus.SUSPICIOUS)
 
     # --- 8. Tóm tắt (stub: None) ---
     summary: str | None = None
