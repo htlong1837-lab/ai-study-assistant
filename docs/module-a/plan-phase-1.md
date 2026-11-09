@@ -6,17 +6,17 @@
 
 ## 1. Tóm tắt hiện trạng qua khảo sát thực tế (Codebase Audit)
 
-1. **Benchmark hiện tại (`src/services/evaluation_runner.py`)**:
+1. **Benchmark hiện tại (`modules/qa/services/evaluation_runner.py`)**:
    - 25/30 câu hỏi trong `DEFAULT_BENCHMARK` là placeholder dạng `"Benchmark question N"`.
    - Không có đáp án chuẩn (`gold_answer`), không có danh sách trang chuẩn (`gold_pages`), không có trích dẫn chuẩn (`gold_evidence`).
    - Chỉ số `citation_accuracy` hiện chỉ đo "chuỗi evidence có xuất hiện trong trang hay không" mà không đo câu trả lời đúng hay sai, dẫn đến số liệu ảo 100%.
-2. **Bộ chuẩn hóa của Verifier (`src/citation_verifier.py`)**:
+2. **Bộ chuẩn hóa của Verifier (`modules/qa/citation_verifier.py`)**:
    - Chỉ thực hiện `re.sub(r"\s+", " ", text).strip().lower()`.
    - Thất bại khi gặp: tiếng Việt tổ hợp (NFD), từ ngắt dòng bằng dấu gạch nối (`-\n`), ký tự ghép (ligatures như fi, fl), dấu ngoặc kép thông minh (“ ” ‘ ’ – —).
    - Chỉ kiểm tra so khớp nguyên văn (exact substring), không có so khớp mềm (fuzzy matching) khi PDF bị lỗi font nhẹ.
 3. **Kiểm tra mức độ liên quan của bằng chứng (Evidence Support)**:
    - Hiện tại Verifier chỉ kiểm tra evidence có nằm trong trang trích dẫn hay không. Nếu LLM trích một câu bất kỳ trong trang không liên quan đến câu trả lời, Verifier vẫn xác nhận "Hợp lệ"!
-4. **Cơ chế báo lỗi từ chối (`src/qa_service.py`)**:
+4. **Cơ chế báo lỗi từ chối (`modules/qa/qa_service.py`)**:
    - Khi trích dẫn không hợp lệ, code hiện tại ném `ValueError("Unsupported citations were found...")` làm crash luồng xử lý và khó phân loại nguyên nhân nghiệp vụ.
 5. **Đo đạc độ trễ và tiêu chí SC-001**:
    - Chưa có script đo đạc độ trễ đầu-cuối (p50/p95 latency) độc lập; tài liệu `docs/module-a/status.md` chưa được lập để theo dõi tiêu chuẩn đánh giá định lượng.
@@ -44,7 +44,7 @@ flowchart TD
   - `benchmarks/dataset.template.jsonl` (tạo mới - khung 30 câu chuẩn)
   - `benchmarks/dataset.jsonl` (tạo mới - dataset mẫu hoặc do người dùng điền)
   - `benchmarks/README.md` (tạo mới - hướng dẫn người dùng điền đáp án chuẩn)
-  - `src/services/evaluation_runner.py` (sửa - đọc và validate dataset)
+  - `modules/qa/services/evaluation_runner.py` (sửa - đọc và validate dataset)
   - `tests/unit/test_dataset_schema.py` (tạo mới - kiểm thử nạp & kiểm tra schema)
 
 - **Các bước thực hiện cụ thể**:
@@ -83,12 +83,12 @@ flowchart TD
 ### Task 1.2: Bộ chỉ số đánh giá tách bạch (Multi-Dimensional Metrics)
 
 - **Các file tác động**:
-  - `src/services/metrics.py` (tạo mới - module tính toán chỉ số)
-  - `src/services/evaluation_runner.py` (sửa - tích hợp xuất báo cáo JSON & Markdown)
+  - `modules/qa/services/metrics.py` (tạo mới - module tính toán chỉ số)
+  - `modules/qa/services/evaluation_runner.py` (sửa - tích hợp xuất báo cáo JSON & Markdown)
   - `tests/unit/test_metrics_calculation.py` (tạo mới)
 
 - **Các bước thực hiện cụ thể**:
-  1. **Xây dựng module `src/services/metrics.py`** tính toán độc lập các chỉ số:
+  1. **Xây dựng module `modules/qa/services/metrics.py`** tính toán độc lập các chỉ số:
      | Chỉ số | Cách tính | Ý nghĩa |
      |---|---|---|
      | `page_hit_rate` | Tỷ lệ câu có trang trích dẫn ∩ `gold_pages` ≠ ∅ | Đo khả năng định vị đúng trang |
@@ -115,12 +115,12 @@ flowchart TD
 ### Task 1.3: Nâng cấp chuẩn hóa text của verifier (Tiếng Việt & Fuzzy Matching)
 
 - **Các file tác động**:
-  - `src/text_normalize.py` (tạo mới)
-  - `src/citation_verifier.py` (sửa - tích hợp chuẩn hóa mới)
+  - `modules/qa/text_normalize.py` (tạo mới)
+  - `modules/qa/citation_verifier.py` (sửa - tích hợp chuẩn hóa mới)
   - `tests/unit/test_text_normalize.py` (tạo mới - >= 15 test cases)
 
 - **Các bước thực hiện cụ thể**:
-  1. **Xây dựng `src/text_normalize.py` với pipeline chuẩn hóa 6 bước**:
+  1. **Xây dựng `modules/qa/text_normalize.py` với pipeline chuẩn hóa 6 bước**:
      - Bước 1: `unicodedata.normalize("NFC", text)` (chuyển toàn bộ tiếng Việt về dạng dựng sẵn chuẩn).
      - Bước 2: Chuẩn hóa ligatures (chữ ghép font PDF: `ﬁ` -> `fi`, `ﬂ` -> `fl`, `ﬀ` -> `ff`, `ﬃ` -> `ffi`, `ﬄ` -> `ffl`) qua `unicodedata.normalize("NFKC", ...)` một cách an toàn không làm hỏng dấu tiếng Việt.
      - Bước 3: Nối từ bị ngắt dòng có dấu gạch nối cuối dòng: `re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", text)`.
@@ -145,8 +145,8 @@ flowchart TD
 ### Task 1.4: Kiểm tra evidence có *ủng hộ* câu trả lời (Evidence Support Check)
 
 - **Các file tác động**:
-  - `src/services/support_check.py` (tạo mới)
-  - `src/citation_verifier.py` (sửa - cấu trúc hóa kết quả thẩm định)
+  - `modules/qa/services/support_check.py` (tạo mới)
+  - `modules/qa/citation_verifier.py` (sửa - cấu trúc hóa kết quả thẩm định)
   - `tests/unit/test_support_check.py` (tạo mới)
 
 - **Các bước thực hiện cụ thể**:
@@ -185,14 +185,14 @@ flowchart TD
 ### Task 1.5: Trạng thái & lý do trả về thay vì chỉ `raise ValueError`
 
 - **Các file tác động**:
-  - `src/models/answer.py` (sửa - bổ sung enum & trường mới)
-  - `src/qa_service.py` (sửa - trả về rejected answer thay vì ném lỗi)
-  - `src/streamlit_app.py` (sửa - hiển thị thông báo thân thiện theo mã lỗi)
-  - `specs/001-document-qna-api/contracts/qa-api.md` (cập nhật contract)
+  - `modules/qa/models/answer.py` (sửa - bổ sung enum & trường mới)
+  - `modules/qa/qa_service.py` (sửa - trả về rejected answer thay vì ném lỗi)
+  - `views/qa.py` (sửa - hiển thị thông báo thân thiện theo mã lỗi)
+  - `specs/005-document-qna/contracts/qa-api.md` (cập nhật contract)
   - `tests/unit/test_rejection_reasons.py` (tạo mới)
 
 - **Các bước thực hiện cụ thể**:
-  1. **Định nghĩa Enum `RejectionReason` trong `src/models/answer.py`**:
+  1. **Định nghĩa Enum `RejectionReason` trong `modules/qa/models/answer.py`**:
      - `NO_CITATION`: Mô hình không đưa ra bất kỳ trích dẫn trang nào.
      - `CITATION_NOT_FOUND`: Trích dẫn trỏ tới trang không tồn tại hoặc không tìm thấy bằng chứng trong trang.
      - `WEAK_SUPPORT`: Bằng chứng trích dẫn không đủ căn cứ để ủng hộ câu trả lời.
@@ -206,12 +206,12 @@ flowchart TD
   3. **Refactor `QAService.ask_question()`**:
      - Giữ `raise ValueError` cho lỗi đầu vào không hợp lệ (`question` rỗng).
      - Với lỗi nghiệp vụ thẩm định trích dẫn (insufficient / invalid citations): Trả về instance `Answer` với `status="rejected"`, gán `rejection_reason` tương ứng và danh sách `warnings` thay vì ném ngoại lệ.
-  4. **Cập nhật giao diện Streamlit (`src/streamlit_app.py`)**:
+  4. **Cập nhật giao diện Streamlit (`views/qa.py`)**:
      - Kiểm tra nếu `answer.status == "rejected"`:
        - Hiển thị thông báo tiếng Việt trực quan, nêu rõ nguyên nhân (ví dụ: *"Trích dẫn không khớp với tài liệu gốc"*, *"Bằng chứng không đủ chứng minh cho câu trả lời"*).
        - Hiển thị gợi ý hành động cụ thể để người dùng biết cách đặt lại câu hỏi hoặc kiểm tra tài liệu.
   5. **Cập nhật contract API**:
-     - Bổ sung `rejection_reason` và `warnings` vào schema trong `specs/001-document-qna-api/contracts/qa-api.md`.
+     - Bổ sung `rejection_reason` và `warnings` vào schema trong `specs/005-document-qna/contracts/qa-api.md`.
 
 - **Tiêu chí hoàn thành (DoD)**:
   - `ask_question` không crash khi gặp trích dẫn không hợp lệ mà trả về đối tượng `Answer(status="rejected", ...)`.
@@ -225,7 +225,7 @@ flowchart TD
 - **Các file tác động**:
   - `scripts/measure_latency.py` (tạo mới - script benchmark độ trễ)
   - `docs/module-a/status.md` (tạo mới - ma trận trạng thái FR/SC)
-  - `src/config.py` (bổ sung cấu hình timeout & retry)
+  - `modules/qa/config.py` (bổ sung cấu hình timeout & retry)
   - `tests/unit/test_latency_script.py` (tạo mới)
 
 - **Các bước thực hiện cụ thể**:

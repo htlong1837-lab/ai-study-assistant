@@ -1,1 +1,0 @@
-"""Document Q&A application package."""

@@ -1,8 +1,8 @@
 # Implementation Plan: Document Q&A via API
 
-**Branch**: `001-document-qna-api` | **Date**: 2026-11-07 | **Spec**: [spec.md](./spec.md)
+**Branch**: `005-document-qna` | **Date**: 2026-11-07 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/001-document-qna-api/spec.md`
+**Input**: Feature specification from `/specs/005-document-qna/spec.md`
 
 ## Summary
 
@@ -45,7 +45,7 @@ This feature delivers a secure document Q&A workflow for Module A: ingest PDF co
 ### Documentation (this feature)
 
 ```text
-specs/001-document-qna-api/
+specs/005-document-qna/
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output
@@ -60,7 +60,7 @@ specs/001-document-qna-api/
 ### Source Code (repository root)
 
 ```text
-src/
+modules/qa/
 ├── llm_client.py
 ├── document_parser.py
 ├── qa_service.py
@@ -81,7 +81,7 @@ src/
     └── benchmark/
 ```
 
-**Structure Decision**: A single Python service layer plus Streamlit frontend is sufficient because the feature is a focused document Q&A application rather than a distributed system. The document-processing and QA logic are centralized in `src/` while the UI remains a thin presentation layer.
+**Structure Decision**: A single Python service layer plus Streamlit frontend is sufficient because the feature is a focused document Q&A application rather than a distributed system. The document-processing and QA logic are centralized in `modules/qa/` while the UI remains a thin presentation layer.
 
 ## Complexity Tracking
 
