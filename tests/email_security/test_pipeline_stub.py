@@ -464,8 +464,9 @@ class TestProcessEmailStub:
             attach_name="lecture.pdf",
             attach_data=b"%PDF-1.4 valid pdf",
         )
-        result = process_email(raw, settings=cfg)
+        result = approve_suspicious(process_email(raw, settings=cfg))
 
+        assert result.safe_attachments
         for sa in result.safe_attachments:
             assert isinstance(sa, SafeAttachment)
             assert len(sa.sha256) == 64
@@ -512,12 +513,23 @@ class TestProcessEmailStub:
         result = process_email(eml_file, settings=settings_offline)
         assert isinstance(result, ProcessedEmail)
 
-    def test_safe_email_can_forward(self, settings_offline: Settings):
-        """Email SAFE (stub mặc định) → can_forward=True."""
+    def test_stub_blocks_until_user_approves(self, settings_offline: Settings):
+        """Chưa có scanner thật → mặc định chặn: SUSPICIOUS, chỉ chuyển sau khi duyệt."""
         raw = make_plain_eml()
         result = process_email(raw, settings=settings_offline)
-        # Stub không có scanner nên safety=SAFE, can_forward=True
-        assert result.can_forward is True
+        assert result.email.safety is SafetyStatus.SUSPICIOUS
+        assert result.can_forward is False
+        assert approve_suspicious(result).can_forward is True
+
+    def test_stub_attachment_needs_approval(self, tmp_path: Path):
+        """File đính kèm chưa quét không thành SafeAttachment cho tới khi người dùng duyệt."""
+        cfg = Settings(virustotal_api_key="", llm_provider="fake", attachments_dir=str(tmp_path))
+        raw = make_multipart_eml(attach_name="lecture.pdf", attach_data=b"%PDF-1.4 valid pdf")
+        result = process_email(raw, settings=cfg)
+        assert result.safe_attachments == []
+        approved = approve_suspicious(result)
+        assert len(approved.safe_attachments) == 1
+        assert len(approved.safe_attachments[0].sha256) == 64
 
 
 # ===========================================================================
