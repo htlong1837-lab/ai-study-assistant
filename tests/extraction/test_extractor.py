@@ -80,7 +80,7 @@ def test_extract_from_email_success():
                 "refers_to": None
             }
         ],
-        "not_assignment": false
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_email(email, llm)
@@ -121,7 +121,7 @@ def test_extract_invalid_evidence_revokes_value():
                 ]
             }
         ],
-        "not_assignment": false
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_email(email, llm)
@@ -150,7 +150,7 @@ def test_extract_caching_with_repository(repo):
                 "deadlines": [{"raw_text": "15/11/2026", "evidence": {"quote": "15/11/2026", "location": "email"}}]
             }
         ],
-        "not_assignment": false
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
 
@@ -175,7 +175,7 @@ def test_extract_empty_when_not_assignment():
         label=EmailLabel.SCHEDULE,
         safety=SafetyStatus.SAFE
     )
-    mock_json = {"assignments": [], "not_assignment": true}
+    mock_json = {"assignments": [], "not_assignment": True}
     llm = MockLLMClient(json.dumps(mock_json))
     outcome = extract_from_email(email, llm)
     assert outcome.is_empty
@@ -204,7 +204,7 @@ def test_extract_from_document_success():
                 ]
             }
         ],
-        "not_assignment": false
+        "not_assignment": False 
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_document(doc, llm, anchor=datetime(2026, 11, 4, 10, 0))
