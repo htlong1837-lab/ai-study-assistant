@@ -51,12 +51,12 @@
 **Kiểm thử độc lập**: Xử lý một email bài tập mẫu (hoặc tài liệu PDF mẫu), hệ thống sinh ra một bản ghi trong bảng `tasks` ở trạng thái `proposed` với đầy đủ tên bài tập, môn học, hạn nộp đã chuẩn hóa kèm trích dẫn văn bản gốc.
 
 ### Tests cho User Story 1
-- [ ] T013 [P] [US1] Viết unit test `tests/extraction/test_extractor.py` (kiểm tra chặn email độc hại, kiểm tra loại bỏ trường khi evidence giả, kiểm tra caching không tốn token)
+- [x] T013 [P] [US1] Viết unit test `tests/extraction/test_extractor.py` (kiểm tra chặn email độc hại, kiểm tra loại bỏ trường khi evidence giả, kiểm tra caching không tốn token)
 
 ### Cài đặt cho User Story 1
-- [ ] T014 [P] [US1] Cài đặt `modules/extraction/prompts.py` (PROMPT_VERSION, system prompt trợ lý học vụ, chống prompt injection, 4 ví dụ few-shot chuẩn)
-- [ ] T015 [P] [US1] Cài đặt `modules/extraction/confidence.py` (hàm compute_confidence bằng code tất định dựa trên độ đầy đủ bằng chứng và cờ cảnh báo)
-- [ ] T016 [US1] Cài đặt `modules/extraction/extractor.py` (hàm extract_from_email, extract_from_document, retry 1 lần khi lỗi JSON, kiểm tra quote là substring trong văn bản gốc, gọi datetime_normalizer)
+- [x] T014 [P] [US1] Cài đặt `modules/extraction/prompts.py` (PROMPT_VERSION, system prompt trợ lý học vụ, chống prompt injection, 4 ví dụ few-shot chuẩn)
+- [x] T015 [P] [US1] Cài đặt `modules/extraction/confidence.py` (hàm compute_confidence bằng code tất định dựa trên độ đầy đủ bằng chứng và cờ cảnh báo)
+- [x] T016 [US1] Cài đặt `modules/extraction/extractor.py` (hàm extract_from_email, extract_from_document, retry 1 lần khi lỗi JSON, kiểm tra quote là substring trong văn bản gốc, gọi datetime_normalizer)
 - [ ] T017 [US1] Cài đặt hàm `process_email` và `process_document` trong `modules/extraction/workflow.py` để kết nối extractor với repository
 
 **Checkpoint**: Hoạt động trích xuất độc lập hoàn chỉnh; test `pytest tests/extraction/test_extractor.py` xanh hoàn toàn với Fake LLM.

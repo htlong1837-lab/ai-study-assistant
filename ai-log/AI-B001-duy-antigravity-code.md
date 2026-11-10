@@ -1,8 +1,8 @@
-# AI-002 — Lập kế hoạch, đặc tả Spec-kit, triển khai CSDL, Chuẩn hóa thời gian và Trích xuất Module B
+# AI-B001 — Lập kế hoạch, đặc tả Spec-kit, triển khai CSDL, Chuẩn hóa thời gian và Trích xuất Module B
 
 | Trường thông tin | Nội dung |
 |---|---|
-| Mã tương tác | AI-002 |
+| Mã tương tác | AI-B001 |
 | Người thực hiện | Duy |
 | Thời gian | 2026-11-08 (phiên làm việc liên tục) |
 | Công cụ AI | Antigravity (Google Gemini 3.8 Flash), môi trường Agentic IDE có quyền chạy lệnh shell và thao tác file |
