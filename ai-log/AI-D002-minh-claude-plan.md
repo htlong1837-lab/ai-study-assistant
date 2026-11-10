@@ -1,0 +1,15 @@
+# Nhật ký sử dụng AI - Tương tác AI-D002
+
+| Trường thông tin | Nội dung |
+| :--- | :--- |
+| **Mã tương tác** | AI-D002 |
+| **Thời gian** | 08/11/2026, 16:15 |
+| **Công cụ AI** | Claude Web (Mô hình: Claude 3.5 Sonnet) |
+| **Mục đích** | Đánh giá kỹ thuật và lập kế hoạch thực thi chi tiết (plan_module_d.md) cho Module D (Email & Bảo mật), chia thành 14 Work Packages độc lập. |
+| **Prompt đầy đủ** | `Tôi là Hoàng Minh, thành viên phụ trách Module D (Email & Bảo mật) trong bài tập lớn môn Trí tuệ nhân tạo (hệ thống Trợ lý AI học tập và lịch trình dựng bằng Python, Streamlit, SQLite, Scikit-learn). Dưới đây là nội dung file review chức năng Module D (review_module_d.md) vừa được tạo từ tài liệu đặc tả của nhóm: [Đính kèm toàn bộ review_module_d.md]. Bạn hãy đóng vai trò là Senior AI Engineer, đánh giá, định hướng kỹ thuật và soạn giúp tôi một file kế hoạch chi tiết plan.md cho Module D (chia thành các task nhỏ từ cấu hình môi trường, xử lý file .eml, mô hình TF-IDF vs Zero-shot, quét SHA-256 VirusTotal, đến giao diện Streamlit và kiểm thử). Mỗi task nêu rõ: mục tiêu, thư viện cần dùng, luồng xử lý và cấu trúc file code để tôi đưa vào AI coding assistant giải quyết từng bước.` |
+| **Phản hồi đầy đủ** | *(Xem nội dung chi tiết được lưu trực tiếp tại file `docs/plan_module_d.md`)*<br><br>Tóm tắt các điểm chính Claude đề xuất:<br>1. Điều chỉnh 18 quyết định thiết kế (từ A1 đến A18): quét an toàn trước khi gọi LLM, kiểm tra magic bytes, SQLite cache cho VirusTotal, FeatureUnion cho tiếng Việt.<br>2. Kiến trúc thư mục chuẩn và pipeline 10 bước nghiêm ngặt tuân thủ nguyên tắc "Chặn tại cổng".<br>3. Khai báo các mô hình dữ liệu nội bộ (Reason, Reputation, UrlFinding, AttachmentFinding, ProcessedEmail).<br>4. Chia chi tiết 14 Work Packages (WP-00 đến WP-13) theo thứ tự lát cắt dọc với tổng thời lượng 48h (cân đối về 45h).<br>5. Chiến lược test cấm gọi mạng (offline test) và checklist Definition of Done. |
+| **Nhận xét, đánh giá** | - **Ưu điểm:** Kế hoạch có tính ứng dụng công nghiệp cao, khắc phục triệt để nguy cơ tấn công Prompt Injection và lộ dữ liệu, tính toán kỹ rủi ro hạn mức VirusTotal.<br>- **Hạn chế:** Cấu trúc ban đầu hơi phức tạp và dài, ước tính tổng giờ lên 48h hơi vượt mốc 45h của nhóm. |
+| **Nội dung được sử dụng** | Tiếp thu toàn bộ kiến trúc 14 Work Packages, các quyết định A1-A18, quy tắc an toàn và quy chuẩn test offline để lưu thành `docs/plan_module_d.md`. |
+| **Nội dung chỉnh sửa hoặc loại bỏ** | Chấp nhận phương án cân đối giờ: hạ WP-03 xuống prototype (-1h), chia sẻ WP-13 khảo sát SP1 với nhóm (-2h) để vừa khít 45 giờ theo phân công. |
+| **Cách kiểm chứng** | So sánh các ràng buộc cứng C1-C7 với file `core/contracts.py` và slide kế hoạch tổng thể của nhóm trưởng Long; kiểm tra tài liệu Scikit-learn và VirusTotal API v3. |
+| **Kết quả áp dụng** | Tạo thành công file `docs/plan_module_d.md`, sẵn sàng nộp PR tuần 1 và chuyển tiếp sang AI coding assistant để thực hiện WP-00. |
