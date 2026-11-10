@@ -12,6 +12,27 @@ from .citation_verifier import validate_answer
 from .models import Answer, Citation
 
 
+def _parse_json(text: str | None) -> dict:
+    """Đọc JSON từ phản hồi LLM, chấp nhận khối ```json ... ``` bao quanh."""
+    raw = (text or "").strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else ""
+        raw = raw.rsplit("```", 1)[0].strip()
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        start, end = raw.find("{"), raw.rfind("}")
+        if start == -1 or end <= start:
+            raise ValueError("LLM response was not valid JSON.") from None
+        try:
+            payload = json.loads(raw[start:end + 1])
+        except json.JSONDecodeError as exc:
+            raise ValueError("LLM response was not valid JSON.") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("LLM response was not a JSON object.")
+    return payload
+
+
 class QAService:
     """Create document-grounded answers through the shared core LLM client."""
 
@@ -50,25 +71,19 @@ class QAService:
             self._prompt(document, question, reference_material),
             system="You are a careful document analyst. Do not invent facts or citations.",
         )
-        try:
-            payload = json.loads(response.text)
-        except (TypeError, json.JSONDecodeError) as exc:
-            raise ValueError("LLM response was not valid JSON.") from exc
+        payload = _parse_json(response.text)
         answer_text = str(payload.get("answer", "")).strip()
         if not answer_text:
             raise ValueError("LLM response did not contain an answer.")
 
         citations: list[Citation] = []
         for item in payload.get("citations", []):
-            if isinstance(item, int):
-                item = {"page_num": item, "evidence_text": ""}
             if not isinstance(item, dict):
-                continue
+                continue  # chỉ có số trang, không có câu trích → không kiểm chứng được
             number = int(item.get("page_num", 0))
-            page = next((p for p in document.pages if p.number == number), None)
+            # Không tự điền bằng chứng: thiếu evidence_text thì bỏ trích dẫn này,
+            # nếu không còn trích dẫn nào thì validate_answer sẽ từ chối câu trả lời.
             evidence = str(item.get("evidence_text", "")).strip()
-            if page is not None and not evidence:
-                evidence = page.text[:180].strip()
             if number > 0 and evidence:
                 citations.append(Citation(number, evidence, float(item.get("confidence", 1.0))))
 

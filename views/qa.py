@@ -1,36 +1,23 @@
 from __future__ import annotations
 
-import os
-
 import streamlit as st
 
 from core import mocks
-from core.llm_client import LLMClient
+from core.llm_client import LLMClient, get_client
 from modules.qa import QAService
-
-
-def _configured_key() -> str:
-    for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-        value = os.environ.get(name, "").strip()
-        if value:
-            return value
-    for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-        try:
-            value = str(st.secrets.get(name, "")).strip()
-        except Exception:
-            value = ""
-        if value:
-            return value
-    return ""
 
 
 st.title("💬 Hỏi đáp tài liệu")
 st.caption("Bản demo dùng ParsedDocument mẫu; file thật sẽ chỉ được nhận qua cổng SafeAttachment của Module D.")
 
-api_key = st.text_input("Gemini API key", type="password", key="qa_api_key")
-effective_key = api_key.strip() or _configured_key()
-if not effective_key:
-    st.info("Nhập API key để bật chức năng hỏi đáp.")
+# Cấu hình chung từ .env (LLM_PROVIDER, LLM_MODEL, <PROVIDER>_API_KEY).
+# Ô nhập key chỉ dùng trong phiên, không ghi ra file.
+client = get_client()
+api_key = st.text_input("API key (tuỳ chọn, chỉ dùng trong phiên này)", type="password", key="qa_api_key")
+if api_key.strip():
+    client = LLMClient(provider=client.provider, model=client.model, api_key=api_key.strip())
+if not client.is_configured():
+    st.info(f"Hỏi đáp đang tắt: {client.not_configured_reason()} Nhập API key hoặc điền vào .env.")
 
 documents = mocks.documents()
 selected_id = st.selectbox(
@@ -43,13 +30,16 @@ document = next(doc for doc in documents if doc.doc_id == selected_id)
 st.caption(f"{len(document.pages)} trang · Dữ liệu mẫu từ hợp đồng dùng chung")
 
 question = st.text_input("Câu hỏi về tài liệu")
-if st.button("Hỏi", disabled=not bool(effective_key and question.strip())):
-    client = LLMClient(provider="gemini", model="gemini-2.5-flash", api_key=effective_key)
+if st.button("Hỏi", disabled=not (client.is_configured() and question.strip())):
     try:
         answer = QAService(client).ask_question(document, question)
         st.session_state["qa_answer"] = answer
+    except ValueError as exc:
+        st.session_state.pop("qa_answer", None)
+        st.error(f"Không tạo được câu trả lời có trích dẫn hợp lệ: {exc}")
     except Exception:
-        st.error("Không thể tạo câu trả lời có trích dẫn hợp lệ. Kiểm tra key và thử lại.")
+        st.session_state.pop("qa_answer", None)
+        st.error("Gọi LLM thất bại. Kiểm tra key và kết nối mạng rồi thử lại.")
 
 answer = st.session_state.get("qa_answer")
 if answer is not None and answer.doc_id == document.doc_id:
