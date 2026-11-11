@@ -218,3 +218,46 @@ def test_extract_from_document_success():
     doc_sources = [s["source"] for s in item.sources]
     assert "doc:d-001#p1" in doc_sources
     assert "doc:d-001#p2" in doc_sources or "doc:d-001" in doc_sources
+
+
+def test_extract_rubric_and_submission_details(repo):
+    doc = ParsedDocument(
+        doc_id="d-002",
+        filename="de_bai_rubric.pdf",
+        pages=[
+            Page(1, "BÀI TẬP LỚN CƠ SỞ DỮ LIỆU\nNộp file định dạng .zip lên LMS."),
+            Page(2, "Quy cách đặt tên: MSSV_HoTen_BTL.zip\nTiêu chí chấm điểm:\n- Thiết kế ERD: 3 điểm\n- Chuẩn hóa 3NF: 4 điểm\n- Truy vấn SQL: 3 điểm"),
+        ]
+    )
+    mock_json = {
+        "assignments": [
+            {
+                "title": {"value": "Bài tập lớn CSDL", "evidence": {"quote": "BÀI TẬP LỚN CƠ SỞ DỮ LIỆU", "location": "p1"}},
+                "course": {"value": "Cơ sở dữ liệu", "evidence": {"quote": "CƠ SỞ DỮ LIỆU", "location": "p1"}},
+                "deadlines": [],
+                "submission_platform": {"value": "LMS", "evidence": {"quote": "lên LMS", "location": "p1"}},
+                "submission_format": {"value": [".zip"], "evidence": {"quote": "định dạng .zip", "location": "p1"}},
+                "naming_convention": {"value": "MSSV_HoTen_BTL.zip", "evidence": {"quote": "MSSV_HoTen_BTL.zip", "location": "p2"}},
+                "grading_criteria": {
+                    "value": ["Thiết kế ERD: 3 điểm", "Chuẩn hóa 3NF: 4 điểm", "Truy vấn SQL: 3 điểm"],
+                    "evidence": {"quote": "Tiêu chí chấm điểm", "location": "p2"}
+                },
+                "estimated_hours": 8.0,
+                "priority_suggestion": "medium",
+                "is_extension_notice": False,
+                "refers_to": None,
+            }
+        ],
+        "not_assignment": False,
+    }
+    llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
+    outcome = extract_from_document(doc, llm, repo=repo)
+
+    assert not outcome.is_empty
+    assert len(outcome.items) == 1
+    item = outcome.items[0]
+    a = item.assignment
+    assert a.submission_platform.value == "LMS"
+    assert a.submission_format.value == [".zip"]
+    assert a.naming_convention.value == "MSSV_HoTen_BTL.zip"
+    assert len(a.grading_criteria.value) == 3
