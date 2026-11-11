@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import hashlib
-import os
 import re
 from uuid import uuid4
 
 import streamlit as st
 
-from core.llm_client import LLMClient
+from core import config
+from core.llm_client import LLMClient, get_client
 from modules.qa import QAService
 from modules.qa.loader import load_document_bytes
 from modules.qa.messages import rejection_message
@@ -16,24 +16,23 @@ from modules.qa.reader.threads import ThreadStore, export_markdown
 
 
 def _configured_key() -> str:
-    for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-        value = os.environ.get(name, "").strip()
-        if value:
-            return value
+    """Khóa theo cấu hình chung (.env: <LLM_PROVIDER>_API_KEY), dự phòng st.secrets."""
+    name = f"{config.env('LLM_PROVIDER', 'gemini').upper()}_API_KEY"
+    value = config.env(name).strip()
+    if value:
+        return value
     try:
-        for name in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-            value = str(st.secrets.get(name, "")).strip()
-            if value:
-                return value
+        return str(st.secrets.get(name, "")).strip()
     except Exception:
-        pass
-    return ""
+        return ""
 
 
 def _client() -> LLMClient:
+    """Dùng LLM_PROVIDER/LLM_MODEL chung; khóa nhập trong phiên được ưu tiên."""
+    base = get_client()
     return LLMClient(
-        provider="gemini",
-        model=os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+        provider=base.provider,
+        model=base.model,
         api_key=st.session_state.get("qa_api_key", "").strip() or _configured_key(),
     )
 
@@ -251,7 +250,7 @@ with right:
         if st.button(
             "Gửi câu hỏi",
             key="qa_doc_ask",
-            disabled=not bool(api_key and question.strip()),
+            disabled=not (_client().is_configured() and question.strip()),
         ):
             try:
                 with st.spinner("Đang tìm trong tài liệu…"):
