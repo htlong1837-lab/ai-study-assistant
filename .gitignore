@@ -24,3 +24,6 @@ Thumbs.db
 
 # Cache LLM
 .cache/
+
+# Benchmark results
+eval/results/

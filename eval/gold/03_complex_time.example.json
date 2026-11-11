@@ -1,0 +1,22 @@
+{
+  "id": "gold-003",
+  "category": "complex_time",
+  "split": "test",
+  "email": {
+    "id": "e-g03",
+    "sender": "csdl.gv@uni.edu.vn",
+    "subject": "[CSDL] Bài tập thực hành SQL tuần 10",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Sinh viên hoàn thành bài tập thực hành SQL trước 17h00 thứ Bảy tuần này lên hệ thống LMS. Đặt tên file MSSV_Lab3.sql."
+  },
+  "gold": {
+    "title": "Bài tập thực hành SQL",
+    "course": "Cơ sở dữ liệu",
+    "deadline": "2026-11-14T17:00:00+07:00",
+    "raw_deadline_text": "17h00 thứ Bảy tuần này",
+    "submission_platform": "LMS",
+    "submission_format": [".sql"],
+    "grading_criteria": [],
+    "has_conflict": false
+  }
+}

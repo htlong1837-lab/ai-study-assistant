@@ -1,0 +1,22 @@
+{
+  "id": "gold-001",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g01",
+    "sender": "gv.ai@uni.edu.vn",
+    "subject": "[AI] Báo cáo tiến độ SP1",
+    "received_at": "2026-11-04T10:00:00+07:00",
+    "body": "Các nhóm nộp Báo cáo SP1 môn Trí tuệ nhân tạo trước 23h59 thứ Sáu tuần sau lên Google Drive lớp. Định dạng nộp là .pdf."
+  },
+  "gold": {
+    "title": "Báo cáo SP1",
+    "course": "Trí tuệ nhân tạo",
+    "deadline": "2026-11-13T23:59:00+07:00",
+    "raw_deadline_text": "23h59 thứ Sáu tuần sau",
+    "submission_platform": "Google Drive",
+    "submission_format": [".pdf"],
+    "grading_criteria": [],
+    "has_conflict": false
+  }
+}

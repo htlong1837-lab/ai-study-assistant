@@ -1,0 +1,24 @@
+{
+  "id": "gold-002",
+  "category": "extension",
+  "split": "test",
+  "email": {
+    "id": "e-g02",
+    "sender": "gv.ai@uni.edu.vn",
+    "subject": "[AI] Đính chính gia hạn nộp Báo cáo SP1",
+    "received_at": "2026-11-06T14:00:00+07:00",
+    "body": "Do nhiều nhóm cần hoàn thiện thêm, thầy dời hạn nộp Báo cáo SP1 đến 23h59 ngày 20/11/2026. Nơi nộp vẫn là Google Drive."
+  },
+  "gold": {
+    "title": "Báo cáo SP1",
+    "course": "Trí tuệ nhân tạo",
+    "deadline": "2026-11-20T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 20/11/2026",
+    "submission_platform": "Google Drive",
+    "submission_format": [".pdf"],
+    "grading_criteria": [],
+    "is_extension_notice": true,
+    "refers_to": "Báo cáo SP1",
+    "has_conflict": true
+  }
+}
