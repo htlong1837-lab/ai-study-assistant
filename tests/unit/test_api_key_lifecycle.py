@@ -1,7 +1,6 @@
 """Unit tests for API key lifecycle, isolation, and error handling."""
 from __future__ import annotations
 
-import pytest
 from core.llm_client import LLMClient
 
 

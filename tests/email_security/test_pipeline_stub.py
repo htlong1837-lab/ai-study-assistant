@@ -293,10 +293,8 @@ class TestParseEml:
         for sa in saved:
             assert ".." not in sa.filename
             assert ".." not in sa.path
-            # Không lưu ra ngoài thư mục tmp_path
-            saved_path = Path(sa.path)
-            # Kiểm tra không escape ra ngoài attachments_dir
-            assert "evil" not in sa.path.split("/")[-2] if "/" in sa.path else True
+            # Không lưu ra ngoài thư mục attachments_dir (tmp_path)
+            assert Path(sa.path).resolve().is_relative_to(tmp_path.resolve())
 
     def test_missing_date_does_not_crash(self):
         """Thiếu header Date → dùng datetime.now(UTC), không crash."""

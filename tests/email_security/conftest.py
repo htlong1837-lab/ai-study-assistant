@@ -25,8 +25,6 @@ def block_network(monkeypatch: pytest.MonkeyPatch) -> None:
     Nếu code gọi socket.connect → test sẽ fail ngay với lỗi rõ ràng
     thay vì treo hoặc phụ thuộc kết nối thực.
     """
-    original_connect = socket.socket.connect
-
     def _blocked_connect(self, address):  # type: ignore[override]
         raise ConnectionRefusedError(
             f"[TEST] Kết nối mạng bị chặn: {address}. "
@@ -68,10 +66,10 @@ def make_plain_eml(
     """Sinh bytes .eml văn bản thuần tối giản."""
     headers = [
         f"From: {sender}",
-        f"To: recipient@example.com",
+        "To: recipient@example.com",
         f"Subject: {subject}",
         f"Message-ID: <{message_id}>",
-        f"Date: Mon, 09 Nov 2026 08:00:00 +0700",
+        "Date: Mon, 09 Nov 2026 08:00:00 +0700",
         "MIME-Version: 1.0",
         "Content-Type: text/plain; charset=utf-8",
     ]

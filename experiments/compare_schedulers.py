@@ -100,12 +100,12 @@ def summarize(rows: list[dict], seeds: int, time_limit: float) -> str:
                 "| Chỉ số | EDF | CP-SAT | CP-SAT thắng / hòa / thua |", "|---|---|---|---|"]
         for col, label, sign in METRICS:
             vals = {a: [r[col] for r in rs if r["algorithm"] == a] for a in ALGORITHMS}
-            w = t = l = 0
+            w = t = lose = 0
             for e, c in zip(vals["EDF"], vals["CP-SAT"]):
                 diff = (c - e) * sign
-                w, t, l = w + (diff > 1e-9), t + (abs(diff) <= 1e-9), l + (diff < -1e-9)
+                w, t, lose = w + (diff > 1e-9), t + (abs(diff) <= 1e-9), lose + (diff < -1e-9)
             out.append(f"| {label} | {mean_std(vals['EDF'])} | {mean_std(vals['CP-SAT'])} "
-                       f"| {w} / {t} / {l} |")
+                       f"| {w} / {t} / {lose} |")
         statuses = sorted({r["status"] for r in rs if r["algorithm"] == "CP-SAT"})
         out += ["", f"Trạng thái CP-SAT: {', '.join(statuses)}.", ""]
     return "\n".join(out)
