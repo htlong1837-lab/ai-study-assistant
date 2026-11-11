@@ -7,12 +7,15 @@ venv/
 
 # Bí mật và dữ liệu thật — KHÔNG commit
 .env
+.env.*
 *.db
 *.db-journal
 *.db-wal
 data/real/
 data/private/
 *.eml
+# Ngoại lệ: email mẫu tự sinh để test (không phải email thật)
+!tests/**/fixtures/*.eml
 eval/gold/*.json
 !eval/gold/*.example.json
 
@@ -22,5 +25,9 @@ eval/gold/*.json
 .DS_Store
 Thumbs.db
 
-# Cache LLM
+# Cache LLM & Module A
 .cache/
+.tmp_uploads/
+dist/
+.dist/
+*.egg-info/
