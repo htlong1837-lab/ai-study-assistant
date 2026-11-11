@@ -48,3 +48,28 @@ def test_corrupt_cache_file_is_ignored(tmp_path):
 def test_usage_persists_between_instances(tmp_path):
     LLMClient(provider="fake", model="m", cache_dir=tmp_path).generate("a")
     assert LLMClient(provider="fake", model="m", cache_dir=tmp_path).usage()["calls"] == 1
+
+
+def test_optional_timeout_is_forwarded_only_when_requested(monkeypatch, tmp_path):
+    from core import llm_client
+
+    calls = []
+
+    def provider(model, system, prompt, temperature, api_key, *, timeout=None):
+        calls.append(timeout)
+        return "ok", 1, 1
+
+    monkeypatch.setitem(llm_client.PROVIDERS, "gemini", provider)
+    client = LLMClient(
+        provider="gemini", model="m", api_key="key", cache_dir=tmp_path
+    )
+    monkeypatch.setattr(client, "not_configured_reason", lambda: None)
+    client.generate("without timeout", use_cache=False)
+    client.generate("with timeout", use_cache=False, timeout=9)
+    assert calls == [None, 9]
+
+
+def test_timeout_must_be_positive(tmp_path):
+    client = LLMClient(provider="fake", model="m", cache_dir=tmp_path)
+    with pytest.raises(ValueError, match="greater than zero"):
+        client.generate("question", timeout=0)
