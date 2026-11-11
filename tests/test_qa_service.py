@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from core.contracts import ParsedDocument, Page
 from core.llm_client import LLMResponse
 from modules.qa import QAService
@@ -43,8 +45,6 @@ def test_qa_service_approves_valid_answer() -> None:
     assert answer.citations
     assert answer.citations[0].page_num in {1, 2}
 
-
-import pytest
 
 
 class _ScriptedClient:
