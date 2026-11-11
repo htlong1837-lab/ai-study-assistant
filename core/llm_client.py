@@ -10,6 +10,7 @@
 Cache theo nội dung yêu cầu trong .cache/llm/, thống kê trong .cache/llm/usage.json.
 Thêm nhà cung cấp: viết hàm _call_<tên> rồi đăng ký vào PROVIDERS.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -35,30 +36,41 @@ class LLMResponse:
 
 # --- nhà cung cấp: (model, system, prompt, temperature, api_key) -> (text, in_tok, out_tok) ---
 
+
 def _call_fake(model, system, prompt, temperature, api_key):
     text = "[fake] " + prompt[:80]
     return text, len(f"{system or ''} {prompt}".split()), len(text.split())
 
 
-def _call_gemini(model, system, prompt, temperature, api_key):
+def _call_gemini(model, system, prompt, temperature, api_key, timeout=None):
     from google import genai
     from google.genai import types
 
-    client = genai.Client(api_key=api_key)
+    if timeout is None:
+        client = genai.Client(api_key=api_key)
+    else:
+        client = genai.Client(
+            api_key=api_key, http_options=types.HttpOptions(timeout=int(timeout * 1000))
+        )
     resp = client.models.generate_content(
         model=model,
         contents=prompt,
-        config=types.GenerateContentConfig(system_instruction=system, temperature=temperature),
+        config=types.GenerateContentConfig(
+            system_instruction=system, temperature=temperature
+        ),
     )
     meta = resp.usage_metadata
-    return (resp.text or "",
-            getattr(meta, "prompt_token_count", 0) or 0,
-            getattr(meta, "candidates_token_count", 0) or 0)
+    return (
+        resp.text or "",
+        getattr(meta, "prompt_token_count", 0) or 0,
+        getattr(meta, "candidates_token_count", 0) or 0,
+    )
 
 
 def _gemini_installed() -> bool:
     try:
         import google.genai  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -70,8 +82,13 @@ _EMPTY_USAGE = {"calls": 0, "cache_hits": 0, "input_tokens": 0, "output_tokens":
 
 
 class LLMClient:
-    def __init__(self, provider: str, model: str, api_key: str = "",
-                 cache_dir: Path | str | None = None):
+    def __init__(
+        self,
+        provider: str,
+        model: str,
+        api_key: str = "",
+        cache_dir: Path | str | None = None,
+    ):
         self.provider = provider
         self.model = model
         self._api_key = api_key
@@ -93,8 +110,17 @@ class LLMClient:
 
     # --- gọi ---
 
-    def generate(self, prompt: str, *, system: str | None = None, temperature: float = 0.0,
-                 use_cache: bool = True) -> LLMResponse:
+    def generate(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        temperature: float = 0.0,
+        use_cache: bool = True,
+        timeout: float | None = None,
+    ) -> LLMResponse:
+        if timeout is not None and timeout <= 0:
+            raise ValueError("timeout must be greater than zero")
         reason = self.not_configured_reason()
         if reason:
             raise LLMNotConfigured(reason)
@@ -106,18 +132,29 @@ class LLMClient:
                 self._add_usage(cache_hits=1)
                 return hit
 
-        text, in_tok, out_tok = PROVIDERS[self.provider](
-            self.model, system, prompt, temperature, self._api_key)
+        provider = PROVIDERS[self.provider]
+        if self.provider == "gemini" and timeout is not None:
+            text, in_tok, out_tok = provider(
+                self.model, system, prompt, temperature, self._api_key, timeout=timeout
+            )
+        else:
+            text, in_tok, out_tok = provider(
+                self.model, system, prompt, temperature, self._api_key
+            )
         resp = LLMResponse(text=text, input_tokens=in_tok, output_tokens=out_tok)
         self._add_usage(calls=1, input_tokens=in_tok, output_tokens=out_tok)
         if use_cache:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(asdict(resp), ensure_ascii=False), encoding="utf-8")
+            path.write_text(
+                json.dumps(asdict(resp), ensure_ascii=False), encoding="utf-8"
+            )
         return resp
 
     def usage(self) -> dict:
         try:
-            data = json.loads((self.cache_dir / "usage.json").read_text(encoding="utf-8"))
+            data = json.loads(
+                (self.cache_dir / "usage.json").read_text(encoding="utf-8")
+            )
             return {**_EMPTY_USAGE, **data}
         except (OSError, ValueError):
             return dict(_EMPTY_USAGE)
@@ -125,8 +162,9 @@ class LLMClient:
     # --- nội bộ ---
 
     def _key(self, prompt, system, temperature) -> str:
-        raw = json.dumps([self.provider, self.model, system, prompt, temperature],
-                         ensure_ascii=False)
+        raw = json.dumps(
+            [self.provider, self.model, system, prompt, temperature], ensure_ascii=False
+        )
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     @staticmethod
