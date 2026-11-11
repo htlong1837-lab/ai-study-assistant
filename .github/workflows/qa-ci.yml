@@ -1,0 +1,40 @@
+name: Module A QA CI
+
+on:
+  push:
+    paths:
+      - "modules/qa/**"
+      - "views/qa.py"
+      - "tests/**"
+      - "benchmarks/qa/**"
+      - "scripts/*qa*benchmark.py"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - ".github/workflows/qa-ci.yml"
+  pull_request:
+    paths:
+      - "modules/qa/**"
+      - "views/qa.py"
+      - "tests/**"
+      - "benchmarks/qa/**"
+      - "scripts/*qa*benchmark.py"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - ".github/workflows/qa-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python -m pip install -r requirements.txt "pytest-cov>=5.0" "ruff>=0.6"
+      - run: ruff check modules/qa views/qa.py tests/test_qa*.py scripts/run_qa_benchmark.py scripts/validate_qa_benchmark.py
+      - run: pytest --cov=modules/qa --cov-report=term-missing --cov-fail-under=80

@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Bí mật và dữ liệu thật — KHÔNG commit
 .env
@@ -31,3 +33,9 @@ Thumbs.db
 dist/
 .dist/
 *.egg-info/
+
+# Local/private QA benchmark material (never commit copyrighted source PDFs)
+benchmarks/qa/source/
+benchmarks/qa/*.pdf
+benchmarks/qa/dataset.jsonl
+benchmarks/qa/results/
