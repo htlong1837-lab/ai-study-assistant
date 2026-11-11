@@ -104,8 +104,9 @@ def _sanitize_filename(raw: str) -> str:
     - Giới hạn 100 ký tự.
     - Bỏ leading dots để tránh file ẩn.
     """
-    # Lấy basename (chống path traversal: ../../evil.exe)
-    name = Path(raw).name
+    # Lấy basename (chống path traversal: ../../evil.exe và ..\..\evil.exe).
+    # Tách theo cả "/" và "\" vì trên Linux Path không coi "\" là dấu phân cách.
+    name = re.split(r"[\\/]", raw)[-1]
     # Bỏ ký tự điều khiển Unicode
     name = "".join(ch for ch in name if unicodedata.category(ch) != "Cc")
     # Thay ký tự không an toàn bằng dấu gạch dưới
