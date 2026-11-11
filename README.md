@@ -38,6 +38,21 @@ Chạy kiểm thử (không cần mạng): `pytest`
 
 Không cần Telegram vẫn có thể tải file `.ics` và nhập vào Google Calendar / lịch điện thoại.
 
+## Module A: đọc PDF và hỏi đáp có trích dẫn
+
+Trang QA nằm trong app chung. Chạy `streamlit run app.py`, mở **Hỏi đáp tài liệu**, tải PDF/TXT/MD lên rồi đọc trong viewer. Bôi đen đoạn để hỏi theo ngữ cảnh; cũng có chế độ hỏi toàn tài liệu. Để gọi AI, nhập API key trực tiếp trong giao diện. PDF.js 6.4.299 được vendored trong repo, không cần CDN.
+
+Giới hạn hiện tại: upload tối đa 50 MB/1000 trang; PDF.js viewer chuyển tối đa 30 MB; OCR và hỏi theo ảnh/crop chưa có. PDF được parse trong process riêng với timeout 60 giây. Hãy chạy [manual QA checklist](docs/module-a/manual-qa-checklist.md) trên trình duyệt thật; tình trạng hiện tại ở [Module A status](docs/module-a/status.md).
+
+Benchmark cần gold answers được người dùng xác nhận từ PDF có quyền sử dụng:
+
+```bash
+python scripts/validate_qa_benchmark.py --dataset benchmarks/qa/dataset.template.jsonl
+python scripts/run_qa_benchmark.py --pdf path/to/authorized.pdf --dataset benchmarks/qa/dataset.jsonl
+```
+
+Copy template thành `dataset.jsonl`, điền/review đủ gold answer, page và evidence trước khi chạy. PDF cùng benchmark cá nhân đã được gitignore. Công cụ lint/coverage tùy chọn: `pip install -e ".[dev]"`.
+
 ## Cấu trúc
 
 ```text

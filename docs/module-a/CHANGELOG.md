@@ -4,6 +4,19 @@ Tất cả các thay đổi kỹ thuật của Module A được ghi nhận tạ
 
 ---
 
+## [Reader + QA hardening] - 2026-11-11
+
+- Hoàn thiện backend hỏi theo đoạn/toàn tài liệu, parser/verifier, retrieval BM25, lịch sử luồng và cache verified theo session.
+- Tích hợp PDF.js 6.4.299, viewer/chọn đoạn/chat/citation navigation; thêm component wrapper và dev harness.
+- Thêm benchmark validator/runner, structured logging và hướng dẫn benchmark; chưa có gold dataset do người dùng xác nhận.
+- Bổ sung thread store có ID ổn định, export Markdown có câu hỏi/citation, khớp đoạn qua trang, validation event chặt hơn và dedup đúng một lần trong session.
+- Reader có toolbar trang/zoom/theme, popup cạnh vùng chọn, giải phóng canvas ngoài viewport, kiểm tra `event.source` và tắt PDF scripting/eval.
+- App xóa API key QA khỏi session state khi điều hướng khỏi trang Reader; citation hỏi toàn tài liệu giờ có nút quay lại đúng trang, mọi rejection hiển thị thông báo tiếng Việt.
+- Kiểm chứng cục bộ cập nhật 2026-11-11: 206 passed, 1 skipped; QA coverage 86.94%; Ruff pass. JS test skip vì Node chưa có trên máy này.
+- Đã bổ sung timeout/retry Gemini và PDF parser subprocess ở 2026-11-11. Còn cần browser QA, benchmark thật/latency, kiểm thử tích hợp B/D, OCR/crop theo phê duyệt nhóm và review/merge.
+
+---
+
 ## [Phase 0] - Khẩn cấp: Bảo mật & Bug thật (2026-11-08)
 
 ### fix(A-0.1): Quản lý API Key linh hoạt, hỗ trợ Default Key & Thêm hướng dẫn người dùng

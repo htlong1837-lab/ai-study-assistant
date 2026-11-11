@@ -8,11 +8,19 @@ from modules.qa import QAService
 class FakeLLMClient:
     model = "fake-model"
 
-    def generate(self, prompt, *, system=None, temperature=0.0, use_cache=True):
-        return LLMResponse(json.dumps({
-            "answer": "Alice works in Paris.",
-            "citations": [{"page_num": 1, "evidence_text": "Alice works in Paris."}],
-        }))
+    def generate(
+        self, prompt, *, system=None, temperature=0.0, use_cache=True, timeout=None
+    ):
+        return LLMResponse(
+            json.dumps(
+                {
+                    "answer": "Alice works in Paris.",
+                    "citations": [
+                        {"page_num": 1, "evidence_text": "Alice works in Paris."}
+                    ],
+                }
+            )
+        )
 
 
 def test_qa_service_approves_valid_answer() -> None:
@@ -20,7 +28,10 @@ def test_qa_service_approves_valid_answer() -> None:
         doc_id="doc-3",
         filename="sample.txt",
         pages=[
-            Page(number=1, text="Alice works in Paris. The city is known for its museums."),
+            Page(
+                number=1,
+                text="Alice works in Paris. The city is known for its museums.",
+            ),
             Page(number=2, text="Paris is the capital of France."),
         ],
     )
