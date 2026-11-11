@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import time
 import unicodedata
 from uuid import uuid4
@@ -66,12 +67,20 @@ class QAService:
     ) -> LLMResponse:
         for attempt in range(3):
             try:
-                return self.llm_client.generate(
-                    prompt,
-                    system=system,
-                    use_cache=False,
-                    timeout=self.timeout_seconds,
-                )
+                generate = self.llm_client.generate
+                kwargs = {"system": system, "use_cache": False}
+                try:
+                    parameters = inspect.signature(generate).parameters.values()
+                    accepts_timeout = any(
+                        parameter.name == "timeout"
+                        or parameter.kind is inspect.Parameter.VAR_KEYWORD
+                        for parameter in parameters
+                    )
+                except (TypeError, ValueError):
+                    accepts_timeout = True
+                if accepts_timeout:
+                    kwargs["timeout"] = self.timeout_seconds
+                return generate(prompt, **kwargs)
             except Exception as exc:
                 if self._is_retryable(exc) and attempt < 2:
                     time.sleep(0.5 * (2**attempt))
@@ -199,12 +208,14 @@ class QAService:
                 response, document, question, system, started
             )
         except (TypeError, ValueError) as exc:
-            return self._log_answer(
-                document,
-                question,
-                self._rejected(document, question, "LLM_UNAVAILABLE", [str(exc)]),
-                started,
+            log_qa_error(
+                doc_id=document.doc_id,
+                question_id=self._question_id(question),
+                model_used=self.llm_client.model,
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error=exc,
             )
+            raise ValueError(str(exc)) from exc
         answer_text = payload["answer"].strip()
         if not payload["can_answer"]:
             answer = Answer(
@@ -261,7 +272,10 @@ class QAService:
             answer.status = "rejected"
             answer.rejection_reason = warnings[0]
             answer.warnings = warnings
-            return self._log_answer(document, question, answer, started)
+            self._log_answer(document, question, answer, started)
+            raise ValueError(
+                "Answer citations could not be verified: " + ", ".join(warnings)
+            )
         answer.status = "verified"
         self._store_answer(cache_key, answer)
         return self._log_answer(document, question, answer, started)
