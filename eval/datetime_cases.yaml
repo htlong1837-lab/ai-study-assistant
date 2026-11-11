@@ -1,0 +1,375 @@
+# Bộ kiểm thử thời gian tiếng Việt học vụ (>= 60 cases)
+# Anchor mặc định: 2026-11-04T10:00:00+07:00 (Thứ Tư tuần 45, 04/11/2026)
+
+cases:
+  # --- 1. Dạng tuyệt đối đầy đủ ---
+  - text: "23:59 ngày 15/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T23:59:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "trước 17h00 ngày 30-10-2026"
+    anchor: "2026-10-20T09:00:00+07:00"
+    expected: "2026-10-30T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "hạn chót 12:00 trưa 20/12/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-12-20T12:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "8g30 sáng ngày 25/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-25T08:30:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "15:30 chiều ngày 18.11.2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-18T15:30:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  # --- 2. Dạng tuyệt đối thiếu năm (suy luận từ anchor) ---
+  - text: "hạn ngày 15 tháng 12"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-12-15T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "trước 17:00 ngày 30/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-30T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "hạn ngày 5/1"
+    anchor: "2026-12-20T08:00:00+07:00"
+    expected: "2027-01-05T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "trước 10h ngày 10 tháng 1"
+    anchor: "2026-12-25T14:00:00+07:00"
+    expected: "2027-01-10T10:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  # --- 3. Dạng tuyệt đối thiếu giờ (gán mặc định 23:59:00) ---
+  - text: "Hạn nộp: ngày 20/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-20T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "hết ngày 28/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-28T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "đến hết ngày 01-12-2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-12-01T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "hạn chót ngày 15/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  # --- 4. Buổi trong ngày ---
+  - text: "8 giờ tối 15/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T20:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "8h tối ngày 20/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-20T20:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "3h chiều 16-11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-16T15:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "9 giờ sáng 18/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-18T09:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "12h trưa 15/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T12:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "12h đêm 15/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-16T00:00:00+07:00"
+    time_defaulted: false
+    flags: ["AMBIGUOUS"]
+
+  # --- 5. Thứ trong tuần tương đối (Anchor: 04/11/2026 là Thứ Tư) ---
+  - text: "23h59 thứ sáu tuần sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-13T23:59:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "trước chủ nhật tuần này"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-08T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "thứ 3 tuần tới lúc 8 giờ sáng"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-10T08:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "thứ hai tuần sau lúc 17h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-09T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "thứ 7 tuần này"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-07T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "thứ sáu tuần này lúc 21:00"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-06T21:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "chủ nhật tuần sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "thứ 5 tuần sau lúc 14h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-12T14:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "thứ tư tuần sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-11T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  # Thứ đơn lẻ sắp tới tính từ anchor (Thứ Tư 04/11)
+  - text: "thứ sáu lúc 18h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-06T18:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "thứ 2 lúc 8h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-09T08:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  # --- 6. Khoảng thời gian tương đối ---
+  - text: "trong vòng 3 ngày tới"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-07T10:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "sau 48 tiếng nữa"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-06T10:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "sau 24h nữa"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-05T10:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "trong 5 ngày nữa"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-09T10:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "hết ngày mai"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-05T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "ngày mai lúc 17h00"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-05T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "hết hôm nay"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-04T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "hôm nay lúc 21h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-04T21:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  # --- 7. Quá khứ / Outdated Deadline ---
+  - text: "hạn ngày 5/11"
+    anchor: "2026-11-08T08:00:00+07:00"
+    expected: "2026-11-05T23:59:00+07:00"
+    time_defaulted: true
+    flags: ["OUTDATED_DEADLINE"]
+
+  - text: "hạn nộp hôm qua lúc 17h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-03T17:00:00+07:00"
+    time_defaulted: false
+    flags: ["OUTDATED_DEADLINE"]
+
+  - text: "23:59 ngày 30/10/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-10-30T23:59:00+07:00"
+    time_defaulted: false
+    flags: ["OUTDATED_DEADLINE"]
+
+  # --- 8. Mốc tuần học kỳ (có và không có cấu hình) ---
+  # Config start_date: 2026-09-07 (Thứ Hai) -> Tuần 8 kết thúc Chủ Nhật 2026-11-01
+  - text: "hết tuần 8"
+    anchor: "2026-11-04T10:00:00+07:00"
+    semester_start: "2026-09-07"
+    expected: "2026-11-01T23:59:00+07:00"
+    time_defaulted: true
+    flags: ["OUTDATED_DEADLINE"]
+
+  - text: "hết tuần 10 môn CSDL"
+    anchor: "2026-11-04T10:00:00+07:00"
+    semester_start: "2026-09-07"
+    expected: "2026-11-15T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "tuần 12 lúc 17h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    semester_start: "2026-09-07"
+    expected: "2026-11-29T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "hết tuần 8"
+    anchor: "2026-11-04T10:00:00+07:00"
+    semester_start: null
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]
+
+  - text: "tuần 15 nộp đồ án"
+    anchor: "2026-11-04T10:00:00+07:00"
+    semester_start: null
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]
+
+  # --- 9. Mơ hồ / Không xác định cụ thể ---
+  - text: "nộp vào tuần sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["AMBIGUOUS"]
+
+  - text: "buổi học sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["AMBIGUOUS"]
+
+  - text: "tiết học tới"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["AMBIGUOUS"]
+
+  - text: "khi nào xong thì nộp"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["AMBIGUOUS"]
+
+  # --- 10. Tiếng Việt không dấu và biến thể ---
+  - text: "23h59 thu sau tuan sau"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-13T23:59:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "truoc 17h ngay 20/11/2026"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-20T17:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "het ngay mai"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-05T23:59:00+07:00"
+    time_defaulted: true
+    flags: []
+
+  - text: "chu nhat tuan nay luc 22h"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-08T22:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  - text: "8 gio toi 15/11"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: "2026-11-15T20:00:00+07:00"
+    time_defaulted: false
+    flags: []
+
+  # --- 11. Chuỗi ký tự rác / Không chứa thời gian ---
+  - text: "không có hạn nộp cụ thể"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]
+
+  - text: "sinh viên làm bài tập nhóm"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]
+
+  - text: "random string 123456"
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]
+
+  - text: ""
+    anchor: "2026-11-04T10:00:00+07:00"
+    expected: null
+    time_defaulted: false
+    flags: ["UNRESOLVED"]

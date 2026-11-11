@@ -11,8 +11,8 @@ hạn chế → khảo sát.*
 |---|---|---|---|
 | 1. Tổng quan hệ thống và các chức năng | Luồng email → lịch, 4 module | Long | Khung sẵn (dưới) |
 | 2. Kiến trúc và thiết kế hệ thống | Sơ đồ, hợp đồng dữ liệu, nguyên tắc | Long | Khung sẵn (dưới) |
-| 3. Phương pháp, mô hình hoặc công nghệ AI | Từng module | Cả nhóm | C: xong nháp; A, B, D: chưa |
-| 4. Cách thức tích hợp AI vào hệ thống | Từng module + bước xác nhận | Cả nhóm | C: xong nháp |
+| 3. Phương pháp, mô hình hoặc công nghệ AI | Từng module | Cả nhóm | B, C: xong nháp; A, D: chưa |
+| 4. Cách thức tích hợp AI vào hệ thống | Từng module + bước xác nhận | Cả nhóm | B, C: xong nháp |
 | 5. Quy trình triển khai và kết quả đạt được | spec-kit, Git, lộ trình 5 tuần | Long | Chưa |
 | 6. Kiểm thử, đánh giá và phân tích kết quả | Từng module + kiểm thử tự động | Cả nhóm | C: xong nháp |
 | 7. Hạn chế và hướng phát triển | Gộp từ các module | Long | Chưa |
@@ -72,7 +72,7 @@ Các module chỉ trao đổi qua dataclass trong `core/contracts.py`, mỗi lo�
 | Module | Phương pháp | So sánh với | Chi tiết |
 |---|---|---|---|
 | A | LLM đọc PDF qua API, trả lời kèm trích dẫn trang | Chatbot không có tài liệu; tự dựng RAG | *[A-hoi-dap.md]* |
-| B | LLM trích xuất có cấu trúc + luật chuẩn hoá ngày giờ tiếng Việt | *[B tự xác định]* | *[B-trich-xuat.md]* |
+| B | LLM trích xuất có cấu trúc + luật chuẩn hoá ngày giờ tiếng Việt | Heuristic Regex; PhoBERT-NER | [B-trich-xuat.md](B-trich-xuat.md) |
 | C | Thoả mãn ràng buộc có tối ưu (CP-SAT) | EDF tham lam | [C-lap-lich.md](C-lap-lich.md) |
 | D | TF-IDF + hồi quy logistic; LLM zero-shot; heuristic URL + VirusTotal | So sánh lẫn nhau | *[D-email-bao-mat.md]* |
 
