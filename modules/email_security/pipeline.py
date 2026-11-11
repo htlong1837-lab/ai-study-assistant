@@ -3,17 +3,23 @@
 Thứ tự pipeline (xem plan § 4):
   1. parse_eml()
   2. Lưu file đính kèm (đã làm trong parser)
-  3. Quét offline (stub ở WP-00: bỏ qua, sẽ hoàn thiện WP-06, WP-08)
+  3. Quét offline (stub ở WP-00: đánh SUSPICIOUS, sẽ hoàn thiện WP-06, WP-08)
   4. Quét online (stub: bỏ qua)
-  5. aggregate_safety (từ kết quả scanner — ở stub: SAFE)
+  5. aggregate_safety (từ kết quả scanner)
   6. classify (stub: EmailLabel.OTHER, confidence 0.0)
   7. aggregate_safety với nhãn
   8. summarize (stub: None)
   9. Dựng ClassifiedEmail + SafeAttachment
   10. can_forward
 
-Khi WP-06, WP-08 hoàn thành, thay thế phần stub bằng import thực.
-Classifier thực và summarizer thực tương tự.
+Chế độ stub (SCANNERS_ARE_STUBS = True):
+  - Mọi email tiếp nhận đều có safety tối thiểu SUSPICIOUS (kể cả email không có
+    URL / file đính kèm), vì chưa có scanner thật để kết luận SAFE.
+  - can_forward chỉ thành True sau khi người dùng bấm duyệt trên UI, tức là sau
+    khi gọi approve_suspicious(). Email MALICIOUS không bao giờ được chuyển.
+
+Khi WP-06, WP-08 hoàn thành: thay các hàm _stub_* bằng scanner thật rồi đặt
+SCANNERS_ARE_STUBS = False.
 """
 from __future__ import annotations
 
@@ -34,12 +40,22 @@ from .models import (
 from .parser import SavedAttachment, parse_eml
 from .safety import aggregate_safety, can_forward_email, max_status
 
+# ---------------------------------------------------------------------------
+# Cờ chế độ stub — ĐẶT False khi WP-06 (URL) và WP-08 (file đính kèm) hoàn thành
+# ---------------------------------------------------------------------------
+# True  → scanner chưa thật: mọi email mặc định SUSPICIOUS, chỉ chuyển cho A/B
+#         sau khi gọi approve_suspicious().
+# False → dùng kết quả scanner thật.
+SCANNERS_ARE_STUBS = True
+
 logger = logging.getLogger(__name__)
 
-# Khi bộ quét URL/file đính kèm còn là stub (chưa có WP-06, WP-08), pipeline
-# "mặc định chặn": mọi email và file bị coi là SUSPICIOUS, chỉ chuyển cho A/B
-# sau khi người dùng xác nhận (approve_suspicious). Đặt False khi có scanner thật.
-SCANNERS_ARE_STUBS = True
+
+def _apply_stub_floor(status: SafetyStatus) -> SafetyStatus:
+    """Ở chế độ stub, không bao giờ trả mức thấp hơn SUSPICIOUS (Constitution II)."""
+    if SCANNERS_ARE_STUBS:
+        return max_status(status, SafetyStatus.SUSPICIOUS)
+    return status
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +82,7 @@ def _stub_scan_urls(
         UrlFinding(
             url=u,
             defanged=u,  # chưa defang — sẽ dùng urls.defang_url() ở WP-06
-            status=SafetyStatus.SUSPICIOUS,  # chưa quét → không coi là an toàn
+            status=SafetyStatus.SUSPICIOUS,
             reasons=[],
             reputation=None,
         )
@@ -86,7 +102,7 @@ def _stub_scan_attachments(
             path=sa.path,
             sha256=sa.sha256,
             size=sa.size,
-            status=SafetyStatus.SUSPICIOUS,  # chưa quét → không coi là an toàn
+            status=SafetyStatus.SUSPICIOUS,
             reasons=[],
             reputation=None,
         )
@@ -113,10 +129,8 @@ def process_email(
 
     Returns:
         ProcessedEmail với ClassifiedEmail (cho B) và SafeAttachment[] (cho A).
-
-    Hành vi lỗi:
-        Mọi lỗi nội bộ được log và pipeline trả ProcessedEmail hợp lệ
-        (có thể có label=OTHER, safety=SUSPICIOUS) thay vì crash.
+        Khi SCANNERS_ARE_STUBS=True: safety >= SUSPICIOUS và can_forward=False
+        cho đến khi gọi approve_suspicious().
     """
     cfg = settings or get_settings()
 
@@ -130,7 +144,7 @@ def process_email(
     else:
         raw_bytes = raw
 
-    # --- 1. Parse ---
+    # --- 1–2. Parse + lưu đính kèm ---
     parsed, saved_attachments = parse_eml(
         raw_bytes,
         attachments_dir=cfg.attachments_dir,
@@ -138,44 +152,43 @@ def process_email(
         save_attachments=bool(raw_bytes),  # không lưu khi bytes rỗng
     )
 
-    # --- 3. Quét offline (stub WP-00) ---
+    # --- 3–4. Quét (stub WP-00) ---
     url_findings, sender_reasons = _stub_scan_urls(
         parsed.urls, parsed.html_links, parsed.sender, cfg
     )
     attach_findings = _stub_scan_attachments(saved_attachments, cfg)
 
-    # --- 5. Tổng hợp safety trước phân loại ---
     url_statuses = [f.status for f in url_findings]
     attach_statuses = [f.status for f in attach_findings]
-    # sender_reasons có thể mang status riêng (stub: không có)
-    safety_pre = aggregate_safety(*url_statuses, *attach_statuses)
+
+    # --- 5. Tổng hợp safety trước phân loại ---
+    # Ở chế độ stub: email không URL/file vẫn bị nâng lên SUSPICIOUS.
+    safety_pre = _apply_stub_floor(aggregate_safety(*url_statuses, *attach_statuses))
 
     # --- 6. Phân loại ---
-    # Plan § 4: nếu MALICIOUS → chỉ dùng TF-IDF cục bộ, không gọi LLM.
-    # Ở WP-00 cả hai đều là stub nên không có sự khác biệt.
+    # Plan § 4: nếu safety_pre == MALICIOUS → chỉ dùng TF-IDF cục bộ, không gọi LLM.
+    # Ở WP-00 cả hai đều là stub nên chưa có khác biệt.
     label, confidence = _stub_classify(parsed)
     classifier_method = "stub"
 
     # --- 7. Tổng hợp safety cuối (áp dụng quy tắc nhãn) ---
-    safety_final = aggregate_safety(
-        *url_statuses,
-        *attach_statuses,
-        label_is_phishing=(label is EmailLabel.PHISHING),
+    safety_final = _apply_stub_floor(
+        aggregate_safety(
+            *url_statuses,
+            *attach_statuses,
+            label_is_phishing=(label is EmailLabel.PHISHING),
+        )
     )
-    if SCANNERS_ARE_STUBS:
-        # Chưa quét được nội dung → không bao giờ kết luận SAFE (Constitution II)
-        safety_final = max_status(safety_final, SafetyStatus.SUSPICIOUS)
+    safety_final = max_status(safety_final, safety_pre)
 
     # --- 8. Tóm tắt (stub: None) ---
     summary: str | None = None
 
     # --- 9. Dựng ClassifiedEmail ---
-    # received_at phải là datetime; parser đảm bảo điều này
     received_at = parsed.received_at
     if hasattr(received_at, "tzinfo") and received_at.tzinfo is None:
         received_at = received_at.replace(tzinfo=timezone.utc)
 
-    # Danh sách đường dẫn file đính kèm đã lưu (chỉ dùng trong ClassifiedEmail.attachments)
     attachment_paths = [sa.path for sa in saved_attachments if sa.path]
 
     classified = ClassifiedEmail(
@@ -192,21 +205,28 @@ def process_email(
     )
 
     # --- 9b. Dựng SafeAttachment chỉ cho file SAFE ---
+    # Ở chế độ stub mọi file là SUSPICIOUS nên danh sách này rỗng cho tới khi
+    # người dùng duyệt (approve_suspicious tạo SafeAttachment cho file SUSPICIOUS).
     safe_attachments: list[SafeAttachment] = []
     for finding in attach_findings:
         if finding.status is SafetyStatus.SAFE and finding.path and finding.sha256:
             try:
-                sa = SafeAttachment(
-                    path=finding.path,
-                    sha256=finding.sha256,
-                    email_id=parsed.message_id,
+                safe_attachments.append(
+                    SafeAttachment(
+                        path=finding.path,
+                        sha256=finding.sha256,
+                        email_id=parsed.message_id,
+                    )
                 )
-                safe_attachments.append(sa)
             except ValueError as exc:
                 logger.error("Không tạo SafeAttachment cho '%s': %s", finding.filename, exc)
 
-    # --- 10. Quyết định chuyển tiếp ---
+    # --- 10. Quyết định chuyển tiếp (chưa có sự đồng ý của người dùng) ---
     forward = can_forward_email(classified, user_approved=False)
+    if SCANNERS_ARE_STUBS:
+        # Chốt chặn thứ hai: ở chế độ stub, trước khi duyệt thì tuyệt đối không chuyển,
+        # bất kể can_forward_email() trả gì.
+        forward = False
 
     return ProcessedEmail(
         email=classified,
@@ -221,12 +241,13 @@ def process_email(
 
 
 def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
-    """Người dùng xác nhận muốn chuyển tiếp email SUSPICIOUS.
+    """Người dùng bấm duyệt trên UI để chuyển tiếp email SUSPICIOUS.
 
-    Tạo SafeAttachment cho các file có status SUSPICIOUS (nếu chưa tạo).
-    Đánh dấu user_approved=True và cập nhật can_forward.
+    - Tạo SafeAttachment cho các file có status SUSPICIOUS (nếu chưa có).
+    - Đặt user_approved=True và tính lại can_forward.
+    - Đây là đường DUY NHẤT để can_forward thành True khi SCANNERS_ARE_STUBS=True.
 
-    Email MALICIOUS: hàm này KHÔNG thay đổi kết quả (can_forward vẫn False).
+    Email MALICIOUS: không thay đổi kết quả (can_forward vẫn False).
     """
     if processed.email.safety is SafetyStatus.MALICIOUS:
         logger.warning(
@@ -235,18 +256,19 @@ def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
         )
         return processed
 
-    # Tạo thêm SafeAttachment cho file SUSPICIOUS (nếu chưa có)
     existing_paths = {sa.path for sa in processed.safe_attachments}
     extra: list[SafeAttachment] = []
     for finding in processed.attachment_findings:
         if finding.status is SafetyStatus.SUSPICIOUS and finding.path not in existing_paths:
             if finding.path and finding.sha256:
                 try:
-                    extra.append(SafeAttachment(
-                        path=finding.path,
-                        sha256=finding.sha256,
-                        email_id=processed.email.id,
-                    ))
+                    extra.append(
+                        SafeAttachment(
+                            path=finding.path,
+                            sha256=finding.sha256,
+                            email_id=processed.email.id,
+                        )
+                    )
                 except ValueError as exc:
                     logger.error("approve_suspicious: không tạo SafeAttachment: %s", exc)
 
