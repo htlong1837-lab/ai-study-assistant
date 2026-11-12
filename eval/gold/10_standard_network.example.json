@@ -1,0 +1,22 @@
+{
+  "id": "gold-010",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g10",
+    "sender": "gv.net@uni.edu.vn",
+    "subject": "[MMT] Bài tập cấu hình định tuyến OSPF",
+    "received_at": "2026-11-07T10:00:00+07:00",
+    "body": "Nộp file Packet Tracer bài tập định tuyến OSPF môn Mạng máy tính trước 23h59 ngày 24/11/2026 lên hệ thống LMS."
+  },
+  "gold": {
+    "title": "Bài tập cấu hình định tuyến OSPF",
+    "course": "Mạng máy tính",
+    "deadline": "2026-11-24T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 24/11/2026",
+    "submission_platform": "LMS",
+    "submission_format": [".pkt"],
+    "grading_criteria": ["Cấu hình địa chỉ IP", "Bảng định tuyến hội tụ", "Kiểm tra Ping liên mạng"],
+    "has_conflict": false
+  }
+}

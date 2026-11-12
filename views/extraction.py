@@ -76,19 +76,35 @@ with c_doc:
     for doc in mocks.documents():
         st.info(f"**{doc.filename}** ({len(doc.pages)} trang)  \n*Nội dung:* {doc.pages[0].text[:80]}...")
 
-# Nút kích hoạt trích xuất
-if st.button("🚀 Bắt đầu trích xuất email & tài liệu mẫu vào DB", key="btn_run_extract"):
-    client = get_client() if llm_ready else LLMClient(provider="fake", model="fake-model")
-    with st.spinner("Đang trích xuất và chuẩn hóa bài tập..."):
-        total_created = 0
-        for e in mocks.emails():
-            if can_forward(e):
-                created = workflow.process_email(e, client, repo)
+# Nút kích hoạt trích xuất & Demo
+c_act1, c_act2 = st.columns(2)
+with c_act1:
+    if st.button("🚀 Bắt đầu trích xuất email & tài liệu mẫu vào DB", key="btn_run_extract"):
+        client = get_client() if llm_ready else LLMClient(provider="fake", model="fake-model")
+        with st.spinner("Đang trích xuất và chuẩn hóa bài tập..."):
+            total_created = 0
+            for e in mocks.emails():
+                if can_forward(e):
+                    created = workflow.process_email(e, client, repo)
+                    total_created += len(created)
+            for d in mocks.documents():
+                created = workflow.process_document(d, client, repo)
                 total_created += len(created)
-        for d in mocks.documents():
-            created = workflow.process_document(d, client, repo)
-            total_created += len(created)
-        st.success(f"Đã xử lý xong! Tạo mới/cập nhật {total_created} bài tập trong cơ sở dữ liệu.")
+            st.success(f"Đã xử lý xong! Tạo mới/cập nhật {total_created} bài tập trong cơ sở dữ liệu.")
+            st.rerun()
+
+with c_act2:
+    if st.button("⚡ Tạo tình huống mâu thuẫn mẫu để demo", key="btn_demo_conflict"):
+        repo.add_conflict({
+            "task_id": "t-004",
+            "kind": "deadline",
+            "value_a": "2026-11-20T23:59:00",
+            "source_a": "email:e-001",
+            "value_b": "2026-11-27T23:59:00",
+            "source_b": "doc:de_bai_ai.pdf#p1",
+            "suggestion": "b",
+        })
+        st.warning("Đã tạo tình huống mâu thuẫn hạn nộp mẫu (Email vs PDF) để kiểm thử!")
         st.rerun()
 
 # ---------------------------------------------------------------- 2. Cảnh báo Mâu thuẫn (Conflicts)
@@ -175,6 +191,16 @@ else:
                             st.write(f"  • {crit}")
                 else:
                     st.write("Không có chi tiết bổ sung.")
+
+            # Xem bằng chứng trích dẫn nguyên văn (Evidence Grounding)
+            sources = repo.get_sources(tid)
+            if sources:
+                with st.expander(f"📎 Bằng chứng trích dẫn nguồn ({len(sources)} nguồn)"):
+                    for s in sources:
+                        f_name = s.get("field") or "nhiệm vụ"
+                        st.markdown(f"- **Trường `{f_name}`** (từ `{s.get('source')}`):")
+                        if s.get("quote"):
+                            st.caption(f'> ❝ *{s["quote"]}* ❞')
 
             # Form chỉnh sửa inline (Mức 1 / T020)
             with st.expander("✏️ Chỉnh sửa thông tin trước khi duyệt"):
