@@ -1,0 +1,22 @@
+{
+  "id": "gold-006",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g06",
+    "sender": "gv.os@uni.edu.vn",
+    "subject": "[HĐH] Lab 2 Lập lịch tiến trình CPU",
+    "received_at": "2026-11-03T09:00:00+07:00",
+    "body": "Nộp báo cáo Lab 2 Lập lịch tiến trình môn Hệ điều hành trước 17h00 ngày 18/11/2026 lên hệ thống LMS. Định dạng file .pdf."
+  },
+  "gold": {
+    "title": "Lab 2 Lập lịch tiến trình",
+    "course": "Hệ điều hành",
+    "deadline": "2026-11-18T17:00:00+07:00",
+    "raw_deadline_text": "17h00 ngày 18/11/2026",
+    "submission_platform": "LMS",
+    "submission_format": [".pdf"],
+    "grading_criteria": ["Mô phỏng FCFS và Round Robin", "Biểu đồ Gantt", "Đánh giá thời gian chờ"],
+    "has_conflict": false
+  }
+}

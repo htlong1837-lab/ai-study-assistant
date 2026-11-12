@@ -1,0 +1,22 @@
+{
+  "id": "gold-008",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g08",
+    "sender": "gv.se@uni.edu.vn",
+    "subject": "[CNPM] Nộp tài liệu SRS giai đoạn 1",
+    "received_at": "2026-11-05T11:00:00+07:00",
+    "body": "Nhóm trưởng nộp tài liệu đặc tả yêu cầu SRS môn Công nghệ phần mềm trước 23h59 ngày 21/11/2026 qua Google Drive."
+  },
+  "gold": {
+    "title": "Tài liệu đặc tả yêu cầu SRS",
+    "course": "Công nghệ phần mềm",
+    "deadline": "2026-11-21T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 21/11/2026",
+    "submission_platform": "Google Drive",
+    "submission_format": [".docx", ".pdf"],
+    "grading_criteria": ["Biểu đồ Use Case", "Đặc tả Use Case chi tiết", "Yêu cầu phi chức năng"],
+    "has_conflict": false
+  }
+}

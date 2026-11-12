@@ -1,0 +1,22 @@
+{
+  "id": "gold-009",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g09",
+    "sender": "gv.sec@uni.edu.vn",
+    "subject": "[ATTT] Báo cáo thực hành mã hóa RSA",
+    "received_at": "2026-11-06T16:00:00+07:00",
+    "body": "Sinh viên hoàn thành báo cáo thực hành RSA môn An toàn thông tin trước 23h59 ngày 23/11/2026 lên LMS."
+  },
+  "gold": {
+    "title": "Báo cáo thực hành mã hóa RSA",
+    "course": "An toàn thông tin",
+    "deadline": "2026-11-23T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 23/11/2026",
+    "submission_platform": "LMS",
+    "submission_format": [".pdf"],
+    "grading_criteria": ["Tạo cặp khóa", "Mã hóa và giải mã bản tin", "Tấn công phân tích thừa số"],
+    "has_conflict": false
+  }
+}

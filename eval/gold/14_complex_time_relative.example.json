@@ -1,0 +1,22 @@
+{
+  "id": "gold-014",
+  "category": "complex_time",
+  "split": "test",
+  "email": {
+    "id": "e-g14",
+    "sender": "gv.ai@uni.edu.vn",
+    "subject": "[AI] Nộp slide thuyết trình nhóm",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Các nhóm nộp slide thuyết trình môn Trí tuệ nhân tạo trước 12h trưa Chủ Nhật tuần sau lên Google Drive."
+  },
+  "gold": {
+    "title": "Slide thuyết trình môn Trí tuệ nhân tạo",
+    "course": "Trí tuệ nhân tạo",
+    "deadline": "2026-11-22T12:00:00+07:00",
+    "raw_deadline_text": "12h trưa Chủ Nhật tuần sau",
+    "submission_platform": "Google Drive",
+    "submission_format": [".pdf", ".pptx"],
+    "grading_criteria": [],
+    "has_conflict": false
+  }
+}

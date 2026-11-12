@@ -1,0 +1,24 @@
+{
+  "id": "gold-011",
+  "category": "extension",
+  "split": "test",
+  "email": {
+    "id": "e-g11",
+    "sender": "gv.web@uni.edu.vn",
+    "subject": "[Web] Dời hạn nộp Bài tập lớn RESTful API",
+    "received_at": "2026-11-10T15:00:00+07:00",
+    "body": "Thầy thông báo dời hạn nộp Bài tập lớn Xây dựng RESTful API đến 23h59 ngày 29/11/2026 trên GitHub Classroom để các nhóm hoàn thiện kiểm thử."
+  },
+  "gold": {
+    "title": "Bài tập lớn Xây dựng RESTful API",
+    "course": "Lập trình Web",
+    "deadline": "2026-11-29T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 29/11/2026",
+    "submission_platform": "GitHub Classroom",
+    "submission_format": [".git"],
+    "grading_criteria": [],
+    "is_extension_notice": true,
+    "refers_to": "Bài tập lớn Xây dựng RESTful API",
+    "has_conflict": true
+  }
+}

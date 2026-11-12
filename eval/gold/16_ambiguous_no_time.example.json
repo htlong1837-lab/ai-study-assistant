@@ -1,0 +1,23 @@
+{
+  "id": "gold-016",
+  "category": "ambiguous",
+  "split": "test",
+  "email": {
+    "id": "e-g16",
+    "sender": "gv.oop@uni.edu.vn",
+    "subject": "[OOP] Hoàn thành bài tập kế thừa và đa hình",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Sinh viên hoàn thành bài tập kế thừa và nộp trong tuần này cho lớp trưởng."
+  },
+  "gold": {
+    "title": "Bài tập kế thừa và đa hình",
+    "course": "Lập trình hướng đối tượng",
+    "deadline": "2026-11-15T23:59:00+07:00",
+    "raw_deadline_text": "trong tuần này",
+    "submission_platform": null,
+    "submission_format": [],
+    "grading_criteria": [],
+    "has_conflict": false,
+    "is_ambiguous": true
+  }
+}

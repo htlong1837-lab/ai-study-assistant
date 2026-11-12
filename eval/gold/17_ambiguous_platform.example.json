@@ -1,0 +1,23 @@
+{
+  "id": "gold-017",
+  "category": "ambiguous",
+  "split": "test",
+  "email": {
+    "id": "e-g17",
+    "sender": "gv.hci@uni.edu.vn",
+    "subject": "[HCI] Thiết kế Wireframe giao diện",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Các bạn nộp bản vẽ Wireframe Figma trước 23h59 ngày 25/11/2026, địa điểm nộp sẽ thông báo sau."
+  },
+  "gold": {
+    "title": "Bản vẽ Wireframe Figma",
+    "course": "Tương tác người máy",
+    "deadline": "2026-11-25T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 25/11/2026",
+    "submission_platform": null,
+    "submission_format": [".fig", "link"],
+    "grading_criteria": [],
+    "has_conflict": false,
+    "is_ambiguous": true
+  }
+}

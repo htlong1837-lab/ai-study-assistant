@@ -1,0 +1,22 @@
+{
+  "id": "gold-005",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g05",
+    "sender": "gv.web@uni.edu.vn",
+    "subject": "[Web] Bài tập lớn xây dựng RESTful API",
+    "received_at": "2026-11-02T08:30:00+07:00",
+    "body": "Sinh viên hoàn thiện Bài tập lớn Xây dựng RESTful API môn Lập trình Web trước 23h59 ngày 22/11/2026. Nộp mã nguồn lên GitHub Classroom."
+  },
+  "gold": {
+    "title": "Bài tập lớn Xây dựng RESTful API",
+    "course": "Lập trình Web",
+    "deadline": "2026-11-22T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 22/11/2026",
+    "submission_platform": "GitHub Classroom",
+    "submission_format": [".git"],
+    "grading_criteria": ["Cấu trúc API chuẩn REST", "Xác thực JWT", "Tài liệu Swagger"],
+    "has_conflict": false
+  }
+}

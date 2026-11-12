@@ -1,0 +1,22 @@
+{
+  "id": "gold-019",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g19",
+    "sender": "gv.cloud@uni.edu.vn",
+    "subject": "[ĐTDM] Báo cáo triển khai cụm Kubernetes",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Nộp báo cáo triển khai cụm K8s môn Điện toán đám mây trước 23h59 ngày 30/11/2026 lên hệ thống LMS."
+  },
+  "gold": {
+    "title": "Báo cáo triển khai cụm K8s",
+    "course": "Điện toán đám mây",
+    "deadline": "2026-11-30T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 30/11/2026",
+    "submission_platform": "LMS",
+    "submission_format": [".pdf"],
+    "grading_criteria": ["Cấu hình Ingress Controller", "Tự động co giãn HPA", "Triển khai StatefulSet"],
+    "has_conflict": false
+  }
+}

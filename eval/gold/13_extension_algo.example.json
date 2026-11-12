@@ -1,0 +1,24 @@
+{
+  "id": "gold-013",
+  "category": "extension",
+  "split": "test",
+  "email": {
+    "id": "e-g13",
+    "sender": "gv.algo@uni.edu.vn",
+    "subject": "[TTUD] Đính chính lùi hạn nộp Quy hoạch động",
+    "received_at": "2026-11-11T09:00:00+07:00",
+    "body": "Hệ thống VNOJ bảo trì nên thời hạn nộp bài tập Quy hoạch động môn Thuật toán ứng dụng được dời đến 23h59 ngày 22/11/2026."
+  },
+  "gold": {
+    "title": "Bài tập Quy hoạch động",
+    "course": "Thuật toán ứng dụng",
+    "deadline": "2026-11-22T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 22/11/2026",
+    "submission_platform": "VNOJ",
+    "submission_format": [".cpp"],
+    "grading_criteria": [],
+    "is_extension_notice": true,
+    "refers_to": "Bài tập Quy hoạch động",
+    "has_conflict": true
+  }
+}

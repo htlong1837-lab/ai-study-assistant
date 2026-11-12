@@ -1,0 +1,22 @@
+{
+  "id": "gold-015",
+  "category": "complex_time",
+  "split": "test",
+  "email": {
+    "id": "e-g15",
+    "sender": "gv.csdl@uni.edu.vn",
+    "subject": "[CSDL] Hạn chốt nộp báo cáo lớn cuối kỳ",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Báo cáo bài tập lớn Cơ sở dữ liệu chốt nộp trước 23h59 thứ Sáu tuần 12 lên hệ thống LMS."
+  },
+  "gold": {
+    "title": "Báo cáo bài tập lớn Cơ sở dữ liệu",
+    "course": "Cơ sở dữ liệu",
+    "deadline": "2026-11-27T23:59:00+07:00",
+    "raw_deadline_text": "23h59 thứ Sáu tuần 12",
+    "submission_platform": "LMS",
+    "submission_format": [".pdf"],
+    "grading_criteria": [],
+    "has_conflict": false
+  }
+}
