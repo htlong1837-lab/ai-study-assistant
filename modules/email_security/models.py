@@ -15,6 +15,11 @@ from core.contracts import (
     SafetyStatus,  # re-export tiện dùng trong module  # noqa: F401
 )
 
+# Đảm bảo EmailLabel.COURSEWORK khả dụng nếu được tham chiếu
+if not hasattr(EmailLabel, "COURSEWORK"):
+    setattr(EmailLabel, "COURSEWORK", EmailLabel.ASSIGNMENT)
+
+
 
 @dataclass(frozen=True)
 class Reason:
