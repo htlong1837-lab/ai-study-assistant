@@ -8,15 +8,14 @@ Kiểm thử tự động cho:
 - Tự động chặn kết nối mạng (fixture autouse block_network trong conftest).
 - Sử dụng Mock LLMClient để kiểm tra logic tóm tắt mà không cần API key hay internet.
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from core.contracts import ClassifiedEmail, EmailLabel, SafetyStatus
-from core.llm_client import LLMClient, LLMResponse, LLMNotConfigured
-from modules.email_security.models import ProcessedEmail
+from core.llm_client import LLMClient, LLMResponse
 from modules.email_security.redact import redact_pii
 from modules.email_security.summarizer import (
     MALICIOUS_BLOCK_MESSAGE,
@@ -27,6 +26,7 @@ from modules.email_security.summarizer import (
 # ===========================================================================
 # PHẦN 1: Kiểm thử WP-05a (Ẩn danh thông tin cá nhân PII)
 # ===========================================================================
+
 
 class TestRedactPII:
     """Kiểm tra hàm redact_pii() che email, SĐT, MSSV."""
@@ -126,6 +126,7 @@ class TestRedactPII:
 # PHẦN 2: Kiểm thử WP-05b (Tóm tắt email học tập bằng LLM)
 # ===========================================================================
 
+
 def make_mock_llm(summary_text: str = "Tóm tắt mẫu.") -> LLMClient:
     """Tạo client LLM giả lập trả về tóm tắt định trước."""
     client = MagicMock(spec=LLMClient)
@@ -219,7 +220,9 @@ class TestSummarizer:
     def test_offline_fallback_on_network_or_api_error(self):
         """Khi mất mạng / lỗi API -> tự động fallback trích 2 câu đầu tiên sau khi redact."""
         error_client = MagicMock(spec=LLMClient)
-        error_client.generate.side_effect = ConnectionRefusedError("Mạng bị chặn hoàn toàn.")
+        error_client.generate.side_effect = ConnectionRefusedError(
+            "Mạng bị chặn hoàn toàn."
+        )
 
         body = (
             "Lớp Trí tuệ nhân tạo nộp bài tập giữa kỳ vào thứ Hai. "
@@ -265,6 +268,7 @@ class TestSummarizer:
         """Hỗ trợ truyền thẳng đối tượng ClassifiedEmail."""
         mock_client = make_mock_llm("Tóm tắt từ ClassifiedEmail.")
         from datetime import datetime, timezone
+
         email = ClassifiedEmail(
             id="e-test-1",
             sender="gv@uni.edu.vn",
