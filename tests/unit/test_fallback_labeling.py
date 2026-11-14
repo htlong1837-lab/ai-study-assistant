@@ -1,4 +1,5 @@
 """Unit tests verifying fallback labeling and cache-pollution prevention."""
+
 from __future__ import annotations
 
 from core.llm_client import LLMClient

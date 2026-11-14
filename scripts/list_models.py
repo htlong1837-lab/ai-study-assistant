@@ -6,6 +6,7 @@ Usage
     python scripts/list_models.py --api-key YOUR_KEY
     python scripts/list_models.py          # prompts securely
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,8 +41,12 @@ def _list_via_genai(api_key: str) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="List available Gemini models for a given API key.")
-    parser.add_argument("--api-key", help="Gemini API key (omit to be prompted securely)")
+    parser = argparse.ArgumentParser(
+        description="List available Gemini models for a given API key."
+    )
+    parser.add_argument(
+        "--api-key", help="Gemini API key (omit to be prompted securely)"
+    )
     args = parser.parse_args()
 
     api_key = args.api_key
@@ -55,7 +60,10 @@ def main() -> None:
     print("Fetching available Gemini models…")
 
     if not _list_via_genai(api_key):
-        print("Error: google-genai is not installed or could not list models.", file=sys.stderr)
+        print(
+            "Error: google-genai is not installed or could not list models.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 

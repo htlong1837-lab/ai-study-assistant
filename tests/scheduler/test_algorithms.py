@@ -73,10 +73,23 @@ def test_cpsat_balances_load_better_than_edf(easy_tasks, sessions, settings):
 def test_cpsat_four_weeks_fifteen_tasks_is_fast_and_valid(sessions):
     """SC-003: 4 tuần × 15 nhiệm vụ trong giới hạn thời gian."""
     rng = random.Random(7)
-    s = ScheduleSettings(start=MONDAY, days=28, day_start=time(7), day_end=time(22),
-                         max_hours_per_day=4, time_limit_s=10)
-    tasks = [task(f"t{i}", datetime.combine(MONDAY, time(23, 59)) + timedelta(days=rng.randint(2, 27)),
-                  rng.choice([1, 2, 3, 4, 6]), rng.choice(list(Priority))) for i in range(15)]
+    s = ScheduleSettings(
+        start=MONDAY,
+        days=28,
+        day_start=time(7),
+        day_end=time(22),
+        max_hours_per_day=4,
+        time_limit_s=10,
+    )
+    tasks = [
+        task(
+            f"t{i}",
+            datetime.combine(MONDAY, time(23, 59)) + timedelta(days=rng.randint(2, 27)),
+            rng.choice([1, 2, 3, 4, 6]),
+            rng.choice(list(Priority)),
+        )
+        for i in range(15)
+    ]
     r = schedule(tasks, sessions, s, "CP-SAT")
     assert r.runtime_s < 12
     assert r.status in ("OPTIMAL", "FEASIBLE")
@@ -85,6 +98,7 @@ def test_cpsat_four_weeks_fifteen_tasks_is_fast_and_valid(sessions):
 
 def test_cpsat_respects_min_block_length(easy_tasks, sessions, settings):
     from modules.scheduler.metrics import short_blocks
+
     r = schedule(easy_tasks, sessions, settings, "CP-SAT")
     assert short_blocks(r.blocks, easy_tasks, settings) == 0
     assert all(b.hours >= 1 for b in r.blocks)
@@ -99,6 +113,7 @@ def test_short_task_may_use_short_block(sessions, settings):
 def test_cpsat_warm_start_not_worse_than_edf_on_overload():
     """Kịch bản quá tải: nhờ gợi ý EDF, CP-SAT không thiếu nhiều hơn EDF (research.md)."""
     from experiments.scenarios import base_settings, generate, sessions
+
     tasks, sess, s = generate("Quá tải", 0), sessions(), base_settings(10)
     edf, cp = (schedule(tasks, sess, s, a) for a in ("EDF", "CP-SAT"))
     m_edf, m_cp = (evaluate(r, tasks, sess, s) for r in (edf, cp))

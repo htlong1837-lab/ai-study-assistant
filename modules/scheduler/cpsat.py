@@ -9,6 +9,7 @@ Ràng buộc  mỗi ô ≤ 1 nhiệm vụ;  Σ_s x[t,s] + short_t = need_t;  loa
            y[t,s] ⇒ x[t,s+j] với j < min(k, need_t)  (khối dài tối thiểu k ô)
 Mục tiêu   min 10000·Σ w_t·short_t + 100·peak + Σ y
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -96,7 +97,9 @@ def solve(tasks: list[Task], slots: list[Slot], settings: ScheduleSettings):
 
     model.minimize(
         W_SHORT * sum(PRIORITY_WEIGHT[t.priority] * short[t.id] for t in tasks)
-        + W_PEAK * peak + W_BLOCK * sum(starts))
+        + W_PEAK * peak
+        + W_BLOCK * sum(starts)
+    )
 
     # Khởi động ấm: gợi ý lời giải EDF để solver bắt đầu từ một lịch tốt thay vì từ lịch rỗng.
     hint = _edf_assignment(tasks, slots, settings)

@@ -2,6 +2,7 @@
 
 Mọi fixture đều offline: không cần mạng, không cần API key.
 """
+
 from __future__ import annotations
 
 import socket
@@ -18,6 +19,7 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 # Chặn mạng — đảm bảo test không gọi ra ngoài
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def block_network(monkeypatch: pytest.MonkeyPatch) -> None:
     """Chặn mọi kết nối mạng trong suốt test.
@@ -25,6 +27,7 @@ def block_network(monkeypatch: pytest.MonkeyPatch) -> None:
     Nếu code gọi socket.connect → test sẽ fail ngay với lỗi rõ ràng
     thay vì treo hoặc phụ thuộc kết nối thực.
     """
+
     def _blocked_connect(self, address):  # type: ignore[override]
         raise ConnectionRefusedError(
             f"[TEST] Kết nối mạng bị chặn: {address}. "
@@ -37,6 +40,7 @@ def block_network(monkeypatch: pytest.MonkeyPatch) -> None:
 # ---------------------------------------------------------------------------
 # Settings offline (không có key API nào)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def settings_offline() -> Settings:
@@ -55,6 +59,7 @@ def settings_offline() -> Settings:
 # ---------------------------------------------------------------------------
 # Helpers sinh .eml tổng hợp (không dùng email thật)
 # ---------------------------------------------------------------------------
+
 
 def make_plain_eml(
     subject: str = "Test subject",
@@ -85,15 +90,17 @@ def make_html_eml(
     message_id: str = "html-001@example.com",
 ) -> bytes:
     """Sinh bytes .eml với HTML body."""
-    headers = "\r\n".join([
-        f"From: {sender}",
-        "To: recipient@example.com",
-        f"Subject: {subject}",
-        f"Message-ID: <{message_id}>",
-        "Date: Mon, 09 Nov 2026 08:00:00 +0700",
-        "MIME-Version: 1.0",
-        "Content-Type: text/html; charset=utf-8",
-    ])
+    headers = "\r\n".join(
+        [
+            f"From: {sender}",
+            "To: recipient@example.com",
+            f"Subject: {subject}",
+            f"Message-ID: <{message_id}>",
+            "Date: Mon, 09 Nov 2026 08:00:00 +0700",
+            "MIME-Version: 1.0",
+            "Content-Type: text/html; charset=utf-8",
+        ]
+    )
     return (headers + "\r\n\r\n" + html_body).encode("utf-8")
 
 
@@ -107,6 +114,7 @@ def make_multipart_eml(
 ) -> bytes:
     """Sinh bytes .eml multipart/mixed với một file đính kèm."""
     import base64
+
     b64 = base64.b64encode(attach_data).decode("ascii")
     raw = (
         f"From: {sender}\r\n"
@@ -122,7 +130,7 @@ def make_multipart_eml(
         "\r\n"
         f"{body}\r\n"
         "--BOUND\r\n"
-        f'Content-Type: application/octet-stream\r\n'
+        f"Content-Type: application/octet-stream\r\n"
         f'Content-Disposition: attachment; filename="{attach_name}"\r\n'
         "Content-Transfer-Encoding: base64\r\n"
         "\r\n"

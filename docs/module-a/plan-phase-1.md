@@ -167,6 +167,7 @@ flowchart TD
          supported: bool
          warnings: list[str]
 
+
      @dataclass
      class VerificationResult:
          valid: bool

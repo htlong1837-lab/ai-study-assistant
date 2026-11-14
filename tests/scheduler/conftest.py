@@ -9,24 +9,38 @@ MONDAY = date(2026, 11, 9)
 
 
 def task(id, deadline, hours, priority=Priority.MEDIUM, status=TaskStatus.CONFIRMED):
-    return Task(id=id, title=f"Việc {id}", course="AI", deadline=deadline,
-                estimated_hours=hours, source="test", confidence=1.0,
-                priority=priority, status=status)
+    return Task(
+        id=id,
+        title=f"Việc {id}",
+        course="AI",
+        deadline=deadline,
+        estimated_hours=hours,
+        source="test",
+        confidence=1.0,
+        priority=priority,
+        status=status,
+    )
 
 
 @pytest.fixture
 def sessions():
     return [
-        ClassSession(0, time(7, 0), time(9, 30), "AI", "A203"),        # thứ 2
-        ClassSession(0, time(13, 0), time(15, 30), "CSDL", "B203"),    # thứ 2
+        ClassSession(0, time(7, 0), time(9, 30), "AI", "A203"),  # thứ 2
+        ClassSession(0, time(13, 0), time(15, 30), "CSDL", "B203"),  # thứ 2
         ClassSession(2, time(13, 0), time(15, 30), "CSDL TH", "Lab"),  # thứ 4
     ]
 
 
 @pytest.fixture
 def settings():
-    return ScheduleSettings(start=MONDAY, days=7, day_start=time(8, 0), day_end=time(20, 0),
-                            max_hours_per_day=3, time_limit_s=10)
+    return ScheduleSettings(
+        start=MONDAY,
+        days=7,
+        day_start=time(8, 0),
+        day_end=time(20, 0),
+        max_hours_per_day=3,
+        time_limit_s=10,
+    )
 
 
 @pytest.fixture

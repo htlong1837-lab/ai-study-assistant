@@ -14,10 +14,9 @@ from modules.extraction.schemas import RawAssignment, ExtractionResult
 
 # --- 1. Xử lý nguồn dữ liệu đầu vào ---
 
+
 def process_email(
-    email: ClassifiedEmail, 
-    llm: LLMClient, 
-    repo: Repository
+    email: ClassifiedEmail, llm: LLMClient, repo: Repository
 ) -> list[str]:
     """Xử lý email an toàn: Trích xuất, chuẩn hóa thời gian, so khớp bài tập cũ.
     Lưu vào DB ở trạng thái 'proposed' (hoặc tạo proposal cập nhật nếu là email dời hạn).
@@ -26,23 +25,20 @@ def process_email(
 
 
 def process_document(
-    doc: ParsedDocument, 
-    llm: LLMClient, 
-    repo: Repository, 
+    doc: ParsedDocument,
+    llm: LLMClient,
+    repo: Repository,
     linked_email: ClassifiedEmail | None = None,
-    pages: list[int] | None = None
+    pages: list[int] | None = None,
 ) -> list[str]:
-    """Xử lý tài liệu đề bài: Trích xuất thông tin theo trang, đối chiếu mâu thuẫn 
+    """Xử lý tài liệu đề bài: Trích xuất thông tin theo trang, đối chiếu mâu thuẫn
     với email liên kết (nếu có), lưu vào DB ở trạng thái 'proposed'."""
 
 
 # --- 2. Vòng đời và Phê duyệt đề xuất (Human-in-the-loop) ---
 
-def confirm(
-    task_id: str, 
-    repo: Repository, 
-    overrides: dict | None = None
-) -> Task:
+
+def confirm(task_id: str, repo: Repository, overrides: dict | None = None) -> Task:
     """Chuyển trạng thái task từ 'proposed' sang 'confirmed'.
     Cho phép sinh viên ghi đè deadline, estimated_hours, priority qua overrides.
     Bắt buộc task phải có deadline hợp lệ mới được xác nhận.
@@ -55,11 +51,12 @@ def cancel(task_id: str, repo: Repository) -> None:
 
 # --- 3. Giải quyết mâu thuẫn và Đề xuất dời hạn ---
 
+
 def resolve_conflict(
-    conflict_id: int, 
-    choice: Literal['a', 'b', 'manual'], 
-    manual_value: str | None = None, 
-    repo: Repository = ...
+    conflict_id: int,
+    choice: Literal["a", "b", "manual"],
+    manual_value: str | None = None,
+    repo: Repository = ...,
 ) -> None:
     """Người dùng lựa chọn phương án giải quyết mâu thuẫn giữa 2 nguồn."""
 
@@ -74,6 +71,7 @@ def reject_update_proposal(proposal_id: int, repo: Repository) -> None:
 
 
 # --- 4. Cầu nối chuyển giao sang Module C ---
+
 
 def to_contract_task(task_row: dict) -> Task:
     """Chuyển đổi bản ghi DB sang dataclass core.contracts.Task.
