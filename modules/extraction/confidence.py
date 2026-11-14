@@ -5,6 +5,7 @@ Nguyên tắc cốt lõi:
 - Tính toán dựa trên tính đầy đủ của các trường thông tin cốt lõi, sự hợp lệ của trích dẫn bằng chứng,
   các giả định chuẩn hóa và các cờ cảnh báo (AMBIGUOUS, UNRESOLVED, OUTDATED_DEADLINE).
 """
+
 from __future__ import annotations
 
 from modules.extraction.datetime_normalizer import NormalizedDeadline

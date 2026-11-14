@@ -4,6 +4,7 @@ Ràng buộc kỹ thuật bất biến:
 - Hàm thuần (pure function), tuyệt đối KHÔNG gọi datetime.now().
 - Không bao giờ ném ngoại lệ ra ngoài (mọi input lạ đều trả về value=None và cờ tương ứng).
 """
+
 from __future__ import annotations
 
 import re
@@ -44,7 +45,9 @@ def _ensure_tz(dt: datetime) -> datetime:
     return dt
 
 
-def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = None) -> NormalizedDeadline:
+def normalize(
+    text: str, anchor: datetime, semester: SemesterConfig | None = None
+) -> NormalizedDeadline:
     """Phân giải chuỗi thời gian tự nhiên thành mốc datetime chuẩn dựa vào mốc neo."""
     if not isinstance(text, str) or not text.strip():
         return NormalizedDeadline(value=None, anchor=anchor, flags=["UNRESOLVED"])
@@ -71,7 +74,9 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
                 value=None,
                 anchor=anchor_tz,
                 rule_id="ambiguous_generic",
-                assumptions=["Thời gian diễn đạt quá mơ hồ, không xác định được mốc cụ thể"],
+                assumptions=[
+                    "Thời gian diễn đạt quá mơ hồ, không xác định được mốc cụ thể"
+                ],
                 flags=["AMBIGUOUS"],
             )
 
@@ -90,7 +95,10 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
         extracted_time = time(12, 0, 0)
     else:
         # 2.3. Cú pháp giờ có buổi (sáng/chiều/tối): ví dụ "8 giờ tối", "8h tối", "3h chiều", "8g30 sáng"
-        m_session = re.search(r"\b(\d{1,2})(?:[:hg](\d{1,2}))?\s*(?:gio)?\s*(sang|chieu|toi)\b", raw_no_accent)
+        m_session = re.search(
+            r"\b(\d{1,2})(?:[:hg](\d{1,2}))?\s*(?:gio)?\s*(sang|chieu|toi)\b",
+            raw_no_accent,
+        )
         if m_session:
             h = int(m_session.group(1))
             m = int(m_session.group(2)) if m_session.group(2) else 0
@@ -108,7 +116,13 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
                 m = int(m_time.group(2))
                 s = int(m_time.group(3)) if m_time.group(3) else 0
                 # Kiểm tra xem có từ chiều/tối theo sau không
-                if re.search(rf"\b{re.escape(m_time.group(0))}\s*(chieu|toi)\b", raw_no_accent) and h < 12:
+                if (
+                    re.search(
+                        rf"\b{re.escape(m_time.group(0))}\s*(chieu|toi)\b",
+                        raw_no_accent,
+                    )
+                    and h < 12
+                ):
                     h += 12
                 if 0 <= h <= 23 and 0 <= m <= 59 and 0 <= s <= 59:
                     extracted_time = time(h, m, s)
@@ -127,7 +141,11 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
     # 3.1. Dạng tuyệt đối: DD/MM/YYYY hoặc DD-MM-YYYY hoặc DD.MM.YYYY
     m_full_date = re.search(r"\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b", raw_lower)
     if m_full_date:
-        d, mo, y = int(m_full_date.group(1)), int(m_full_date.group(2)), int(m_full_date.group(3))
+        d, mo, y = (
+            int(m_full_date.group(1)),
+            int(m_full_date.group(2)),
+            int(m_full_date.group(3)),
+        )
         try:
             extracted_date = date(y, mo, d)
             rule_id = "absolute_full"
@@ -136,9 +154,15 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
 
     # 3.2. Dạng "ngày DD tháng MM năm YYYY"
     if not extracted_date:
-        m_dm_text_y = re.search(r"\bngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\s*nam\s*(\d{4})\b", raw_no_accent)
+        m_dm_text_y = re.search(
+            r"\bngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\s*nam\s*(\d{4})\b", raw_no_accent
+        )
         if m_dm_text_y:
-            d, mo, y = int(m_dm_text_y.group(1)), int(m_dm_text_y.group(2)), int(m_dm_text_y.group(3))
+            d, mo, y = (
+                int(m_dm_text_y.group(1)),
+                int(m_dm_text_y.group(2)),
+                int(m_dm_text_y.group(3)),
+            )
             try:
                 extracted_date = date(y, mo, d)
                 rule_id = "absolute_text_y"
@@ -152,7 +176,9 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
         if m_dm:
             d, mo = int(m_dm.group(1)), int(m_dm.group(2))
         else:
-            m_text_dm = re.search(r"\bngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\b", raw_no_accent)
+            m_text_dm = re.search(
+                r"\bngay\s*(\d{1,2})\s*thang\s*(\d{1,2})\b", raw_no_accent
+            )
             if m_text_dm:
                 d, mo = int(m_text_dm.group(1)), int(m_text_dm.group(2))
 
@@ -176,16 +202,22 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
             week_num = int(m_sem.group(1))
             if semester and semester.start_date:
                 # Tuần 1 bắt đầu từ start_date, kết thúc vào Chủ nhật của tuần đó (+6 ngày)
-                target_sunday = semester.start_date + timedelta(weeks=week_num - 1, days=6)
+                target_sunday = semester.start_date + timedelta(
+                    weeks=week_num - 1, days=6
+                )
                 extracted_date = target_sunday
                 rule_id = "semester_week"
-                assumptions.append(f"Quy đổi tuần {week_num} theo học kỳ (kết thúc Chủ Nhật)")
+                assumptions.append(
+                    f"Quy đổi tuần {week_num} theo học kỳ (kết thúc Chủ Nhật)"
+                )
             else:
                 return NormalizedDeadline(
                     value=None,
                     anchor=anchor_tz,
                     rule_id="unresolved_semester_week",
-                    assumptions=[f"Thiếu cấu hình học kỳ để phân giải 'tuần {week_num}'"],
+                    assumptions=[
+                        f"Thiếu cấu hình học kỳ để phân giải 'tuần {week_num}'"
+                    ],
                     flags=["UNRESOLVED"],
                 )
 
@@ -213,7 +245,9 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
                     time_defaulted=False,
                 )
 
-            m_days = re.search(r"\b(?:trong\s*vong|trong|sau)\s*(\d+)\s*ngay\b", raw_no_accent)
+            m_days = re.search(
+                r"\b(?:trong\s*vong|trong|sau)\s*(\d+)\s*ngay\b", raw_no_accent
+            )
             if m_days:
                 d_offset = int(m_days.group(1))
                 computed = anchor_tz + timedelta(days=d_offset)
@@ -257,11 +291,21 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
                 else:
                     # Thứ đơn lẻ: lần xuất hiện gần nhất tiếp theo
                     days_ahead = (w_idx - anchor_w) % 7
-                    if days_ahead == 0 and extracted_time and extracted_time < anchor_tz.time():
+                    if (
+                        days_ahead == 0
+                        and extracted_time
+                        and extracted_time < anchor_tz.time()
+                    ):
                         days_ahead = 7
                     elif days_ahead == 0 and not extracted_time:
                         flags.append("AMBIGUOUS")
-                    extracted_date = anchor_tz.date() + timedelta(days=days_ahead if days_ahead > 0 else 7 if days_ahead == 0 and "AMBIGUOUS" not in flags else 0)
+                    extracted_date = anchor_tz.date() + timedelta(
+                        days=days_ahead
+                        if days_ahead > 0
+                        else 7
+                        if days_ahead == 0 and "AMBIGUOUS" not in flags
+                        else 0
+                    )
                     rule_id = "weekday_standalone"
                     assumptions.append("Lấy thứ gần nhất tiếp theo tính từ mốc neo")
                     break
@@ -286,7 +330,9 @@ def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = Non
     if is_midnight:
         extracted_date = extracted_date + timedelta(days=1)
 
-    result_dt = datetime.combine(extracted_date, extracted_time, tzinfo=anchor_tz.tzinfo)
+    result_dt = datetime.combine(
+        extracted_date, extracted_time, tzinfo=anchor_tz.tzinfo
+    )
 
     # 5. Kiểm tra Outdated (Hạn nộp nằm trong quá khứ so với anchor)
     if result_dt < anchor_tz and "OUTDATED_DEADLINE" not in flags:

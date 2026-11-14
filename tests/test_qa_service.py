@@ -46,7 +46,6 @@ def test_qa_service_approves_valid_answer() -> None:
     assert answer.citations[0].page_num in {1, 2}
 
 
-
 class _ScriptedClient:
     model = "fake-model"
 
@@ -68,37 +67,58 @@ def _deadline_doc() -> ParsedDocument:
     )
 
 
-@pytest.mark.parametrize("citations", [
-    [{"page_num": 1}],                        # có trang, thiếu câu trích
-    [{"page_num": 1, "evidence_text": ""}],   # câu trích rỗng
-    [1],                                      # chỉ có số trang
-])
+@pytest.mark.parametrize(
+    "citations",
+    [
+        [{"page_num": 1}],  # có trang, thiếu câu trích
+        [{"page_num": 1, "evidence_text": ""}],  # câu trích rỗng
+        [1],  # chỉ có số trang
+    ],
+)
 def test_citation_without_evidence_is_rejected(citations) -> None:
     """Trích dẫn không có câu trích thì không được tự điền bằng chứng để qua kiểm tra."""
     payload = json.dumps({"answer": "Hạn nộp là 30/12.", "citations": citations})
     with pytest.raises(ValueError):
-        QAService(_ScriptedClient(payload)).ask_question(_deadline_doc(), "Hạn nộp khi nào?")
+        QAService(_ScriptedClient(payload)).ask_question(
+            _deadline_doc(), "Hạn nộp khi nào?"
+        )
 
 
 def test_evidence_not_in_page_is_rejected() -> None:
-    payload = json.dumps({"answer": "Hạn nộp là 30/12.",
-                          "citations": [{"page_num": 1, "evidence_text": "Hạn nộp là 30/12."}]})
+    payload = json.dumps(
+        {
+            "answer": "Hạn nộp là 30/12.",
+            "citations": [{"page_num": 1, "evidence_text": "Hạn nộp là 30/12."}],
+        }
+    )
     with pytest.raises(ValueError):
-        QAService(_ScriptedClient(payload)).ask_question(_deadline_doc(), "Hạn nộp khi nào?")
+        QAService(_ScriptedClient(payload)).ask_question(
+            _deadline_doc(), "Hạn nộp khi nào?"
+        )
 
 
-@pytest.mark.parametrize("wrap", [
-    "```json\n{}\n```",
-    "```\n{}\n```",
-    "Đây là kết quả:\n{}",
-])
+@pytest.mark.parametrize(
+    "wrap",
+    [
+        "```json\n{}\n```",
+        "```\n{}\n```",
+        "Đây là kết quả:\n{}",
+    ],
+)
 def test_json_wrapped_by_llm_is_parsed(wrap: str) -> None:
     """Gemini hay bọc JSON trong ```json ... ```; vẫn phải đọc được."""
-    body = json.dumps({"answer": "15/11",
-                       "citations": [{"page_num": 1, "evidence_text": "Hạn nộp bài tập lớn là 15/11."}]},
-                      ensure_ascii=False)
+    body = json.dumps(
+        {
+            "answer": "15/11",
+            "citations": [
+                {"page_num": 1, "evidence_text": "Hạn nộp bài tập lớn là 15/11."}
+            ],
+        },
+        ensure_ascii=False,
+    )
     answer = QAService(_ScriptedClient(wrap.replace("{}", body))).ask_question(
-        _deadline_doc(), "Hạn nộp khi nào?")
+        _deadline_doc(), "Hạn nộp khi nào?"
+    )
     assert answer.status == "verified"
     assert answer.citations[0].page_num == 1
 
@@ -106,4 +126,5 @@ def test_json_wrapped_by_llm_is_parsed(wrap: str) -> None:
 def test_non_json_response_is_rejected() -> None:
     with pytest.raises(ValueError):
         QAService(_ScriptedClient("[fake] không phải JSON")).ask_question(
-            _deadline_doc(), "Hạn nộp khi nào?")
+            _deadline_doc(), "Hạn nộp khi nào?"
+        )

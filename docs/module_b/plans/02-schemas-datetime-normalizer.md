@@ -12,17 +12,22 @@ Nguyên tắc bất biến: **Mọi trường đều nullable**, `null` là giá
 
 ```python
 class Evidence(BaseModel):
-    quote: str = Field(description="Trích nguyên văn cụm từ trong văn bản, không diễn đạt lại")
+    quote: str = Field(
+        description="Trích nguyên văn cụm từ trong văn bản, không diễn đạt lại"
+    )
     location: str = Field(description="'email' hoặc 'p<số trang>'")
+
 
 class ExField(BaseModel, Generic[T]):
     value: T | None = None
     evidence: Evidence | None = None
 
+
 class RawDeadline(BaseModel):
-    label: str | None = None          # "báo cáo SP1", "nộp slide"...
-    raw_text: str                     # Cụm thời gian nguyên văn
+    label: str | None = None  # "báo cáo SP1", "nộp slide"...
+    raw_text: str  # Cụm thời gian nguyên văn
     evidence: Evidence
+
 
 class RawAssignment(BaseModel):
     title: ExField[str]
@@ -36,6 +41,7 @@ class RawAssignment(BaseModel):
     priority_suggestion: Priority | None = None
     is_extension_notice: bool = False
     refers_to: str | None = None
+
 
 class ExtractionResult(BaseModel):
     assignments: list[RawAssignment] = []
@@ -51,15 +57,17 @@ Giao diện hàm thuần (pure function), **tuyệt đối không gọi `datetim
 ```python
 @dataclass
 class NormalizedDeadline:
-    value: datetime | None           # tz-aware Asia/Ho_Chi_Minh; None nếu không thể phân giải
-    anchor: datetime                 # Mốc neo (received_at hoặc ngày tài liệu)
+    value: datetime | None  # tz-aware Asia/Ho_Chi_Minh; None nếu không thể phân giải
+    anchor: datetime  # Mốc neo (received_at hoặc ngày tài liệu)
     rule_id: str | None
-    assumptions: list[str]           # Các giả định bằng tiếng Việt để hiển thị trên UI
-    flags: list[str]                 # 'OUTDATED_DEADLINE', 'AMBIGUOUS', 'UNRESOLVED'
-    time_defaulted: bool             # True nếu giờ do hệ thống tự gán 23:59:00
+    assumptions: list[str]  # Các giả định bằng tiếng Việt để hiển thị trên UI
+    flags: list[str]  # 'OUTDATED_DEADLINE', 'AMBIGUOUS', 'UNRESOLVED'
+    time_defaulted: bool  # True nếu giờ do hệ thống tự gán 23:59:00
 
-def normalize(text: str, anchor: datetime, semester: SemesterConfig | None = None) -> NormalizedDeadline:
-    ...
+
+def normalize(
+    text: str, anchor: datetime, semester: SemesterConfig | None = None
+) -> NormalizedDeadline: ...
 ```
 
 ### Bộ quy ước chuẩn hoá bắt buộc:
