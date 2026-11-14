@@ -2,13 +2,7 @@ import pytest
 from datetime import datetime
 from core.contracts import ClassifiedEmail, EmailLabel, Priority, SafetyStatus
 from modules.extraction.gate import UnsafeSourceError, ensure_safe
-from modules.extraction.schemas import (
-    Evidence,
-    ExField,
-    ExtractionResult,
-    RawAssignment,
-    RawDeadline,
-)
+from modules.extraction.schemas import Evidence, ExField, ExtractionResult, RawAssignment, RawDeadline
 
 
 def test_gate_allows_safe_email():
@@ -85,7 +79,7 @@ def test_schemas_with_valid_data():
         course=ExField(value="CS101", evidence=evidence),
         deadlines=[deadline],
         priority_suggestion=Priority.HIGH,
-        estimated_hours=5.0,
+        estimated_hours=5.0
     )
     result = ExtractionResult(assignments=[assignment])
 

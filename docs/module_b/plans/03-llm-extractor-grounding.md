@@ -30,15 +30,8 @@
 ### 1.3. Bộ trích xuất & Kiểm chứng bằng chứng (`modules/extraction/extractor.py`)
 - Hàm chính:
   ```python
-  def extract_from_email(
-      email: ClassifiedEmail, llm: LLMClient, repo: Repository
-  ) -> ExtractionOutcome: ...
-  def extract_from_document(
-      doc: ParsedDocument,
-      llm: LLMClient,
-      repo: Repository,
-      pages: list[int] | None = None,
-  ) -> ExtractionOutcome: ...
+  def extract_from_email(email: ClassifiedEmail, llm: LLMClient, repo: Repository) -> ExtractionOutcome: ...
+  def extract_from_document(doc: ParsedDocument, llm: LLMClient, repo: Repository, pages: list[int] | None = None) -> ExtractionOutcome: ...
   ```
 - Gọi LLM qua `core/llm_client.py` với `temperature = 0.0`.
 - Cơ chế thử lại tự động: Nếu JSON đầu ra không parse được theo schema Pydantic, hệ thống thử lại **duy nhất 1 lần** kèm thông báo lỗi của Pydantic. Nếu vẫn lỗi, trả về `ExtractionOutcome` báo lỗi kỹ thuật, không làm sập luồng.

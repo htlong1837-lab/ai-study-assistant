@@ -1,5 +1,4 @@
 """Kiểu dữ liệu nội bộ của module C. Hợp đồng ra/vào dùng core.contracts."""
-
 from __future__ import annotations
 
 import math
@@ -15,7 +14,6 @@ WEEKDAY_VN = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", 
 @dataclass
 class ClassSession:
     """Buổi lên lớp lặp lại hằng tuần."""
-
     weekday: int  # 0 = thứ Hai ... 6 = Chủ nhật
     start: time
     end: time
@@ -56,10 +54,7 @@ class ScheduleSettings:
             raise ValueError("max_hours_per_day phải > 0")
         if self.slot_minutes <= 0 or 60 % self.slot_minutes:
             raise ValueError("slot_minutes phải là ước của 60")
-        if (
-            self.min_block_minutes < self.slot_minutes
-            or self.min_block_minutes % self.slot_minutes
-        ):
+        if self.min_block_minutes < self.slot_minutes or self.min_block_minutes % self.slot_minutes:
             raise ValueError("min_block_minutes phải là bội của slot_minutes")
         if self.time_limit_s <= 0:
             raise ValueError("time_limit_s phải > 0")

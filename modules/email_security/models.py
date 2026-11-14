@@ -4,7 +4,6 @@ Dùng SafetyStatus / EmailLabel từ core.contracts — KHÔNG định nghĩa l�
 Các dataclass ở đây chỉ dùng trong modules/email_security/; không xuất ra
 ngoài qua API công khai của module (ngoại trừ ProcessedEmail).
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,10 +15,6 @@ from core.contracts import (
     SafetyStatus,  # re-export tiện dùng trong module  # noqa: F401
 )
 
-# Đảm bảo EmailLabel.COURSEWORK khả dụng nếu được tham chiếu
-if not hasattr(EmailLabel, "COURSEWORK"):
-    setattr(EmailLabel, "COURSEWORK", EmailLabel.ASSIGNMENT)
-
 
 @dataclass(frozen=True)
 class Reason:
@@ -29,9 +24,7 @@ class Reason:
     ``message`` bằng tiếng Việt cho người dùng cuối.
     """
 
-    code: (
-        str  # vd "URL_SHORTENER", "LOOKALIKE_DOMAIN", "VT_MALICIOUS", "MAGIC_MISMATCH"
-    )
+    code: str    # vd "URL_SHORTENER", "LOOKALIKE_DOMAIN", "VT_MALICIOUS", "MAGIC_MISMATCH"
     message: str  # vd "URL rút gọn — không rõ đích đến thực sự"
 
 
@@ -43,7 +36,7 @@ class Reputation:
     ``error`` ghi lý do kỹ thuật: "not_found", "quota", "network", "no_key", "rate_limited".
     """
 
-    status: SafetyStatus | None = None  # None = UNKNOWN
+    status: SafetyStatus | None = None   # None = UNKNOWN
     malicious: int = 0
     suspicious: int = 0
     source: str = "virustotal"
@@ -54,8 +47,8 @@ class Reputation:
 class UrlFinding:
     """Kết quả quét một URL đơn lẻ."""
 
-    url: str  # URL gốc (đã chuẩn hoá)
-    defanged: str  # URL defang để hiển thị an toàn, vd "hxxp://evil[.]com"
+    url: str            # URL gốc (đã chuẩn hoá)
+    defanged: str       # URL defang để hiển thị an toàn, vd "hxxp://evil[.]com"
     status: SafetyStatus
     reasons: list[Reason] = field(default_factory=list)
     reputation: Reputation | None = None
@@ -65,10 +58,10 @@ class UrlFinding:
 class AttachmentFinding:
     """Kết quả quét một file đính kèm."""
 
-    filename: str  # tên file đã làm sạch (không có path traversal)
-    path: str  # đường dẫn tương đối sau khi lưu (vd "data/real/e-001/abc123_file.pdf")
-    sha256: str  # 64 ký tự hex lowercase
-    size: int  # kích thước byte sau khi giải mã từ email
+    filename: str       # tên file đã làm sạch (không có path traversal)
+    path: str           # đường dẫn tương đối sau khi lưu (vd "data/real/e-001/abc123_file.pdf")
+    sha256: str         # 64 ký tự hex lowercase
+    size: int           # kích thước byte sau khi giải mã từ email
     status: SafetyStatus
     reasons: list[Reason] = field(default_factory=list)
     reputation: Reputation | None = None
@@ -81,18 +74,16 @@ class ParsedEmail:
     Chỉ dùng trong pipeline.py; không xuất ra ngoài module.
     """
 
-    message_id: str  # Từ header Message-ID (hoặc UUID4 nếu thiếu)
-    sender: str  # Header From: (địa chỉ đã parse)
+    message_id: str         # Từ header Message-ID (hoặc UUID4 nếu thiếu)
+    sender: str             # Header From: (địa chỉ đã parse)
     subject: str
-    received_at: object  # datetime (timezone-aware nếu có, UTC nếu không)
-    body_text: str  # Văn bản thuần (ưu tiên text/plain, fallback strip HTML)
-    urls: list[str]  # Tất cả URL trong body + href
+    received_at: object     # datetime (timezone-aware nếu có, UTC nếu không)
+    body_text: str          # Văn bản thuần (ưu tiên text/plain, fallback strip HTML)
+    urls: list[str]         # Tất cả URL trong body + href
     html_links: list[tuple[str, str]]  # [(link_text, href)] từ thẻ <a>
-    reply_to: str | None  # Header Reply-To (None nếu không có)
+    reply_to: str | None    # Header Reply-To (None nếu không có)
     auth_results: str | None  # Header Authentication-Results (None nếu không có)
-    raw_attachments: list[
-        dict
-    ]  # [{"filename": str, "content": bytes, "mimetype": str}]
+    raw_attachments: list[dict]  # [{"filename": str, "content": bytes, "mimetype": str}]
 
 
 @dataclass
@@ -103,13 +94,11 @@ class ProcessedEmail:
     Các trường còn lại là chi tiết nội bộ → dùng cho UI và logging.
     """
 
-    email: ClassifiedEmail  # Gửi cho Module B
-    safe_attachments: list[
-        SafeAttachment
-    ]  # Gửi cho Module A (chỉ file SAFE / đã duyệt)
+    email: ClassifiedEmail                   # Gửi cho Module B
+    safe_attachments: list[SafeAttachment]   # Gửi cho Module A (chỉ file SAFE / đã duyệt)
     url_findings: list[UrlFinding]
     attachment_findings: list[AttachmentFinding]
     sender_reasons: list[Reason]
-    classifier_method: str  # "tfidf" | "llm" | "llm+tfidf" | "fallback" | "stub"
+    classifier_method: str                   # "tfidf" | "llm" | "llm+tfidf" | "fallback" | "stub"
     can_forward: bool
     user_approved: bool = False

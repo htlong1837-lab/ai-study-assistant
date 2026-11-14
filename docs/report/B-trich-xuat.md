@@ -88,34 +88,33 @@ Dưới đây là bảng tổng hợp các chức năng của Module B cùng mã
 class AssignmentDetail(BaseModel):
     title: str = Field(description="Tên bài tập hoặc đồ án")
     course: str = Field(description="Tên môn học hoặc mã môn (ví dụ: CS102, CSDL)")
-    raw_deadline_text: str = Field(
-        description="Cụm từ chỉ thời gian nguyên văn trong tài liệu"
-    )
+    raw_deadline_text: str = Field(description="Cụm từ chỉ thời gian nguyên văn trong tài liệu")
     submission_format: list[str] = Field(
-        default_factory=list,
-        description="Định dạng nộp: .pdf, .zip, link github, bản in...",
+        default_factory=list, 
+        description="Định dạng nộp: .pdf, .zip, link github, bản in..."
     )
     submission_platform: str = Field(
         description="Nơi nộp bài: LMS, Google Classroom, Email, Teams..."
     )
     naming_convention: str | None = Field(
-        default=None,
-        description="Quy cách đặt tên file (ví dụ: [MSSV]_[HoTen]_BT1.zip)",
+        default=None, 
+        description="Quy cách đặt tên file (ví dụ: [MSSV]_[HoTen]_BT1.zip)"
     )
     grading_criteria: list[str] = Field(
-        default_factory=list,
-        description="Các tiêu chí chấm điểm, rubric hoặc thang điểm thành phần",
+        default_factory=list, 
+        description="Các tiêu chí chấm điểm, rubric hoặc thang điểm thành phần"
     )
     estimated_hours: float = Field(
-        default=4.0,
-        description="Số giờ ước tính hoàn thành do LLM phân tích dựa trên khối lượng yêu cầu",
+        default=4.0, 
+        description="Số giờ ước tính hoàn thành do LLM phân tích dựa trên khối lượng yêu cầu"
     )
     priority_suggestion: Priority = Field(
-        default=Priority.MEDIUM,
-        description="Độ ưu tiên gợi ý dựa trên trọng số điểm hoặc tính cấp bách",
+        default=Priority.MEDIUM, 
+        description="Độ ưu tiên gợi ý dựa trên trọng số điểm hoặc tính cấp bách"
     )
     confidence: float = Field(
-        ge=0.0, le=1.0, description="Độ tự tin tổng thể của mô hình về việc trích xuất"
+        ge=0.0, le=1.0, 
+        description="Độ tự tin tổng thể của mô hình về việc trích xuất"
     )
 ```
 

@@ -16,13 +16,7 @@ def no_api_key(monkeypatch, tmp_path):
 
 
 def test_all_five_pages_exist():
-    assert {p.stem for p in VIEWS} == {
-        "home",
-        "qa",
-        "extraction",
-        "scheduler",
-        "email_security",
-    }
+    assert {p.stem for p in VIEWS} == {"home", "qa", "extraction", "scheduler", "email_security"}
 
 
 @pytest.mark.parametrize("page", VIEWS, ids=lambda p: p.stem)
@@ -43,9 +37,7 @@ def test_home_warns_ai_off():
 
 
 def test_scheduler_runs_both_algorithms():
-    at = AppTest.from_file(
-        str(ROOT / "views" / "scheduler.py"), default_timeout=60
-    ).run()
+    at = AppTest.from_file(str(ROOT / "views" / "scheduler.py"), default_timeout=60).run()
     assert not at.exception
     at.button(key="run").click().run()
     assert not at.exception, at.exception
