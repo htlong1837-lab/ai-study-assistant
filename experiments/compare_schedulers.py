@@ -5,6 +5,7 @@
 
 Ghi vào experiments/results/: runs.csv, summary.md, *.png
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,9 +27,24 @@ from modules.scheduler.model import PRIORITY_WEIGHT  # noqa: E402
 from .scenarios import SCENARIOS, base_settings, generate, load_ratio, sessions  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "results"
-FIELDS = ["scenario", "seed", "algorithm", "load_ratio", "tasks", "on_time", "missing_h",
-          "weighted_missing", "high_missing_h", "conflicts", "peak_h", "load_std", "blocks",
-          "short_blocks", "runtime_s", "status"]
+FIELDS = [
+    "scenario",
+    "seed",
+    "algorithm",
+    "load_ratio",
+    "tasks",
+    "on_time",
+    "missing_h",
+    "weighted_missing",
+    "high_missing_h",
+    "conflicts",
+    "peak_h",
+    "load_std",
+    "blocks",
+    "short_blocks",
+    "runtime_s",
+    "status",
+]
 METRICS = [  # (cột, nhãn, hướng tốt: -1 = nhỏ hơn tốt)
     ("on_time", "Nhiệm vụ kịp hạn (%)", 1),
     ("missing_h", "Giờ thiếu", -1),
@@ -49,18 +65,35 @@ def run_one(name: str, seed: int, algo: str, sess, settings) -> dict:
     by_id = {t.id: t for t in tasks}
     load = daily_hours(r.blocks)
     last = max(t.deadline.date() for t in tasks)
-    span = [d for d in (settings.start + timedelta(days=i)
-                        for i in range(settings.days)) if d <= last]
+    span = [
+        d
+        for d in (settings.start + timedelta(days=i) for i in range(settings.days))
+        if d <= last
+    ]
     per_day = [load.get(d, 0.0) for d in span]
     return {
-        "scenario": name, "seed": seed, "algorithm": algo,
-        "load_ratio": round(load_ratio(tasks, sess, settings), 3), "tasks": len(tasks),
+        "scenario": name,
+        "seed": seed,
+        "algorithm": algo,
+        "load_ratio": round(load_ratio(tasks, sess, settings), 3),
+        "tasks": len(tasks),
         "on_time": round(100 * (len(tasks) - len(r.missing_hours)) / len(tasks), 1),
         "missing_h": round(sum(r.missing_hours.values()), 2),
-        "weighted_missing": round(sum(PRIORITY_WEIGHT[by_id[k].priority] * v
-                                      for k, v in r.missing_hours.items()), 2),
-        "high_missing_h": round(sum(v for k, v in r.missing_hours.items()
-                                    if by_id[k].priority.value == "high"), 2),
+        "weighted_missing": round(
+            sum(
+                PRIORITY_WEIGHT[by_id[k].priority] * v
+                for k, v in r.missing_hours.items()
+            ),
+            2,
+        ),
+        "high_missing_h": round(
+            sum(
+                v
+                for k, v in r.missing_hours.items()
+                if by_id[k].priority.value == "high"
+            ),
+            2,
+        ),
         "conflicts": len(validate(r.blocks, tasks, sess, settings)),
         "peak_h": round(max(per_day), 2),
         "load_std": round(statistics.pstdev(per_day), 3),
@@ -96,16 +129,26 @@ def summarize(rows: list[dict], seeds: int, time_limit: float) -> str:
             continue
         ratios = [r["load_ratio"] for r in rs if r["algorithm"] == "EDF"]
         sc = SCENARIOS[name]
-        out += [f"## {name} — {sc.n_tasks} nhiệm vụ, tỉ lệ tải {mean_std(ratios)}", "",
-                "| Chỉ số | EDF | CP-SAT | CP-SAT thắng / hòa / thua |", "|---|---|---|---|"]
+        out += [
+            f"## {name} — {sc.n_tasks} nhiệm vụ, tỉ lệ tải {mean_std(ratios)}",
+            "",
+            "| Chỉ số | EDF | CP-SAT | CP-SAT thắng / hòa / thua |",
+            "|---|---|---|---|",
+        ]
         for col, label, sign in METRICS:
             vals = {a: [r[col] for r in rs if r["algorithm"] == a] for a in ALGORITHMS}
             w = t = lose = 0
             for e, c in zip(vals["EDF"], vals["CP-SAT"]):
                 diff = (c - e) * sign
-                w, t, lose = w + (diff > 1e-9), t + (abs(diff) <= 1e-9), lose + (diff < -1e-9)
-            out.append(f"| {label} | {mean_std(vals['EDF'])} | {mean_std(vals['CP-SAT'])} "
-                       f"| {w} / {t} / {lose} |")
+                w, t, lose = (
+                    w + (diff > 1e-9),
+                    t + (abs(diff) <= 1e-9),
+                    lose + (diff < -1e-9),
+                )
+            out.append(
+                f"| {label} | {mean_std(vals['EDF'])} | {mean_std(vals['CP-SAT'])} "
+                f"| {w} / {t} / {lose} |"
+            )
         statuses = sorted({r["status"] for r in rs if r["algorithm"] == "CP-SAT"})
         out += ["", f"Trạng thái CP-SAT: {', '.join(statuses)}.", ""]
     return "\n".join(out)
@@ -114,19 +157,29 @@ def summarize(rows: list[dict], seeds: int, time_limit: float) -> str:
 def plot(rows: list[dict]) -> list[Path]:
     names = [n for n in SCENARIOS if any(r["scenario"] == n for r in rows)]
     colors = {"EDF": "#8a8f98", "CP-SAT": "#4c78a8"}
-    panels = [("weighted_missing", "Giờ thiếu có trọng số"), ("peak_h", "Đỉnh tải (giờ/ngày)"),
-              ("load_std", "Độ lệch tải (giờ)"), ("short_blocks", "Khối < 60 phút")]
+    panels = [
+        ("weighted_missing", "Giờ thiếu có trọng số"),
+        ("peak_h", "Đỉnh tải (giờ/ngày)"),
+        ("load_std", "Độ lệch tải (giờ)"),
+        ("short_blocks", "Khối < 60 phút"),
+    ]
     fig, axes = plt.subplots(1, len(panels), figsize=(14, 3.6))
     width = 0.38
     for ax, (col, title) in zip(axes, panels):
         for i, algo in enumerate(ALGORITHMS):
             means, errs = [], []
             for n in names:
-                v = [r[col] for r in rows if r["scenario"] == n and r["algorithm"] == algo]
+                v = [
+                    r[col]
+                    for r in rows
+                    if r["scenario"] == n and r["algorithm"] == algo
+                ]
                 means.append(statistics.mean(v))
                 errs.append(statistics.stdev(v) if len(v) > 1 else 0)
             xs = [k + (i - 0.5) * width for k in range(len(names))]
-            ax.bar(xs, means, width, yerr=errs, capsize=3, label=algo, color=colors[algo])
+            ax.bar(
+                xs, means, width, yerr=errs, capsize=3, label=algo, color=colors[algo]
+            )
         ax.set_xticks(range(len(names)), names)
         ax.set_title(title, fontsize=10)
         ax.spines[["top", "right"]].set_visible(False)
@@ -139,8 +192,14 @@ def plot(rows: list[dict]) -> list[Path]:
     fig, ax = plt.subplots(figsize=(6, 3.4))
     for algo in ALGORITHMS:
         rs = [r for r in rows if r["algorithm"] == algo]
-        ax.scatter([r["load_ratio"] for r in rs], [r["weighted_missing"] for r in rs],
-                   label=algo, color=colors[algo], alpha=0.75, s=22)
+        ax.scatter(
+            [r["load_ratio"] for r in rs],
+            [r["weighted_missing"] for r in rs],
+            label=algo,
+            color=colors[algo],
+            alpha=0.75,
+            s=22,
+        )
     ax.axvline(1, color="#ccc", lw=1, ls="--")
     ax.set_xlabel("Tỉ lệ tải (giờ cần / giờ có thể học)")
     ax.set_ylabel("Giờ thiếu có trọng số")
@@ -167,15 +226,20 @@ def main() -> None:
             for algo in ALGORITHMS:
                 row = run_one(name, seed, algo, sess, settings)
                 rows.append(row)
-                print(f"{name:8} seed={seed:2} {algo:6} thiếu={row['missing_h']:5} "
-                      f"đỉnh={row['peak_h']:4} khối={row['blocks']:3} {row['runtime_s']:6.2f}s "
-                      f"{row['status']}", flush=True)
+                print(
+                    f"{name:8} seed={seed:2} {algo:6} thiếu={row['missing_h']:5} "
+                    f"đỉnh={row['peak_h']:4} khối={row['blocks']:3} {row['runtime_s']:6.2f}s "
+                    f"{row['status']}",
+                    flush=True,
+                )
 
     with open(OUT / "runs.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
-    (OUT / "summary.md").write_text(summarize(rows, args.seeds, args.time_limit), encoding="utf-8")
+    (OUT / "summary.md").write_text(
+        summarize(rows, args.seeds, args.time_limit), encoding="utf-8"
+    )
     for p in plot(rows):
         print("Đã ghi", p.relative_to(OUT.parent.parent))
     print("Đã ghi experiments/results/runs.csv và summary.md")

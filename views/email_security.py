@@ -48,7 +48,9 @@ if uploaded_files and st.button("Xử lý file tải lên"):
         known_ids.add(p.email.id)
         added += 1
     st.session_state["flash"] = (
-        f"Đã nạp {added} email mới." if added else "Các email này đã có trong danh sách."
+        f"Đã nạp {added} email mới."
+        if added
+        else "Các email này đã có trong danh sách."
     )
     st.rerun()
 
@@ -155,7 +157,9 @@ elif selected_p.safe_attachments:
     for a in selected_p.safe_attachments:
         st.code(f"{a.path}\nsha256: {a.sha256}")
 elif findings:
-    st.write(f"📎 **File đính kèm:** {len(findings)} file, sẽ chuyển sau khi bạn duyệt email")
+    st.write(
+        f"📎 **File đính kèm:** {len(findings)} file, sẽ chuyển sau khi bạn duyệt email"
+    )
 else:
     st.write("📎 **File đính kèm:** không có")
 
