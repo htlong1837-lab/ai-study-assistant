@@ -1,13 +1,7 @@
 import statistics
 
 from core.contracts import TaskStatus
-from experiments.scenarios import (
-    SCENARIOS,
-    base_settings,
-    generate,
-    load_ratio,
-    sessions,
-)
+from experiments.scenarios import SCENARIOS, base_settings, generate, load_ratio, sessions
 
 
 def test_same_seed_same_data_different_seed_different_data():
@@ -25,8 +19,6 @@ def test_task_counts_and_all_confirmed():
 
 def test_load_ratio_increases_with_scenario():
     s, sess = base_settings(), sessions()
-    mean = {
-        name: statistics.mean(load_ratio(generate(name, k), sess, s) for k in range(10))
-        for name in SCENARIOS
-    }
+    mean = {name: statistics.mean(load_ratio(generate(name, k), sess, s) for k in range(10))
+            for name in SCENARIOS}
     assert mean["Nhẹ"] < mean["Vừa"] < 1 < mean["Quá tải"]

@@ -16,7 +16,6 @@ Chạy được offline hoàn toàn.
   "phishing"    → EmailLabel.PHISHING
   "other"       → EmailLabel.OTHER
 """
-
 from __future__ import annotations
 
 import json
@@ -148,12 +147,10 @@ class BaselineClassifier:
             min_df=1,
             max_features=10_000,
         )
-        feature_union = FeatureUnion(
-            [
-                ("word", word_tfidf),
-                ("char", char_tfidf),
-            ]
-        )
+        feature_union = FeatureUnion([
+            ("word", word_tfidf),
+            ("char", char_tfidf),
+        ])
         lr = LogisticRegression(
             C=1.0,
             class_weight="balanced",
@@ -161,20 +158,16 @@ class BaselineClassifier:
             random_state=42,
             solver="lbfgs",
         )
-        self._pipeline = Pipeline(
-            [
-                ("features", feature_union),
-                ("clf", lr),
-            ]
-        )
+        self._pipeline = Pipeline([
+            ("features", feature_union),
+            ("clf", lr),
+        ])
         self._pipeline.fit(texts, labels)
         self._classes = list(self._pipeline.classes_)
         self._is_trained = True
         logger.info(
             "BaselineClassifier huấn luyện xong: %d mẫu, %d nhãn: %s",
-            len(texts),
-            len(self._classes),
-            self._classes,
+            len(texts), len(self._classes), self._classes,
         )
         return self
 
@@ -232,10 +225,7 @@ class BaselineClassifier:
             for i, (idx, proba) in enumerate(zip(non_empty_indices, probas)):
                 label_str = self._classes[int(proba.argmax())]
                 confidence = float(proba.max())
-                batch_results[idx] = (
-                    _LABEL_MAP.get(label_str, EmailLabel.OTHER),
-                    confidence,
-                )
+                batch_results[idx] = (_LABEL_MAP.get(label_str, EmailLabel.OTHER), confidence)
 
         # Ghép lại theo thứ tự gốc
         for i in range(len(texts)):
@@ -252,7 +242,6 @@ class BaselineClassifier:
             raise RuntimeError("Chưa huấn luyện, không có gì để lưu.")
         try:
             import joblib
-
             Path(path).parent.mkdir(parents=True, exist_ok=True)
             joblib.dump({"pipeline": self._pipeline, "classes": self._classes}, path)
         except ImportError:
@@ -266,7 +255,6 @@ class BaselineClassifier:
         """Tải model đã lưu. Raise FileNotFoundError nếu không tìm thấy."""
         try:
             import joblib
-
             data = joblib.load(path)
         except ImportError:
             with open(path, "rb") as f:

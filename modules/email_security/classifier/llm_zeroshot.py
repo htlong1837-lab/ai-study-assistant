@@ -8,7 +8,6 @@ Fallback chuỗi:
 
 Chạy được offline với LLM_PROVIDER=fake (Constitution V).
 """
-
 from __future__ import annotations
 
 import json
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Ánh xạ chuỗi nhãn LLM trả về → EmailLabel
 _LABEL_MAP: dict[str, EmailLabel] = {
     "assignment": EmailLabel.ASSIGNMENT,
-    "coursework": EmailLabel.ASSIGNMENT,  # alias
+    "coursework": EmailLabel.ASSIGNMENT,   # alias
     "schedule": EmailLabel.SCHEDULE,
     "announcement": EmailLabel.ANNOUNCEMENT,
     "spam": EmailLabel.SPAM,
@@ -48,7 +47,7 @@ Quy tắc BẮT BUỘC:
 3. Format: {"label": "<nhãn>", "confidence": <0.0-1.0>, "reason": "<lý do ngắn tiếng Việt>"}
 """
 
-_BODY_LIMIT = 500  # ký tự tối đa của body gửi lên LLM
+_BODY_LIMIT = 500   # ký tự tối đa của body gửi lên LLM
 
 
 def _build_prompt(text: str) -> str:

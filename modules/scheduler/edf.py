@@ -1,5 +1,4 @@
 """Baseline: Earliest Deadline First (tham lam). Xem research.md R2."""
-
 from __future__ import annotations
 
 from collections import Counter
@@ -17,9 +16,7 @@ def solve(tasks: list[Task], slots: list[Slot], settings: ScheduleSettings):
     cap = settings.max_slots_per_day
     assignment = []
 
-    for t in sorted(
-        tasks, key=lambda t: (t.deadline, -PRIORITY_WEIGHT[t.priority], t.id)
-    ):
+    for t in sorted(tasks, key=lambda t: (t.deadline, -PRIORITY_WEIGHT[t.priority], t.id)):
         need = settings.need_slots(t)
         for s in slots:
             if need == 0 or s.end > t.deadline:

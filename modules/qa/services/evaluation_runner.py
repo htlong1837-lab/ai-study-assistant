@@ -34,23 +34,19 @@ def run_evaluation(
                 document, question, reference_material=reference_material
             )
             valid, warnings = verify_citations(document, answer.citations)
-            entries.append(
-                {
-                    "question": question,
-                    "answer_status": answer.status,
-                    "citation_valid": valid,
-                    "warnings": warnings,
-                }
-            )
+            entries.append({
+                "question": question,
+                "answer_status": answer.status,
+                "citation_valid": valid,
+                "warnings": warnings,
+            })
         except ValueError as exc:
-            entries.append(
-                {
-                    "question": question,
-                    "answer_status": "rejected",
-                    "citation_valid": False,
-                    "warnings": [str(exc)],
-                }
-            )
+            entries.append({
+                "question": question,
+                "answer_status": "rejected",
+                "citation_valid": False,
+                "warnings": [str(exc)],
+            })
     valid_count = sum(bool(item["citation_valid"]) for item in entries)
     return {
         "reference_material": reference_material,
