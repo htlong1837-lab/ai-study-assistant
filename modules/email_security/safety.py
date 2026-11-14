@@ -4,7 +4,6 @@ Quy tắc: SAFE < SUSPICIOUS < MALICIOUS.
 ``aggregate_safety`` luôn trả về mức nghiêm trọng nhất trong tập tín hiệu đầu vào.
 Hàm này KHÔNG bao giờ làm giảm mức an toàn — đây là tính chất đơn điệu được test.
 """
-
 from __future__ import annotations
 
 from core.contracts import ClassifiedEmail, SafetyStatus
@@ -72,5 +71,4 @@ def can_forward_email(email: ClassifiedEmail, user_approved: bool = False) -> bo
     - Điểm duy nhất cần test quy tắc II cho Module D.
     """
     from core.contracts import can_forward as _contract_can_forward
-
     return _contract_can_forward(email, allow_suspicious=user_approved)

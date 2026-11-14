@@ -4,13 +4,7 @@ from datetime import datetime
 from core.contracts import Priority, ReminderChannel, StudyBlock
 from modules.scheduler import notify
 from modules.scheduler.reminders import (
-    TelegramSender,
-    _fold,
-    load_reminders,
-    make_reminders,
-    save_reminders,
-    send_due,
-    to_ics,
+    TelegramSender, _fold, load_reminders, make_reminders, save_reminders, send_due, to_ics,
 )
 
 from .conftest import task
@@ -21,10 +15,8 @@ BLOCKS = [StudyBlock("a", datetime(2026, 11, 10, 9, 0), datetime(2026, 11, 10, 1
 
 def test_make_reminders_before_block_and_deadline():
     rs = make_reminders(BLOCKS, TASKS, before_block_min=30, before_deadline_h=24)
-    assert [r.remind_at for r in rs] == [
-        datetime(2026, 11, 10, 8, 30),
-        datetime(2026, 11, 10, 23, 59),
-    ]
+    assert [r.remind_at for r in rs] == [datetime(2026, 11, 10, 8, 30),
+                                        datetime(2026, 11, 10, 23, 59)]
     assert "09:00" in rs[0].message and "Hạn nộp" in rs[1].message
     assert all(r.channel is ReminderChannel.TELEGRAM for r in rs)
 
@@ -64,12 +56,8 @@ def test_send_due_sends_each_once(tmp_path):
 def test_send_due_skips_future_and_stale(tmp_path):
     rs = make_reminders(BLOCKS, TASKS)
     outbox = []
-    send_due(
-        rs, datetime(2026, 11, 10, 8, 0), outbox.append, tmp_path / "s.json"
-    )  # chưa tới
-    send_due(
-        rs, datetime(2026, 11, 10, 12, 0), outbox.append, tmp_path / "s.json"
-    )  # quá 1 giờ
+    send_due(rs, datetime(2026, 11, 10, 8, 0), outbox.append, tmp_path / "s.json")  # chưa tới
+    send_due(rs, datetime(2026, 11, 10, 12, 0), outbox.append, tmp_path / "s.json")  # quá 1 giờ
     assert outbox == []
 
 

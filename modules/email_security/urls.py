@@ -2,7 +2,6 @@
 
 Không phụ thuộc thư viện ngoài — chỉ dùng re, urllib.parse từ stdlib.
 """
-
 from __future__ import annotations
 
 import re
@@ -23,9 +22,7 @@ _URL_RE = re.compile(
 _TRAILING_JUNK = re.compile(r"[.,;:!?)>\]'\"]+$")
 
 
-def extract_urls(
-    text: str, html_links: list[tuple[str, str]] | None = None
-) -> list[str]:
+def extract_urls(text: str, html_links: list[tuple[str, str]] | None = None) -> list[str]:
     """Trích tất cả URL từ văn bản thuần và/hoặc danh sách liên kết HTML.
 
     Args:
@@ -69,16 +66,14 @@ def normalize_url(url: str) -> str:
         if not parsed.netloc:
             return ""
         # Chuẩn hoá: scheme và host lowercase, bỏ fragment
-        normalized = urlunparse(
-            (
-                parsed.scheme.lower(),
-                parsed.netloc.lower(),
-                parsed.path,
-                parsed.params,
-                parsed.query,
-                "",  # bỏ fragment
-            )
-        )
+        normalized = urlunparse((
+            parsed.scheme.lower(),
+            parsed.netloc.lower(),
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            "",  # bỏ fragment
+        ))
         return normalized
     except Exception:
         return ""
@@ -126,23 +121,21 @@ def defang_url(url: str) -> str:
         if userinfo:
             defanged_netloc = f"{userinfo}@{defanged_netloc}"
 
-        defanged = urlunparse(
-            (
-                defanged_scheme,
-                defanged_netloc,
-                parsed.path,
-                parsed.params,
-                parsed.query,
-                parsed.fragment,
-            )
-        )
+        defanged = urlunparse((
+            defanged_scheme,
+            defanged_netloc,
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment,
+        ))
         return defanged
     except Exception:
         # Fallback: thay thủ công
         return (
             url.replace("http://", "hxxp://")
-            .replace("https://", "hxxps://")
-            .replace(".", "[.]", 1)  # ít nhất 1 chấm
+               .replace("https://", "hxxps://")
+               .replace(".", "[.]", 1)  # ít nhất 1 chấm
         )
 
 

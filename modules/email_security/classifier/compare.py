@@ -9,7 +9,6 @@ Output:
     - In báo cáo ra stdout (classification_report, Macro-F1, thời gian inference).
     - Ghi tóm tắt ra docs/email_classifier_comparison.md.
 """
-
 from __future__ import annotations
 
 import json
@@ -47,10 +46,9 @@ def _load_dataset(path: str | Path) -> tuple[list[str], list[str]]:
             continue
         try:
             obj = json.loads(line)
-            text = (
-                obj.get("text")
-                or (obj.get("subject", "") + " " + obj.get("body", "")).strip()
-            )
+            text = obj.get("text") or (
+                obj.get("subject", "") + " " + obj.get("body", "")
+            ).strip()
             label = obj.get("label", "").strip().lower()
             if text and label:
                 texts.append(text)
@@ -80,8 +78,8 @@ def _baseline_cv(
     for fold, (train_idx, test_idx) in enumerate(skf.split(texts, labels), 1):
         x_train = [texts[i] for i in train_idx]
         y_train = [labels[i] for i in train_idx]
-        x_test = [texts[i] for i in test_idx]
-        y_test = [labels[i] for i in test_idx]
+        x_test  = [texts[i] for i in test_idx]
+        y_test  = [labels[i] for i in test_idx]
 
         clf = BaselineClassifier()
         clf.train(x_train, y_train)
@@ -99,10 +97,8 @@ def _baseline_cv(
 
     report = classification_report(all_true, all_preds, zero_division=0)
     macro_f1_mean = sum(fold_f1s) / len(fold_f1s)
-    macro_f1_std = (
-        sum((x - macro_f1_mean) ** 2 for x in fold_f1s) / len(fold_f1s)
-    ) ** 0.5
-    avg_time_ms = sum(inference_times) / len(inference_times)
+    macro_f1_std  = (sum((x - macro_f1_mean) ** 2 for x in fold_f1s) / len(fold_f1s)) ** 0.5
+    avg_time_ms   = sum(inference_times) / len(inference_times)
 
     return {
         "report": report,
@@ -153,7 +149,7 @@ def _write_markdown(
     """Ghi báo cáo so sánh ra file Markdown."""
     fold_f1_str = ", ".join(f"{v:.4f}" for v in baseline["fold_f1s"])
     sample_rows = "\n".join(
-        f"| {i + 1} | {label} | {conf:.2f} |"
+        f"| {i+1} | {label} | {conf:.2f} |"
         for i, (label, conf) in enumerate(llm["sample_results"])
     )
     md = f"""\
@@ -274,25 +270,21 @@ def run_comparison(
     min_per_label = min(labels.count(lb) for lb in unique_labels)
     if min_per_label < n_splits:
         n_splits = max(2, min_per_label)
-        print(
-            f"⚠️  Điều chỉnh n_splits={n_splits} (nhãn ít nhất chỉ có {min_per_label} mẫu)"
-        )
+        print(f"⚠️  Điều chỉnh n_splits={n_splits} (nhãn ít nhất chỉ có {min_per_label} mẫu)")
 
     # --- Baseline ---
-    print(f"\n{'=' * 50}")
+    print(f"\n{'='*50}")
     print(f"Baseline TF-IDF+LR ({n_splits}-fold CV):")
-    print("=" * 50)
+    print("="*50)
     baseline_result = _baseline_cv(texts, labels, n_splits=n_splits)
-    print(
-        f"\nMacro-F1: {baseline_result['macro_f1_mean']:.4f} ± {baseline_result['macro_f1_std']:.4f}"
-    )
+    print(f"\nMacro-F1: {baseline_result['macro_f1_mean']:.4f} ± {baseline_result['macro_f1_std']:.4f}")
     print("\nClassification Report:\n")
     print(baseline_result["report"])
 
     # --- LLM sample ---
-    print(f"\n{'=' * 50}")
+    print(f"\n{'='*50}")
     print(f"LLM Zero-Shot ({llm_samples} mẫu, fake mode):")
-    print("=" * 50)
+    print("="*50)
     llm_result = _llm_inference_sample(texts, n_samples=llm_samples)
     print(f"Thời gian trung bình: {llm_result['avg_inference_ms']:.1f} ms/mẫu")
     print(f"Ghi chú: {llm_result['note']}")

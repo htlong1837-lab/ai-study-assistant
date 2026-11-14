@@ -2,13 +2,7 @@ from datetime import datetime
 import json
 import pytest
 
-from core.contracts import (
-    ClassifiedEmail,
-    EmailLabel,
-    Page,
-    ParsedDocument,
-    SafetyStatus,
-)
+from core.contracts import ClassifiedEmail, EmailLabel, Page, ParsedDocument, SafetyStatus
 from db.repository import Repository
 from modules.extraction.extractor import extract_from_document, extract_from_email
 from modules.extraction.gate import UnsafeSourceError
@@ -24,16 +18,12 @@ class MockLLMClient:
 
     def generate(self, prompt: str, system: str = "", temperature: float = 0.0):
         self.call_count += 1
-        return type(
-            "Resp",
-            (),
-            {
-                "text": self.response_text,
-                "input_tokens": 100,
-                "output_tokens": 50,
-                "cached": False,
-            },
-        )()
+        return type("Resp", (), {
+            "text": self.response_text,
+            "input_tokens": 100,
+            "output_tokens": 50,
+            "cached": False
+        })()
 
 
 @pytest.fixture
@@ -49,7 +39,7 @@ def test_extract_blocks_malicious_email():
         body="Bấm vào link",
         received_at=datetime(2026, 11, 4, 10, 0),
         label=EmailLabel.PHISHING,
-        safety=SafetyStatus.MALICIOUS,
+        safety=SafetyStatus.MALICIOUS
     )
     llm = MockLLMClient("")
     with pytest.raises(UnsafeSourceError):
@@ -65,43 +55,31 @@ def test_extract_from_email_success():
         body="Các nhóm nộp Báo cáo SP1 môn Trí tuệ nhân tạo trước 23h59 thứ Sáu tuần sau lên hệ thống LMS.",
         received_at=datetime(2026, 11, 4, 10, 0),  # Thứ Tư
         label=EmailLabel.ASSIGNMENT,
-        safety=SafetyStatus.SAFE,
+        safety=SafetyStatus.SAFE
     )
     mock_json = {
         "assignments": [
             {
-                "title": {
-                    "value": "Báo cáo SP1",
-                    "evidence": {"quote": "Báo cáo SP1", "location": "email"},
-                },
-                "course": {
-                    "value": "Trí tuệ nhân tạo",
-                    "evidence": {"quote": "Trí tuệ nhân tạo", "location": "email"},
-                },
+                "title": {"value": "Báo cáo SP1", "evidence": {"quote": "Báo cáo SP1", "location": "email"}},
+                "course": {"value": "Trí tuệ nhân tạo", "evidence": {"quote": "Trí tuệ nhân tạo", "location": "email"}},
                 "deadlines": [
                     {
                         "label": "Hạn nộp",
                         "raw_text": "23h59 thứ Sáu tuần sau",
-                        "evidence": {
-                            "quote": "23h59 thứ Sáu tuần sau",
-                            "location": "email",
-                        },
+                        "evidence": {"quote": "23h59 thứ Sáu tuần sau", "location": "email"}
                     }
                 ],
-                "submission_platform": {
-                    "value": "LMS",
-                    "evidence": {"quote": "hệ thống LMS", "location": "email"},
-                },
+                "submission_platform": {"value": "LMS", "evidence": {"quote": "hệ thống LMS", "location": "email"}},
                 "submission_format": {"value": None, "evidence": None},
                 "naming_convention": {"value": None, "evidence": None},
                 "grading_criteria": {"value": None, "evidence": None},
                 "estimated_hours": 6.0,
                 "priority_suggestion": "high",
                 "is_extension_notice": False,
-                "refers_to": None,
+                "refers_to": None
             }
         ],
-        "not_assignment": False,
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_email(email, llm)
@@ -113,10 +91,7 @@ def test_extract_from_email_success():
     assert item.assignment.course.value == "Trí tuệ nhân tạo"
     assert len(item.normalized_deadlines) == 1
     # 2026-11-04 (Thứ Tư) -> thứ Sáu tuần sau = 2026-11-13 23:59:00
-    assert (
-        item.normalized_deadlines[0].value.strftime("%Y-%m-%d %H:%M")
-        == "2026-11-13 23:59"
-    )
+    assert item.normalized_deadlines[0].value.strftime("%Y-%m-%d %H:%M") == "2026-11-13 23:59"
     assert item.confidence >= 0.8
     assert len(item.sources) >= 3
 
@@ -129,29 +104,23 @@ def test_extract_invalid_evidence_revokes_value():
         body="Nộp bài tập lớn trước 20/11.",
         received_at=datetime(2026, 11, 4, 10, 0),
         label=EmailLabel.ASSIGNMENT,
-        safety=SafetyStatus.SAFE,
+        safety=SafetyStatus.SAFE
     )
     # LLM hallucinate ra môn học "Học máy nâng cao" không có trong body
     mock_json = {
         "assignments": [
             {
-                "title": {
-                    "value": "Bài tập lớn",
-                    "evidence": {"quote": "Bài tập lớn", "location": "email"},
-                },
-                "course": {
-                    "value": "Học máy nâng cao",
-                    "evidence": {"quote": "Học máy nâng cao", "location": "email"},
-                },
+                "title": {"value": "Bài tập lớn", "evidence": {"quote": "Bài tập lớn", "location": "email"}},
+                "course": {"value": "Học máy nâng cao", "evidence": {"quote": "Học máy nâng cao", "location": "email"}},
                 "deadlines": [
                     {
                         "raw_text": "20/11",
-                        "evidence": {"quote": "20/11", "location": "email"},
+                        "evidence": {"quote": "20/11", "location": "email"}
                     }
-                ],
+                ]
             }
         ],
-        "not_assignment": False,
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_email(email, llm)
@@ -171,24 +140,16 @@ def test_extract_caching_with_repository(repo):
         body="Nộp bài tập chương 2 trước ngày 15/11/2026.",
         received_at=datetime(2026, 11, 4, 10, 0),
         label=EmailLabel.ASSIGNMENT,
-        safety=SafetyStatus.SAFE,
+        safety=SafetyStatus.SAFE
     )
     mock_json = {
         "assignments": [
             {
-                "title": {
-                    "value": "Bài tập chương 2",
-                    "evidence": {"quote": "Bài tập chương 2", "location": "email"},
-                },
-                "deadlines": [
-                    {
-                        "raw_text": "15/11/2026",
-                        "evidence": {"quote": "15/11/2026", "location": "email"},
-                    }
-                ],
+                "title": {"value": "Bài tập chương 2", "evidence": {"quote": "Bài tập chương 2", "location": "email"}},
+                "deadlines": [{"raw_text": "15/11/2026", "evidence": {"quote": "15/11/2026", "location": "email"}}]
             }
         ],
-        "not_assignment": False,
+        "not_assignment": False
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
 
@@ -211,7 +172,7 @@ def test_extract_empty_when_not_assignment():
         body="Lớp học chuyển sang phòng B102.",
         received_at=datetime(2026, 11, 4, 10, 0),
         label=EmailLabel.SCHEDULE,
-        safety=SafetyStatus.SAFE,
+        safety=SafetyStatus.SAFE
     )
     mock_json = {"assignments": [], "not_assignment": True}
     llm = MockLLMClient(json.dumps(mock_json))
@@ -226,34 +187,23 @@ def test_extract_from_document_success():
         filename="de_bai.pdf",
         pages=[
             Page(1, "TRƯỜNG ĐẠI HỌC BÁCH KHOA\nĐỀ BÀI TẬP LỚN MÔN TRÍ TUỆ NHÂN TẠO"),
-            Page(
-                2, "Yêu cầu: Nộp báo cáo SP1 trước 23h59 ngày 20/11/2026 lên hệ thống."
-            ),
-        ],
+            Page(2, "Yêu cầu: Nộp báo cáo SP1 trước 23h59 ngày 20/11/2026 lên hệ thống."),
+        ]
     )
     mock_json = {
         "assignments": [
             {
-                "title": {
-                    "value": "Đề bài tập lớn",
-                    "evidence": {"quote": "ĐỀ BÀI TẬP LỚN", "location": "p1"},
-                },
-                "course": {
-                    "value": "Trí tuệ nhân tạo",
-                    "evidence": {"quote": "TRÍ TUỆ NHÂN TẠO", "location": "p1"},
-                },
+                "title": {"value": "Đề bài tập lớn", "evidence": {"quote": "ĐỀ BÀI TẬP LỚN", "location": "p1"}},
+                "course": {"value": "Trí tuệ nhân tạo", "evidence": {"quote": "TRÍ TUỆ NHÂN TẠO", "location": "p1"}},
                 "deadlines": [
                     {
                         "raw_text": "23h59 ngày 20/11/2026",
-                        "evidence": {
-                            "quote": "23h59 ngày 20/11/2026",
-                            "location": "p2",
-                        },
+                        "evidence": {"quote": "23h59 ngày 20/11/2026", "location": "p2"}
                     }
-                ],
+                ]
             }
         ],
-        "not_assignment": False,
+        "not_assignment": False 
     }
     llm = MockLLMClient(json.dumps(mock_json, ensure_ascii=False))
     outcome = extract_from_document(doc, llm, anchor=datetime(2026, 11, 4, 10, 0))
@@ -262,10 +212,7 @@ def test_extract_from_document_success():
     assert len(outcome.items) == 1
     item = outcome.items[0]
     assert item.assignment.title.value == "Đề bài tập lớn"
-    assert (
-        item.normalized_deadlines[0].value.strftime("%Y-%m-%d %H:%M")
-        == "2026-11-20 23:59"
-    )
+    assert item.normalized_deadlines[0].value.strftime("%Y-%m-%d %H:%M") == "2026-11-20 23:59"
     # Kiểm tra source location có p1, p2
     doc_sources = [s["source"] for s in item.sources]
     assert "doc:d-001#p1" in doc_sources

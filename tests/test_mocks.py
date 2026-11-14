@@ -1,14 +1,8 @@
 from core import mocks
 from core.contracts import SafetyStatus, TaskStatus, can_forward
 
-FACTORIES = [
-    mocks.emails,
-    mocks.attachments,
-    mocks.documents,
-    mocks.tasks,
-    mocks.study_blocks,
-    mocks.reminders,
-]
+FACTORIES = [mocks.emails, mocks.attachments, mocks.documents,
+             mocks.tasks, mocks.study_blocks, mocks.reminders]
 
 
 def test_each_mock_has_at_least_three_records():

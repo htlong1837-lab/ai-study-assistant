@@ -23,36 +23,24 @@ def test_datetime_normalizer_cases(case):
     text = case["text"]
     anchor = datetime.fromisoformat(case["anchor"])
     sem_start = case.get("semester_start")
-    semester = (
-        SemesterConfig(start_date=date.fromisoformat(sem_start)) if sem_start else None
-    )
+    semester = SemesterConfig(start_date=date.fromisoformat(sem_start)) if sem_start else None
 
     result: NormalizedDeadline = normalize(text, anchor, semester)
 
     expected = case.get("expected")
     if expected is None:
-        assert result.value is None, (
-            f"Expected None for text '{text}', got {result.value}"
-        )
+        assert result.value is None, f"Expected None for text '{text}', got {result.value}"
     else:
-        assert result.value is not None, (
-            f"Expected {expected} for text '{text}', got None"
-        )
+        assert result.value is not None, f"Expected {expected} for text '{text}', got None"
         exp_dt = datetime.fromisoformat(expected)
-        assert result.value == exp_dt, (
-            f"Failed for '{text}': got {result.value}, expected {exp_dt}"
-        )
+        assert result.value == exp_dt, f"Failed for '{text}': got {result.value}, expected {exp_dt}"
 
     expected_flags = case.get("flags", [])
     for flag in expected_flags:
-        assert flag in result.flags, (
-            f"Flag {flag} missing in result for '{text}'. Got flags: {result.flags}"
-        )
+        assert flag in result.flags, f"Flag {flag} missing in result for '{text}'. Got flags: {result.flags}"
 
     if "time_defaulted" in case:
-        assert result.time_defaulted == case["time_defaulted"], (
-            f"time_defaulted mismatch for '{text}'"
-        )
+        assert result.time_defaulted == case["time_defaulted"], f"time_defaulted mismatch for '{text}'"
 
 
 def test_determinism_and_no_clock_dependency():

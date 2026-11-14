@@ -5,7 +5,6 @@ Luồng: D → ClassifiedEmail/SafeAttachment → A, B;  A → ParsedDocument �
 
 Đổi một trường ở đây là thay đổi phá vỡ: cần PR riêng, cả nhóm đồng ý, sửa mock cùng lúc.
 """
-
 from __future__ import annotations
 
 import re
@@ -22,8 +21,8 @@ class SafetyStatus(str, Enum):
 
 
 class EmailLabel(str, Enum):
-    ASSIGNMENT = "assignment"  # thông báo bài tập
-    SCHEDULE = "schedule"  # lịch học, đổi lịch
+    ASSIGNMENT = "assignment"      # thông báo bài tập
+    SCHEDULE = "schedule"          # lịch học, đổi lịch
     ANNOUNCEMENT = "announcement"  # thông báo chung
     SPAM = "spam"
     PHISHING = "phishing"
@@ -51,15 +50,12 @@ class ReminderChannel(str, Enum):
 
 # --- tiện ích kiểm tra ---
 
-
 def _enum(cls: type[Enum], value, name: str):
     try:
         return cls(value)
     except ValueError:
         allowed = ", ".join(m.value for m in cls)
-        raise ValueError(
-            f"{name}: '{value}' không hợp lệ (cho phép: {allowed})"
-        ) from None
+        raise ValueError(f"{name}: '{value}' không hợp lệ (cho phép: {allowed})") from None
 
 
 def _not_blank(value: str, name: str) -> None:
@@ -78,7 +74,6 @@ def _datetime(value, name: str) -> None:
 
 
 # --- D → B ---
-
 
 @dataclass
 class ClassifiedEmail:
@@ -122,7 +117,6 @@ class SafeAttachment:
 
 # --- A → B ---
 
-
 @dataclass
 class Page:
     number: int
@@ -152,7 +146,6 @@ class ParsedDocument:
 
 # --- B → C ---
 
-
 @dataclass
 class Task:
     id: str
@@ -179,9 +172,7 @@ class Task:
     def confirm(self) -> None:
         """Người dùng xác nhận đề xuất của AI (nguyên tắc I)."""
         if self.status is not TaskStatus.PROPOSED:
-            raise ValueError(
-                f"chỉ xác nhận được task 'proposed', task đang '{self.status.value}'"
-            )
+            raise ValueError(f"chỉ xác nhận được task 'proposed', task đang '{self.status.value}'")
         self.status = TaskStatus.CONFIRMED
 
     def cancel(self) -> None:
@@ -191,7 +182,6 @@ class Task:
 
 
 # --- C → người dùng ---
-
 
 @dataclass
 class StudyBlock:
@@ -225,7 +215,6 @@ class Reminder:
 
 
 # --- quy tắc chung ---
-
 
 def can_forward(email: ClassifiedEmail, allow_suspicious: bool = False) -> bool:
     """Cổng chặn (nguyên tắc II): malicious không bao giờ đi tiếp."""

@@ -2,7 +2,6 @@
 
 Chỉ xử lý dữ liệu an toàn; nội dung độc hại (malicious) tuyệt đối không đi tiếp.
 """
-
 from __future__ import annotations
 
 import logging
@@ -17,7 +16,7 @@ class UnsafeSourceError(ValueError):
 
 def ensure_safe(email: ClassifiedEmail, allow_suspicious: bool = False) -> None:
     """Kiểm tra tính an toàn của email thông qua hợp đồng can_forward().
-
+    
     Nếu không an toàn, lập tức raise UnsafeSourceError và ghi log cảnh báo,
     tuyệt đối không cho phép tiếp tục luồng xử lý hoặc gọi LLM.
     """
