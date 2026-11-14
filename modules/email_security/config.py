@@ -3,6 +3,7 @@
 Không import streamlit hay scikit-learn tại đây để giữ module testable.
 Mọi giá trị đều có mặc định hợp lý → ứng dụng chạy được khi thiếu .env.
 """
+
 from __future__ import annotations
 
 import os
@@ -12,6 +13,7 @@ from dataclasses import dataclass, field
 try:
     from core.config import env as _env
 except ImportError:  # pragma: no cover
+
     def _env(name: str, default: str = "") -> str:  # type: ignore[misc]
         return os.getenv(name, default).strip()
 
@@ -47,9 +49,7 @@ class Settings:
 
     # --- Domain whitelist ---
     domain_whitelist: list[str] = field(
-        default_factory=lambda: _parse_whitelist(
-            _env("EMAIL_DOMAIN_WHITELIST", "")
-        )
+        default_factory=lambda: _parse_whitelist(_env("EMAIL_DOMAIN_WHITELIST", ""))
     )
 
     # --- File đính kèm ---

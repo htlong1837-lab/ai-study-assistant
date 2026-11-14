@@ -11,6 +11,7 @@ Luồng chính:
               → raw_attachments (tên + bytes)
               → ParsedEmail
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -39,6 +40,7 @@ _MAX_FILENAME_LEN = 100
 # ---------------------------------------------------------------------------
 # Tiện ích nội bộ
 # ---------------------------------------------------------------------------
+
 
 class _TextHTMLExtractor(HTMLParser):
     """Lấy văn bản thuần từ HTML, bỏ script/style."""
@@ -87,6 +89,7 @@ def _decode_part(part: EmailMessage) -> str:
             # Thử chardet nếu có
             try:
                 import chardet  # noqa: PLC0415
+
                 detected = chardet.detect(payload)
                 enc = detected.get("encoding") or "utf-8"
                 return payload.decode(enc, errors="replace")
@@ -115,7 +118,7 @@ def _sanitize_filename(raw: str) -> str:
     name = name.lstrip(". ")
     # Giới hạn độ dài
     if len(name) > _MAX_FILENAME_LEN:
-        stem = Path(name).stem[:_MAX_FILENAME_LEN - 10]
+        stem = Path(name).stem[: _MAX_FILENAME_LEN - 10]
         suffix = Path(name).suffix[:10]
         name = stem + suffix
     return name or "attachment"
@@ -162,7 +165,9 @@ def _parse_date(msg: EmailMessage) -> datetime:
             return date_obj
     except Exception:
         pass
-    logger.warning("Header Date thiếu hoặc sai định dạng — dùng thời điểm hiện tại (UTC)")
+    logger.warning(
+        "Header Date thiếu hoặc sai định dạng — dùng thời điểm hiện tại (UTC)"
+    )
     return datetime.now(timezone.utc)
 
 
@@ -187,13 +192,15 @@ def _parse_message_id(msg: EmailMessage) -> str:
 # Hàm công khai
 # ---------------------------------------------------------------------------
 
+
 class SavedAttachment(NamedTuple):
     """Thông tin file đính kèm đã lưu xuống disk."""
-    filename: str    # tên đã làm sạch
-    path: str        # đường dẫn tương đối
-    sha256: str      # 64 ký tự hex lowercase
-    size: int        # kích thước byte
-    mimetype: str    # MIME type khai báo trong email
+
+    filename: str  # tên đã làm sạch
+    path: str  # đường dẫn tương đối
+    sha256: str  # 64 ký tự hex lowercase
+    size: int  # kích thước byte
+    mimetype: str  # MIME type khai báo trong email
 
 
 def save_attachment(
@@ -306,23 +313,25 @@ def parse_eml(
                     fname_raw,
                     max_attach_bytes // (1024 * 1024),
                 )
-            raw_attachments_meta.append({
-                "filename": fname_raw,
-                "content": b"" if oversized else payload,
-                "mimetype": content_type,
-                "oversized": oversized,
-            })
+            raw_attachments_meta.append(
+                {
+                    "filename": fname_raw,
+                    "content": b"" if oversized else payload,
+                    "mimetype": content_type,
+                    "oversized": oversized,
+                }
+            )
             if save_attachments and not oversized and payload:
-                sa = save_attachment(
-                    fname_raw, payload, message_id, attachments_dir
+                sa = save_attachment(fname_raw, payload, message_id, attachments_dir)
+                saved.append(
+                    SavedAttachment(
+                        filename=sa.filename,
+                        path=sa.path,
+                        sha256=sa.sha256,
+                        size=sa.size,
+                        mimetype=content_type,
+                    )
                 )
-                saved.append(SavedAttachment(
-                    filename=sa.filename,
-                    path=sa.path,
-                    sha256=sa.sha256,
-                    size=sa.size,
-                    mimetype=content_type,
-                ))
             continue
 
         # Body

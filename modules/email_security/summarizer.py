@@ -7,11 +7,12 @@ Quy tắc bảo mật ("Chặn tại cổng"):
 - Tối đa 150 ký tự cho bản tóm tắt.
 - Cơ chế fallback offline: Trích 2 câu đầu tiên sau khi redact nếu mất mạng hoặc lỗi API.
 """
+
 from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from core.contracts import ClassifiedEmail, EmailLabel, SafetyStatus
 from core.llm_client import LLMClient, get_client
@@ -59,7 +60,7 @@ def _extract_first_two_sentences(text: str, max_chars: int = 150) -> str:
         result = f"{sentences[0]} {sentences[1]}"
 
     if len(result) > max_chars:
-        result = result[:max_chars - 3].rstrip() + "..."
+        result = result[: max_chars - 3].rstrip() + "..."
     return result
 
 
@@ -136,9 +137,7 @@ def summarize_email(
     redacted_subject = redact_pii(subject)
     redacted_body = redact_pii(body)
 
-    content_for_fallback = (
-        redacted_body if redacted_body.strip() else redacted_subject
-    )
+    content_for_fallback = redacted_body if redacted_body.strip() else redacted_subject
 
     # 5. Gọi LLM tóm tắt (có fallback offline)
     if client is None:
@@ -160,7 +159,7 @@ def summarize_email(
         summary = (resp.text or "").strip()
         # Loại bỏ code fence hoặc dấu nháy bao quanh
         summary = re.sub(r"^```(?:text|markdown)?\s*|\s*```$", "", summary).strip()
-        summary = summary.strip('"\'')
+        summary = summary.strip("\"'")
 
         if not summary:
             return _extract_first_two_sentences(content_for_fallback)

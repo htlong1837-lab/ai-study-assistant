@@ -5,24 +5,19 @@ Che các thông tin nhạy cảm trước khi gửi nội dung cho LLM hoặc hi
 - Số điện thoại Việt Nam -> [PHONE]
 - Mã số sinh viên (MSSV) -> [STUDENT_ID]
 """
+
 from __future__ import annotations
 
 import re
 
 # Email: user@domain.tld
-_EMAIL_REGEX = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
-)
+_EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 
 # Số điện thoại Việt Nam: 03x, 05x, 07x, 08x, 09x hoặc (+84) / +84 / 84
-_PHONE_REGEX = re.compile(
-    r"(?:\(?\+?84\)?[\s.-]?|\b0)[35789](?:[.\-\s]?\d){8}(?!\d)"
-)
+_PHONE_REGEX = re.compile(r"(?:\(?\+?84\)?[\s.-]?|\b0)[35789](?:[.\-\s]?\d){8}(?!\d)")
 
 # Mã số sinh viên: 8 số bắt đầu bằng 20-24 (20xxxxxx - 24xxxxxx) hoặc 2 chữ cái + 6 số
-_STUDENT_ID_REGEX = re.compile(
-    r"\b(?:2[0-4]\d{6}|[A-Za-z]{2}\d{6})\b"
-)
+_STUDENT_ID_REGEX = re.compile(r"\b(?:2[0-4]\d{6}|[A-Za-z]{2}\d{6})\b")
 
 
 def redact_pii(text: str) -> str:

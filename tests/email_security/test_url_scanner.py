@@ -8,6 +8,7 @@ Các trường hợp:
 - Địa chỉ IP trực tiếp (IPv4 / IPv6): SUSPICIOUS (URL_IP_DIRECT).
 - Tên miền giả mạo / lừa đảo (hust-edu-login, domain lạ có từ khóa nhạy cảm, lừa đảo qua @): MALICIOUS (URL_SPOOFING).
 """
+
 from __future__ import annotations
 
 import pytest

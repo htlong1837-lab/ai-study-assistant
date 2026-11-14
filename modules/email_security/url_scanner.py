@@ -5,6 +5,7 @@ Không gọi mạng, phân tích dựa trên cấu trúc URL và tên miền:
 2. Dịch vụ rút gọn link -> SUSPICIOUS (URL_SHORTENER).
 3. Giả mạo tên miền trường học hoặc từ khóa lừa đảo nhạy cảm với domain lạ -> MALICIOUS (URL_SPOOFING).
 """
+
 from __future__ import annotations
 
 import ipaddress
@@ -206,9 +207,8 @@ def scan_url(url: str) -> UrlFinding:
         pass
 
     # 4. Kiểm tra dịch vụ rút gọn link -> SUSPICIOUS (URL_SHORTENER)
-    is_shortener = (
-        hostname in SHORTENER_DOMAINS
-        or any(hostname.endswith("." + s) for s in SHORTENER_DOMAINS)
+    is_shortener = hostname in SHORTENER_DOMAINS or any(
+        hostname.endswith("." + s) for s in SHORTENER_DOMAINS
     )
     if is_shortener:
         reasons.append(
@@ -225,7 +225,16 @@ def scan_url(url: str) -> UrlFinding:
 
     # A: Chứa tên viết tắt trường học hoặc cấu trúc nhái domain trường (hust, vnu, edu-vn...)
     has_school_token = bool(tokens & UNIVERSITY_TOKENS) or any(
-        kw in hostname for kw in ["uni-edu", "edu-vn", "hust-edu", "vnu-edu", "neu-edu", "ptit-edu", "fpt-edu"]
+        kw in hostname
+        for kw in [
+            "uni-edu",
+            "edu-vn",
+            "hust-edu",
+            "vnu-edu",
+            "neu-edu",
+            "ptit-edu",
+            "fpt-edu",
+        ]
     )
     if has_school_token:
         reasons.append(
@@ -269,7 +278,11 @@ def scan_url(url: str) -> UrlFinding:
 
     # C: Chứa domain trường thật dạng lookalike (vd: hust.edu.vn.evil.com)
     for domain in GENUINE_UNIVERSITY_DOMAINS:
-        if domain in hostname and not hostname.endswith("." + domain) and hostname != domain:
+        if (
+            domain in hostname
+            and not hostname.endswith("." + domain)
+            and hostname != domain
+        ):
             reasons.append(
                 Reason(
                     code="URL_SPOOFING",
