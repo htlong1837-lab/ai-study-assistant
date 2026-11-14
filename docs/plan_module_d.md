@@ -145,16 +145,20 @@ Dùng `SafetyStatus` / `EmailLabel` từ `core.contracts`, **không định ngh�
 ```python
 @dataclass(frozen=True)
 class Reason:
-    code: str          # vd "URL_SHORTENER", "LOOKALIKE_DOMAIN", "VT_MALICIOUS", "MAGIC_MISMATCH"
-    message: str       # tiếng Việt, hiển thị cho người dùng
+    code: (
+        str  # vd "URL_SHORTENER", "LOOKALIKE_DOMAIN", "VT_MALICIOUS", "MAGIC_MISMATCH"
+    )
+    message: str  # tiếng Việt, hiển thị cho người dùng
+
 
 @dataclass(frozen=True)
 class Reputation:
-    status: SafetyStatus | None   # None = UNKNOWN
+    status: SafetyStatus | None  # None = UNKNOWN
     malicious: int = 0
     suspicious: int = 0
     source: str = "virustotal"
-    error: str | None = None      # "quota", "network", "not_found"…
+    error: str | None = None  # "quota", "network", "not_found"…
+
 
 @dataclass
 class UrlFinding:
@@ -164,9 +168,10 @@ class UrlFinding:
     reasons: list[Reason]
     reputation: Reputation | None = None
 
+
 @dataclass
 class AttachmentFinding:
-    filename: str          # đã làm sạch
+    filename: str  # đã làm sạch
     path: str
     sha256: str
     size: int
@@ -174,14 +179,15 @@ class AttachmentFinding:
     reasons: list[Reason]
     reputation: Reputation | None = None
 
+
 @dataclass
 class ProcessedEmail:
-    email: ClassifiedEmail                 # đối tượng theo contract (gửi cho B)
-    safe_attachments: list[SafeAttachment] # gửi cho A (chỉ file SAFE / đã duyệt)
+    email: ClassifiedEmail  # đối tượng theo contract (gửi cho B)
+    safe_attachments: list[SafeAttachment]  # gửi cho A (chỉ file SAFE / đã duyệt)
     url_findings: list[UrlFinding]
     attachment_findings: list[AttachmentFinding]
     sender_reasons: list[Reason]
-    classifier_method: str                 # "tfidf" | "llm" | "llm+tfidf" | "fallback"
+    classifier_method: str  # "tfidf" | "llm" | "llm+tfidf" | "fallback"
     can_forward: bool
     user_approved: bool = False
 ```

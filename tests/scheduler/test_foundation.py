@@ -15,6 +15,7 @@ from .conftest import MONDAY, task
 
 # --- model ---
 
+
 def test_settings_validation():
     with pytest.raises(ValueError):
         ScheduleSettings(days=0)
@@ -38,6 +39,7 @@ def test_class_session_invalid():
 
 # --- timetable ---
 
+
 def test_load_sample_timetable():
     sessions, errors = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
     assert errors == [] and len(sessions) == 6
@@ -59,6 +61,7 @@ def test_timetable_missing_columns():
 
 # --- slots ---
 
+
 def test_free_slots_skip_classes_and_window(sessions, settings):
     slots = free_slots(sessions, settings)
     monday = [s for s in slots if s.day == MONDAY]
@@ -77,30 +80,57 @@ def test_free_slots_not_before(sessions, settings):
 def test_to_blocks_merges_contiguous(sessions, settings):
     s = free_slots(sessions, settings)
     blocks = to_blocks([("a", s[1]), ("a", s[0]), ("b", s[2]), ("a", s[4])])
-    assert [(b.task_id, b.hours) for b in blocks] == [("a", 1.0), ("b", 0.5), ("a", 0.5)]
+    assert [(b.task_id, b.hours) for b in blocks] == [
+        ("a", 1.0),
+        ("b", 0.5),
+        ("a", 0.5),
+    ]
 
 
 # --- metrics ---
 
+
 def test_validate_detects_each_violation(sessions, settings, easy_tasks):
     blocks = [
-        StudyBlock("a", datetime(2026, 11, 9, 13, 0), datetime(2026, 11, 9, 14, 0)),   # trùng lớp
-        StudyBlock("a", datetime(2026, 11, 12, 9, 0), datetime(2026, 11, 12, 10, 0)),  # sau hạn
-        StudyBlock("p", datetime(2026, 11, 10, 9, 0), datetime(2026, 11, 10, 10, 0)),  # chưa xác nhận
-        StudyBlock("b", datetime(2026, 11, 13, 6, 0), datetime(2026, 11, 13, 9, 0)),   # ngoài khung giờ
-        StudyBlock("c", datetime(2026, 11, 14, 9, 0), datetime(2026, 11, 14, 13, 0)),  # vượt 3 giờ/ngày
-        StudyBlock("b", datetime(2026, 11, 14, 12, 0), datetime(2026, 11, 14, 12, 30)),  # trùng khối
+        StudyBlock(
+            "a", datetime(2026, 11, 9, 13, 0), datetime(2026, 11, 9, 14, 0)
+        ),  # trùng lớp
+        StudyBlock(
+            "a", datetime(2026, 11, 12, 9, 0), datetime(2026, 11, 12, 10, 0)
+        ),  # sau hạn
+        StudyBlock(
+            "p", datetime(2026, 11, 10, 9, 0), datetime(2026, 11, 10, 10, 0)
+        ),  # chưa xác nhận
+        StudyBlock(
+            "b", datetime(2026, 11, 13, 6, 0), datetime(2026, 11, 13, 9, 0)
+        ),  # ngoài khung giờ
+        StudyBlock(
+            "c", datetime(2026, 11, 14, 9, 0), datetime(2026, 11, 14, 13, 0)
+        ),  # vượt 3 giờ/ngày
+        StudyBlock(
+            "b", datetime(2026, 11, 14, 12, 0), datetime(2026, 11, 14, 12, 30)
+        ),  # trùng khối
     ]
     errors = " | ".join(validate(blocks, easy_tasks, sessions, settings))
-    for needle in ["trùng giờ lên lớp", "sau hạn", "chưa được xác nhận",
-                   "ngoài khung giờ", "vượt tối đa", "trùng giờ lúc"]:
+    for needle in [
+        "trùng giờ lên lớp",
+        "sau hạn",
+        "chưa được xác nhận",
+        "ngoài khung giờ",
+        "vượt tối đa",
+        "trùng giờ lúc",
+    ]:
         assert needle in errors
 
 
 def test_missing_and_evaluate(sessions, settings, easy_tasks):
-    blocks = [StudyBlock("a", datetime(2026, 11, 10, 9, 0), datetime(2026, 11, 10, 12, 0))]
+    blocks = [
+        StudyBlock("a", datetime(2026, 11, 10, 9, 0), datetime(2026, 11, 10, 12, 0))
+    ]
     assert missing_hours(blocks, easy_tasks, settings) == {"b": 4.0, "c": 2.0}
-    m = evaluate(ScheduleResult("X", blocks, {}, "GREEDY"), easy_tasks, sessions, settings)
+    m = evaluate(
+        ScheduleResult("X", blocks, {}, "GREEDY"), easy_tasks, sessions, settings
+    )
     assert m["Kịp hạn"] == "1/3" and m["Giờ thiếu"] == 6.0
     assert m["Giờ thiếu (trọng số)"] == 4 * 2 + 2 * 1
     assert m["Xung đột"] == 0 and m["Đỉnh tải (giờ/ngày)"] == 3.0

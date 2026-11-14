@@ -6,6 +6,7 @@ Tuân thủ nguyên tắc:
 - Mở kết nối theo yêu cầu (per-call connection), an toàn với chu kỳ re-run của Streamlit.
 - Mọi timestamp lưu ISO-8601 string.
 """
+
 from __future__ import annotations
 
 import json
@@ -79,7 +80,10 @@ class Repository:
         """Liệt kê danh sách tasks, có thể lọc theo status ('proposed', 'confirmed', 'cancelled')."""
         with self._conn() as conn:
             if status:
-                cur = conn.execute("SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC", (status,))
+                cur = conn.execute(
+                    "SELECT * FROM tasks WHERE status = ? ORDER BY created_at DESC",
+                    (status,),
+                )
             else:
                 cur = conn.execute("SELECT * FROM tasks ORDER BY created_at DESC")
             return [dict(r) for r in cur.fetchall()]
@@ -94,11 +98,20 @@ class Repository:
         with self._conn() as conn:
             conn.execute(f"UPDATE tasks SET {set_clause} WHERE id = :task_id", params)
 
-    def set_task_status(self, task_id: str, status: str, confirmed_at: str | None = None) -> None:
+    def set_task_status(
+        self, task_id: str, status: str, confirmed_at: str | None = None
+    ) -> None:
         """Cập nhật trạng thái của task."""
-        params: dict[str, Any] = {"task_id": task_id, "status": status, "confirmed_at": confirmed_at}
+        params: dict[str, Any] = {
+            "task_id": task_id,
+            "status": status,
+            "confirmed_at": confirmed_at,
+        }
         with self._conn() as conn:
-            conn.execute("UPDATE tasks SET status = :status, confirmed_at = :confirmed_at WHERE id = :task_id", params)
+            conn.execute(
+                "UPDATE tasks SET status = :status, confirmed_at = :confirmed_at WHERE id = :task_id",
+                params,
+            )
 
     def delete_task(self, task_id: str) -> None:
         """Xoá task (tự động xoá cascade các bản ghi con liên quan)."""
@@ -122,13 +135,16 @@ class Repository:
     def get_sources(self, task_id: str) -> list[dict[str, Any]]:
         """Lấy danh sách nguồn trích xuất của task."""
         with self._conn() as conn:
-            cur = conn.execute("SELECT * FROM task_sources WHERE task_id = ?", (task_id,))
+            cur = conn.execute(
+                "SELECT * FROM task_sources WHERE task_id = ?", (task_id,)
+            )
             return [dict(r) for r in cur.fetchall()]
 
     # --- Assignment Details ---
 
     def save_assignment_details(self, task_id: str, details: dict[str, Any]) -> None:
         """Lưu hoặc cập nhật chi tiết yêu cầu bài tập mở rộng."""
+
         def _to_json(val: Any) -> str | None:
             if val is None:
                 return None
@@ -156,7 +172,9 @@ class Repository:
     def get_assignment_details(self, task_id: str) -> dict[str, Any] | None:
         """Lấy chi tiết yêu cầu bài tập kèm parse JSON."""
         with self._conn() as conn:
-            cur = conn.execute("SELECT * FROM assignment_details WHERE task_id = ?", (task_id,))
+            cur = conn.execute(
+                "SELECT * FROM assignment_details WHERE task_id = ?", (task_id,)
+            )
             row = cur.fetchone()
             if not row:
                 return None
@@ -197,12 +215,16 @@ class Repository:
         """Lấy danh sách các mâu thuẫn (có thể lọc theo task_id)."""
         with self._conn() as conn:
             if task_id:
-                cur = conn.execute("SELECT * FROM conflicts WHERE task_id = ?", (task_id,))
+                cur = conn.execute(
+                    "SELECT * FROM conflicts WHERE task_id = ?", (task_id,)
+                )
             else:
                 cur = conn.execute("SELECT * FROM conflicts")
             return [dict(r) for r in cur.fetchall()]
 
-    def resolve_conflict(self, conflict_id: int, resolution: str, resolved_at: str | None = None) -> None:
+    def resolve_conflict(
+        self, conflict_id: int, resolution: str, resolved_at: str | None = None
+    ) -> None:
         """Đánh dấu đã giải quyết mâu thuẫn."""
         now_iso = resolved_at or datetime.now(timezone.utc).isoformat()
         with self._conn() as conn:
@@ -235,19 +257,29 @@ class Repository:
             )
             return int(cur.lastrowid)
 
-    def list_pending_proposals(self, task_id: str | None = None) -> list[dict[str, Any]]:
+    def list_pending_proposals(
+        self, task_id: str | None = None
+    ) -> list[dict[str, Any]]:
         """Lấy các đề xuất cập nhật đang chờ duyệt (status = 'pending')."""
         with self._conn() as conn:
             if task_id:
-                cur = conn.execute("SELECT * FROM task_update_proposals WHERE task_id = ? AND status = 'pending'", (task_id,))
+                cur = conn.execute(
+                    "SELECT * FROM task_update_proposals WHERE task_id = ? AND status = 'pending'",
+                    (task_id,),
+                )
             else:
-                cur = conn.execute("SELECT * FROM task_update_proposals WHERE status = 'pending'")
+                cur = conn.execute(
+                    "SELECT * FROM task_update_proposals WHERE status = 'pending'"
+                )
             return [dict(r) for r in cur.fetchall()]
 
     def set_update_proposal_status(self, proposal_id: int, status: str) -> None:
         """Cập nhật trạng thái đề xuất cập nhật ('accepted' hoặc 'rejected')."""
         with self._conn() as conn:
-            conn.execute("UPDATE task_update_proposals SET status = ? WHERE id = ?", (status, proposal_id))
+            conn.execute(
+                "UPDATE task_update_proposals SET status = ? WHERE id = ?",
+                (status, proposal_id),
+            )
 
     # --- Extraction Logs & Cache ---
 
@@ -276,7 +308,9 @@ class Repository:
             )
             return int(cur.lastrowid)
 
-    def get_cached_extraction(self, source_id: str, content_hash: str, prompt_version: str) -> dict[str, Any] | None:
+    def get_cached_extraction(
+        self, source_id: str, content_hash: str, prompt_version: str
+    ) -> dict[str, Any] | None:
         """Tìm bản ghi trích xuất đã lưu đệm theo source_id, content_hash và prompt_version."""
         with self._conn() as conn:
             cur = conn.execute(

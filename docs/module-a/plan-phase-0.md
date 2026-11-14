@@ -111,6 +111,7 @@ Sau khi đối chiếu toàn diện giữa yêu cầu nghiệp vụ, mã nguồn
      - `question_id`: Chuẩn hóa Unicode NFC trước khi hash:
        ```python
        import hashlib, unicodedata
+
        normalized = " ".join(unicodedata.normalize("NFC", question.strip().lower()).split())
        question_id = f"q-{hashlib.sha256(normalized.encode('utf-8')).hexdigest()[:12]}"
        ```

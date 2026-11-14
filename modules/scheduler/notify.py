@@ -5,6 +5,7 @@
 Đặt Windows Task Scheduler (hoặc cron) chạy lệnh này mỗi 5 phút. Lệnh đọc nhắc nhở của lịch được
 lưu gần nhất trên trang "Lập lịch & nhắc nhở"; mỗi nhắc nhở chỉ được gửi một lần.
 """
+
 from __future__ import annotations
 
 import sys
@@ -20,7 +21,9 @@ def main() -> int:
         return 1
     reminders = load_reminders()
     if not reminders:
-        print("Chưa có lịch nào được lưu. Mở trang Lập lịch, xếp lịch và bấm 'Lưu nhắc nhở'.")
+        print(
+            "Chưa có lịch nào được lưu. Mở trang Lập lịch, xếp lịch và bấm 'Lưu nhắc nhở'."
+        )
         return 1
     sent = send_due(reminders, datetime.now(), sender)
     print(f"Đã gửi {len(sent)} nhắc nhở.")

@@ -36,27 +36,46 @@ Quy tắc bất biến:
 
 ### 1.2. Danh mục các hàm nghiệp vụ chính
 ```python
-def process_email(email: ClassifiedEmail, llm: LLMClient, repo: Repository) -> list[str]:
+def process_email(
+    email: ClassifiedEmail, llm: LLMClient, repo: Repository
+) -> list[str]:
     """Xử lý email an toàn: Trích xuất, chuẩn hóa, so khớp task cũ, lưu vào DB và trả về danh sách task_id tạo mới/cập nhật."""
 
-def process_document(doc: ParsedDocument, llm: LLMClient, repo: Repository, linked_email: ClassifiedEmail | None = None) -> list[str]:
+
+def process_document(
+    doc: ParsedDocument,
+    llm: LLMClient,
+    repo: Repository,
+    linked_email: ClassifiedEmail | None = None,
+) -> list[str]:
     """Xử lý tài liệu bài tập từ Module A: Trích xuất, so sánh mâu thuẫn với email liên kết (nếu có) và lưu task proposed."""
+
 
 def confirm(task_id: str, repo: Repository, overrides: dict | None = None) -> Task:
     """Người dùng xác nhận đề xuất. Cho phép ghi đè các trường (deadline, estimated_hours, priority).
     Chuyển trạng thái sang CONFIRMED, ghi nhận confirmed_at và trả về Task theo hợp đồng core/contracts.py."""
 
+
 def cancel(task_id: str, repo: Repository) -> None:
     """Người dùng từ chối / hủy đề xuất bài tập."""
 
-def resolve_conflict(conflict_id: int, choice: Literal['a', 'b', 'manual'], manual_value: str | None = None, repo: Repository = ...) -> None:
+
+def resolve_conflict(
+    conflict_id: int,
+    choice: Literal["a", "b", "manual"],
+    manual_value: str | None = None,
+    repo: Repository = ...,
+) -> None:
     """Người dùng giải quyết xung đột trên giao diện."""
+
 
 def accept_update_proposal(proposal_id: int, repo: Repository) -> Task:
     """Người dùng chấp nhận đề xuất dời hạn / thay đổi yêu cầu cho task đã có."""
 
+
 def reject_update_proposal(proposal_id: int, repo: Repository) -> None:
     """Người dùng từ chối đề xuất dời hạn."""
+
 
 def to_contract_task(task_row: dict) -> Task:
     """Chuyển đổi bản ghi DB sang dataclass Task của core/contracts.py.

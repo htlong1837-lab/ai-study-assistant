@@ -1,4 +1,5 @@
 """Đọc thời khoá biểu từ CSV: thu,bat_dau,ket_thuc,mon,phong."""
+
 from __future__ import annotations
 
 import csv
@@ -49,9 +50,15 @@ def load_timetable_csv(source: str | Path | IO) -> tuple[list[ClassSession], lis
         if not any(row.values()):
             continue
         try:
-            sessions.append(ClassSession(
-                weekday=_weekday(row["thu"]), start=_time(row["bat_dau"]),
-                end=_time(row["ket_thuc"]), course=row["mon"], room=row.get("phong", "")))
+            sessions.append(
+                ClassSession(
+                    weekday=_weekday(row["thu"]),
+                    start=_time(row["bat_dau"]),
+                    end=_time(row["ket_thuc"]),
+                    course=row["mon"],
+                    room=row.get("phong", ""),
+                )
+            )
         except ValueError as e:
             errors.append(f"Dòng {line_no}: {e}")
     return sessions, errors
