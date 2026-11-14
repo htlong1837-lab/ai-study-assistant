@@ -1,5 +1,4 @@
 """Rời rạc hoá thời gian thành ô rảnh và gộp ô thành khối học."""
-
 from __future__ import annotations
 
 from datetime import datetime, timedelta

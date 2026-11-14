@@ -7,12 +7,7 @@ def test_verify_citations_rejects_missing_evidence() -> None:
     document = ParsedDocument(
         doc_id="doc-2",
         filename="sample.txt",
-        pages=[
-            Page(
-                number=1,
-                text="Alice works in Paris. The city is known for its museums.",
-            )
-        ],
+        pages=[Page(number=1, text="Alice works in Paris. The city is known for its museums.")],
     )
 
     citations = [Citation(page_num=1, evidence_text="Alice studied in London.")]

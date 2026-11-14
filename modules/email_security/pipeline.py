@@ -21,7 +21,6 @@ Chế độ stub (SCANNERS_ARE_STUBS = True):
 Khi WP-06, WP-08 hoàn thành: thay các hàm _stub_* bằng scanner thật rồi đặt
 SCANNERS_ARE_STUBS = False.
 """
-
 from __future__ import annotations
 
 import logging
@@ -63,7 +62,6 @@ def _apply_stub_floor(status: SafetyStatus) -> SafetyStatus:
 # Classifier stub (WP-00) — sẽ được thay bằng WP-02b/03
 # ---------------------------------------------------------------------------
 
-
 def _stub_classify(parsed: ParsedEmail) -> tuple[EmailLabel, float]:
     """Stub phân loại: luôn trả OTHER với confidence 0.0 để pipeline chạy được ngay."""
     return EmailLabel.OTHER, 0.0
@@ -72,7 +70,6 @@ def _stub_classify(parsed: ParsedEmail) -> tuple[EmailLabel, float]:
 # ---------------------------------------------------------------------------
 # Scanner stubs (WP-00) — sẽ được thay bằng WP-06, WP-08
 # ---------------------------------------------------------------------------
-
 
 def _stub_scan_urls(
     urls: list[str],
@@ -116,7 +113,6 @@ def _stub_scan_attachments(
 # ---------------------------------------------------------------------------
 # Pipeline chính
 # ---------------------------------------------------------------------------
-
 
 def process_email(
     raw: bytes | Path,
@@ -223,9 +219,7 @@ def process_email(
                     )
                 )
             except ValueError as exc:
-                logger.error(
-                    "Không tạo SafeAttachment cho '%s': %s", finding.filename, exc
-                )
+                logger.error("Không tạo SafeAttachment cho '%s': %s", finding.filename, exc)
 
     # --- 10. Quyết định chuyển tiếp (chưa có sự đồng ý của người dùng) ---
     forward = can_forward_email(classified, user_approved=False)
@@ -265,10 +259,7 @@ def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
     existing_paths = {sa.path for sa in processed.safe_attachments}
     extra: list[SafeAttachment] = []
     for finding in processed.attachment_findings:
-        if (
-            finding.status is SafetyStatus.SUSPICIOUS
-            and finding.path not in existing_paths
-        ):
+        if finding.status is SafetyStatus.SUSPICIOUS and finding.path not in existing_paths:
             if finding.path and finding.sha256:
                 try:
                     extra.append(
@@ -279,9 +270,7 @@ def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
                         )
                     )
                 except ValueError as exc:
-                    logger.error(
-                        "approve_suspicious: không tạo SafeAttachment: %s", exc
-                    )
+                    logger.error("approve_suspicious: không tạo SafeAttachment: %s", exc)
 
     new_forward = can_forward_email(processed.email, user_approved=True)
 

@@ -1,5 +1,4 @@
 """Bộ sinh kịch bản thí nghiệm có hạt giống (specs/003-scheduler-experiments/plan.md)."""
-
 from __future__ import annotations
 
 import random
@@ -32,15 +31,8 @@ SCENARIOS = {
 
 
 def base_settings(time_limit_s: float = 10) -> ScheduleSettings:
-    return ScheduleSettings(
-        start=START,
-        days=28,
-        day_start=time(7),
-        day_end=time(22),
-        max_hours_per_day=4,
-        min_block_minutes=60,
-        time_limit_s=time_limit_s,
-    )
+    return ScheduleSettings(start=START, days=28, day_start=time(7), day_end=time(22),
+                            max_hours_per_day=4, min_block_minutes=60, time_limit_s=time_limit_s)
 
 
 def sessions() -> list[ClassSession]:
@@ -52,33 +44,18 @@ def generate(name: str, seed: int) -> list[Task]:
     sc = SCENARIOS[name]
     rng = random.Random(f"{name}-{seed}")
     lo, hi = sc.deadline_days
-    return [
-        Task(
-            id=f"{name[:2]}{seed}-{i:02d}",
-            title=f"Việc {i + 1}",
-            course="Thí nghiệm",
-            deadline=datetime.combine(
-                START + timedelta(days=rng.randint(lo, hi)), time(23, 59)
-            ),
-            estimated_hours=rng.choice(sc.hours),
-            source="synthetic",
-            confidence=1.0,
-            priority=rng.choice(list(Priority)),
-            status=TaskStatus.CONFIRMED,
-        )
-        for i in range(sc.n_tasks)
-    ]
+    return [Task(
+        id=f"{name[:2]}{seed}-{i:02d}", title=f"Việc {i + 1}", course="Thí nghiệm",
+        deadline=datetime.combine(START + timedelta(days=rng.randint(lo, hi)), time(23, 59)),
+        estimated_hours=rng.choice(sc.hours), source="synthetic", confidence=1.0,
+        priority=rng.choice(list(Priority)), status=TaskStatus.CONFIRMED,
+    ) for i in range(sc.n_tasks)]
 
 
-def load_ratio(
-    tasks: list[Task], sess: list[ClassSession], settings: ScheduleSettings
-) -> float:
+def load_ratio(tasks: list[Task], sess: list[ClassSession], settings: ScheduleSettings) -> float:
     """Giờ cần làm / giờ có thể học (đã tính giới hạn mỗi ngày) đến hạn cuối."""
     last = max(t.deadline for t in tasks)
     per_day = Counter(s.day for s in free_slots(sess, settings) if s.end <= last)
-    capacity = (
-        sum(min(n, settings.max_slots_per_day) for n in per_day.values())
-        * settings.slot_hours
-    )
+    capacity = sum(min(n, settings.max_slots_per_day) for n in per_day.values()) * settings.slot_hours
     need = sum(settings.need_slots(t) for t in tasks) * settings.slot_hours
     return need / capacity

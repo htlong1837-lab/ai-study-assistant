@@ -1,5 +1,4 @@
 """Cấu hình chung, đọc từ file .env ở thư mục gốc repo."""
-
 from __future__ import annotations
 
 import os
