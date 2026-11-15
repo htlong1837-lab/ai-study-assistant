@@ -1,5 +1,4 @@
 from datetime import datetime
-import pytest
 
 from eval.metrics import (
     compute_conflict_metrics,

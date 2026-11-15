@@ -16,7 +16,6 @@ from modules.extraction.workflow import (
     accept_update_proposal,
     confirm,
     process_email,
-    to_contract_task,
 )
 
 

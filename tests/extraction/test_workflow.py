@@ -11,7 +11,6 @@ from modules.extraction.workflow import (
     process_email,
     reject_update_proposal,
     resolve_conflict,
-    to_contract_task,
 )
 
 
