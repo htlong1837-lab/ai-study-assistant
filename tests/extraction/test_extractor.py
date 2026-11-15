@@ -3,7 +3,6 @@ import json
 import pytest
 
 from core.contracts import ClassifiedEmail, EmailLabel, Page, ParsedDocument, SafetyStatus
-from core.llm_client import LLMClient
 from db.repository import Repository
 from modules.extraction.extractor import extract_from_document, extract_from_email
 from modules.extraction.gate import UnsafeSourceError

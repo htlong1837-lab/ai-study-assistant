@@ -1,0 +1,11 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>PDF.js Reader dev host</title><style>body{font:14px system-ui;margin:12px}iframe{width:100%;height:75vh;border:1px solid #aaa}pre{white-space:pre-wrap;background:#f3f3f3;padding:8px}</style></head>
+<body><h1>Reader component dev harness</h1><input id="file" type="file" accept="application/pdf"><label><input id="enabled" type="checkbox" checked> Enable asking</label><iframe id="reader" src="./index.html"></iframe><h2>Component event</h2><pre id="event">Choose a local PDF.</pre>
+<script>
+const frame=document.getElementById("reader"),out=document.getElementById("event");let args=null;
+function sendRender(){if(frame.contentWindow&&args)frame.contentWindow.postMessage({type:"streamlit:render",args},"*")}
+document.getElementById("file").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;const bytes=new Uint8Array(await file.arrayBuffer());let binary="";for(const b of bytes)binary+=String.fromCharCode(b);args={doc_id:`dev-${Date.now()}`,filename:file.name,pdf_b64:btoa(binary),pages:[],ask_enabled:document.getElementById("enabled").checked,highlights:[],goto:null};sendRender()});
+document.getElementById("enabled").addEventListener("change",e=>{if(args){args.ask_enabled=e.target.checked;sendRender()}});
+frame.addEventListener("load",sendRender);
+window.addEventListener("message",e=>{if(e.source!==frame.contentWindow)return;const data=e.data||{};if(data.type==="streamlit:componentReady")sendRender();if(data.type==="streamlit:setComponentValue"){out.textContent=JSON.stringify(data.value,null,2);if(data.value?.type==="need_pdf")sendRender()}});
+</script></body></html>

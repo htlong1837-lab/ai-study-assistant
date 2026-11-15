@@ -104,3 +104,16 @@ def test_cpsat_warm_start_not_worse_than_edf_on_overload():
     m_edf, m_cp = (evaluate(r, tasks, sess, s) for r in (edf, cp))
     assert m_cp["Giờ thiếu (trọng số)"] <= m_edf["Giờ thiếu (trọng số)"]
     assert validate(cp.blocks, tasks, sess, s) == []
+
+
+def test_cpsat_falls_back_to_edf_when_time_runs_out():
+    """Hết giờ trước khi tìm được lịch tốt → trả lịch EDF, không bao giờ thiếu nhiều hơn EDF."""
+    from dataclasses import replace
+
+    from experiments.scenarios import base_settings, generate, sessions
+    tasks, sess = generate("Quá tải", 0), sessions()
+    s = replace(base_settings(10), time_limit_s=0.001)
+    edf, cp = (schedule(tasks, sess, s, a) for a in ("EDF", "CP-SAT"))
+    m_edf, m_cp = (evaluate(r, tasks, sess, s) for r in (edf, cp))
+    assert m_cp["Giờ thiếu (trọng số)"] <= m_edf["Giờ thiếu (trọng số)"]
+    assert cp.blocks
