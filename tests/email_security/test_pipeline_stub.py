@@ -7,6 +7,7 @@ Mọi test:
 - Không cần API key (settings_offline không có VIRUSTOTAL_API_KEY hay GEMINI_API_KEY).
 - Không sửa core/contracts.py.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -46,6 +47,7 @@ from .conftest import (
 # PHẦN 1: aggregate_safety & max_status
 # ===========================================================================
 
+
 class TestMaxStatus:
     """Kiểm tra hàm max_status — tính chất đơn điệu."""
 
@@ -62,13 +64,21 @@ class TestMaxStatus:
         assert max_status(SafetyStatus.MALICIOUS) is SafetyStatus.MALICIOUS
 
     def test_safe_suspicious_returns_suspicious(self):
-        assert max_status(SafetyStatus.SAFE, SafetyStatus.SUSPICIOUS) is SafetyStatus.SUSPICIOUS
+        assert (
+            max_status(SafetyStatus.SAFE, SafetyStatus.SUSPICIOUS)
+            is SafetyStatus.SUSPICIOUS
+        )
 
     def test_suspicious_malicious_returns_malicious(self):
-        assert max_status(SafetyStatus.SUSPICIOUS, SafetyStatus.MALICIOUS) is SafetyStatus.MALICIOUS
+        assert (
+            max_status(SafetyStatus.SUSPICIOUS, SafetyStatus.MALICIOUS)
+            is SafetyStatus.MALICIOUS
+        )
 
     def test_all_three_returns_malicious(self):
-        result = max_status(SafetyStatus.SAFE, SafetyStatus.SUSPICIOUS, SafetyStatus.MALICIOUS)
+        result = max_status(
+            SafetyStatus.SAFE, SafetyStatus.SUSPICIOUS, SafetyStatus.MALICIOUS
+        )
         assert result is SafetyStatus.MALICIOUS
 
     def test_monotone_adding_bad_signal_never_decreases(self):
@@ -113,6 +123,7 @@ class TestAggregateSafety:
 # PHẦN 2: can_forward_email
 # ===========================================================================
 
+
 class TestCanForwardEmail:
     def _make_email(self, safety: SafetyStatus) -> ClassifiedEmail:
         return ClassifiedEmail(
@@ -153,12 +164,15 @@ class TestCanForwardEmail:
         assert can_forward_email(email) == can_forward(email, allow_suspicious=False)
 
         email = self._make_email(SafetyStatus.SUSPICIOUS)
-        assert can_forward_email(email, user_approved=True) == can_forward(email, allow_suspicious=True)
+        assert can_forward_email(email, user_approved=True) == can_forward(
+            email, allow_suspicious=True
+        )
 
 
 # ===========================================================================
 # PHẦN 3: parse_eml — WP-01
 # ===========================================================================
+
 
 class TestSanitizeFilename:
     def test_path_traversal_blocked(self):
@@ -219,11 +233,15 @@ class TestParseEml:
             body="Hello World. See https://example.com for details.",
             message_id="test-plain-001@example.com",
         )
-        parsed, saved = parse_eml(raw, attachments_dir=str(tmp_path), save_attachments=False)
+        parsed, saved = parse_eml(
+            raw, attachments_dir=str(tmp_path), save_attachments=False
+        )
 
         assert parsed.subject == "Test Subject"
         assert parsed.sender != ""
-        assert "example.com" in parsed.sender.lower() or "sender" in parsed.sender.lower()
+        assert (
+            "example.com" in parsed.sender.lower() or "sender" in parsed.sender.lower()
+        )
         assert "Hello World" in parsed.body_text
         assert isinstance(parsed.received_at, datetime)
         assert parsed.urls == ["https://example.com"]
@@ -340,6 +358,7 @@ class TestParseEml:
 # PHẦN 4: URL utilities
 # ===========================================================================
 
+
 class TestExtractUrls:
     def test_simple_https_url(self):
         text = "Xem tại https://portal.uni.edu.vn/ai2026 nhé."
@@ -421,6 +440,7 @@ class TestDefangUrl:
 # ===========================================================================
 # PHẦN 5: process_email — Pipeline stub WP-00
 # ===========================================================================
+
 
 class TestProcessEmailStub:
     """Kiểm tra process_email() stub: cấu trúc hợp lệ, không cần mạng/API."""
@@ -521,8 +541,12 @@ class TestProcessEmailStub:
 
     def test_stub_attachment_needs_approval(self, tmp_path: Path):
         """File đính kèm chưa quét không thành SafeAttachment cho tới khi người dùng duyệt."""
-        cfg = Settings(virustotal_api_key="", llm_provider="fake", attachments_dir=str(tmp_path))
-        raw = make_multipart_eml(attach_name="lecture.pdf", attach_data=b"%PDF-1.4 valid pdf")
+        cfg = Settings(
+            virustotal_api_key="", llm_provider="fake", attachments_dir=str(tmp_path)
+        )
+        raw = make_multipart_eml(
+            attach_name="lecture.pdf", attach_data=b"%PDF-1.4 valid pdf"
+        )
         result = process_email(raw, settings=cfg)
         assert result.safe_attachments == []
         approved = approve_suspicious(result)
@@ -533,6 +557,7 @@ class TestProcessEmailStub:
 # ===========================================================================
 # PHẦN 6: approve_suspicious
 # ===========================================================================
+
 
 class TestApproveSuspicious:
     def _make_processed(self, safety: SafetyStatus) -> ProcessedEmail:
@@ -582,12 +607,14 @@ class TestApproveSuspicious:
 # PHẦN 7: Tích hợp với core.mocks (Constitution III)
 # ===========================================================================
 
+
 class TestIntegrationWithMocks:
     """Kiểm tra Module D hoạt động được với dữ liệu mock từ core.mocks."""
 
     def test_core_mocks_emails_pass_validation(self):
         """Tất cả email trong core.mocks hợp lệ theo ClassifiedEmail contract."""
         from core import mocks
+
         for email in mocks.emails():
             assert isinstance(email, ClassifiedEmail)
             assert email.id
@@ -596,6 +623,7 @@ class TestIntegrationWithMocks:
     def test_core_mocks_attachments_pass_validation(self):
         """Tất cả SafeAttachment trong core.mocks hợp lệ theo contract."""
         from core import mocks
+
         for sa in mocks.attachments():
             assert isinstance(sa, SafeAttachment)
             assert len(sa.sha256) == 64
