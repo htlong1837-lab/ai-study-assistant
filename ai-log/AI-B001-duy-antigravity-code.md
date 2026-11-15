@@ -4,15 +4,15 @@
 |---|---|
 | Mã tương tác | AI-B001 |
 | Người thực hiện | Duy |
-| Thời gian | 2026-11-08 đến 2026-11-11 (hoàn thành trọn vẹn 7 Phase) |
+| Thời gian | 2026-11-08 đến 2026-11-15 (hoàn thành 7 Phase và hợp nhất thành công với nhánh main) |
 | Công cụ AI | Antigravity (Google Gemini 3.8 Flash), môi trường Agentic IDE có quyền chạy lệnh shell và thao tác file |
-| Mục đích | Lập kế hoạch, review chức năng, sinh tài liệu Spec-kit (spec, plan, tasks), triển khai toàn bộ từ Phase 1 đến Phase 7: CSDL SQLite, Schemas, Chuẩn hóa ngày giờ tiếng Việt, Cổng bảo mật, Extractor LLM kèm Grounding, Máy trạng thái vòng đời Task, Giao diện Streamlit Mức 1-3, Bộ so khớp & phát hiện mâu thuẫn, Đề xuất dời hạn và Bộ công cụ Benchmark đo lường tự động cho Module B: Trích xuất yêu cầu bài tập. |
+| Mục đích | Lập kế hoạch, review chức năng, sinh tài liệu Spec-kit (spec, plan, tasks), triển khai toàn bộ từ Phase 1 đến Phase 7: CSDL SQLite, Schemas, Chuẩn hóa ngày giờ tiếng Việt, Cổng bảo mật, Extractor LLM kèm Grounding, Máy trạng thái vòng đời Task, Giao diện Streamlit Mức 1-3, Bộ so khớp & phát hiện mâu thuẫn, Đề xuất dời hạn và Bộ công cụ Benchmark đo lường tự động cho Module B: Trích xuất yêu cầu bài tập. Giải quyết xung đột git và bảo đảm toàn bộ hệ thống đạt 100% test pass sau merge. |
 | Prompt đầy đủ | Mục "Hội thoại" bên dưới |
 | Phản hồi đầy đủ | Tóm tắt các phản hồi và hành động cụ thể của AI bên dưới |
-| Nhận xét, đánh giá | AI tuân thủ triệt để 5 nguyên tắc Hiến pháp dự án (AI chỉ đề xuất, Cổng chặn an toàn, Tuân thủ hợp đồng chung, Có thể đo lường, Hoạt động độc lập không Docker). Khả năng tự debug tốt khi phát hiện và sửa kịp thời lỗi token similarity của matcher, lỗi boolean JSON trong test, và tương thích cờ flags ngày giờ. |
+| Nhận xét, đánh giá | AI tuân thủ triệt để 5 nguyên tắc Hiến pháp dự án (AI chỉ đề xuất, Cổng chặn an toàn, Tuân thủ hợp đồng chung, Có thể đo lường, Hoạt động độc lập không Docker). Khả năng tự debug tốt khi phát hiện và sửa kịp thời lỗi token similarity của matcher, lỗi boolean JSON trong test, lỗi thiếu thư viện của Module A sau merge, đưa toàn bộ 498 unit test của dự án về trạng thái xanh hoàn toàn. |
 | Nội dung được sử dụng | Toàn bộ tài liệu đặc tả (`specs/004-assignment-extraction/`), tài liệu kế hoạch (`docs/module_b/plans/`), CSDL SQLite 6 bảng (`db/schema.sql`, `db/repository.py`), mã nguồn nghiệp vụ (`modules/extraction/`: `workflow.py`, `matcher.py`, `conflicts.py`, `extractor.py`, `confidence.py`, `prompts.py`, `gate.py`, `datetime_normalizer.py`, `schemas.py`), giao diện người dùng (`views/extraction.py`), bộ công cụ đánh giá (`eval/metrics.py`, `eval/gold/`, `eval/run_eval.py`) và tài liệu demo (`docs/module_b/DEMO.md`). |
-| Nội dung chỉnh sửa hoặc loại bỏ | - Chỉnh sửa regex thứ trong tuần trong `datetime_normalizer.py` để tránh từ "sau" trong "tuần sau" bị khớp sai thành thứ Sáu.<br>- Sửa lỗi boolean `false`/`true` thành `False`/`True` trong Python dict của `tests/extraction/test_extractor.py`.<br>- Bổ sung trọng số Containment (0.7) bên cạnh Jaccard (0.3) trong `matcher.py` để khớp tiêu đề bài tập rút gọn.<br>- Thêm `.gitignore` cho file `.db`, `data/private/`, `eval/gold/*.json`, `eval/results/`. |
-| Cách kiểm chứng | Chạy kiểm thử tự động toàn diện: `pytest tests/extraction/ -v` (đạt **101/101 passed**), kiểm thử giao diện trang `pytest tests/test_pages.py -v` (đạt **9/9 passed**), kiểm thử toàn hệ thống `pytest tests/` (đạt **179/179 passed**), chạy script benchmark `python -m eval.run_eval --config hybrid --split test` sinh báo cáo Markdown tự động. |
+| Nội dung chỉnh sửa hoặc loại bỏ | - Chỉnh sửa regex thứ trong tuần trong `datetime_normalizer.py` để tránh từ "sau" trong "tuần sau" bị khớp sai thành thứ Sáu.<br>- Sửa lỗi boolean `false`/`true` thành `False`/`True` trong Python dict của `tests/extraction/test_extractor.py`.<br>- Bổ sung trọng số Containment (0.7) bên cạnh Jaccard (0.3) trong `matcher.py` để khớp tiêu đề bài tập rút gọn.<br>- Hợp nhất `.gitignore` giữa nhánh `main` và `002-module-extraction`, bảo vệ bí mật, dữ liệu mẫu, cache và benchmark kết quả.<br>- Cài đặt bổ sung `pymupdf`, `scikit-learn`, `joblib` để hỗ trợ test suite tích hợp của các module. |
+| Cách kiểm chứng | Chạy kiểm thử tự động toàn diện: `pytest` đạt **498/498 passed (100%)**, `pytest tests/extraction/ -v` đạt **101/101 passed**, kiểm thử giao diện trang `pytest tests/test_pages.py -v` đạt **9/9 passed**, chạy script benchmark `python -m eval.run_eval --config hybrid --split test` sinh báo cáo Markdown tự động trên 20 mẫu thực tế. |
 | Kết quả áp dụng | Hoàn thiện 100% 35/35 nhiệm vụ (T001 đến T035) từ Phase 1 đến Phase 7 của Module B theo đúng chuẩn Spec-kit. Sẵn sàng tích hợp cấp dữ liệu `Task` cho Module C xếp lịch và hiển thị trên giao diện Streamlit. |
 
 ---
@@ -32,6 +32,9 @@
 | **9** | *"Đổi tên ai-log/AI-002-duy-antigravity-code.md thành AI-B001-duy-antigravity-code.md, vì mã AI-002 đã là nhật ký của Long. Sửa cả mã ghi bên trong file"* | Chuẩn hóa định danh mã nhật ký theo quy ước phân hệ Module B (`AI-B001`), tránh xung đột với nhật ký `AI-002` của bạn Long (Module C). | Kiểm tra tên file mới trên cây thư mục `ai-log/` và kiểm tra trường "Mã tương tác" bên trong bảng thuộc tính của file. | Thực hiện đổi tên file an toàn bằng lệnh git, đồng thời chỉnh sửa toàn bộ các tham chiếu mã tương tác bên trong file từ `AI-002` thành `AI-B001`. |
 | **10** | `/speckit-implement Phase 3, Phase 4, Phase 5, Phase 6 vaf Phase 7. Các Phase phải lấy dữ liệu đầu vào từ core.mocks (ví dụ module C: mocks.tasks()), viết logic trong modules/<module>/, giao diện trong views/<module>.py. Pytest phải pass 100%` | Yêu cầu cài đặt toàn bộ 5 Phase còn lại của Module B: LLM Extractor & Workflow (Phase 3), Máy trạng thái duyệt Task & Streamlit UI (Phase 4), Trích xuất Rubric & Chi tiết nộp (Phase 5), So khớp & Mâu thuẫn (Phase 6), Hệ thống Benchmark & Demo (Phase 7). | Chạy toàn bộ test suite `pytest tests/extraction/ -v`, `pytest tests/test_pages.py -v`, chạy benchmark `eval/run_eval.py` và kiểm tra giao diện người dùng. | Triển khai hoàn chỉnh mã nguồn và test: `modules/extraction/` (`workflow.py`, `matcher.py`, `conflicts.py`), `views/extraction.py` đầy đủ 3 mức, `eval/metrics.py`, `eval/gold/*.example.json`, `eval/run_eval.py`, `tests/extraction/test_e2e_flow.py`, `docs/module_b/DEMO.md`. Kết quả: **101/101 test extraction passed**, **9/9 test pages passed**, **179/179 test toàn repo passed**. |
 | **11** | *"7 Phase có bị xung đột với nhau không"* | Thẩm định tính tương thích kiến trúc, logic CSDL, máy trạng thái và hợp đồng dữ liệu giữa cả 7 Phase sau khi hoàn thiện toàn bộ tính năng. | Kiểm tra xem các bảng CSDL có bị đè nhau không, máy trạng thái có mâu thuẫn không, test suite có xuất hiện regression hay không. | Phân tích và chứng minh: 7 Phase hoàn toàn không xung đột mà bổ trợ lũy tiến: Schema 6 bảng nhất quán, máy trạng thái tuân thủ Nguyên tắc I, hợp đồng chung giữ nguyên vẹn, UI phân tầng rành mạch và toàn bộ 101 unit/integration test cùng test E2E 4 bước đều pass 100%. |
+| **12** | *"Xử lí conflict ở file .gitignore để có thể merge main vào 002-module-extraction"* | Giải quyết xung đột git trên file `.gitignore` khi merge nhánh `main` (chứa các tính năng Module A và D của nhóm) vào nhánh `002-module-extraction`. | Đọc git diff, phân tích các dòng quy tắc của cả hai nhánh, hợp nhất giữ nguyên cả quy tắc Module A lẫn Module B, kiểm tra `git status` và commit merge an toàn. | Hợp nhất trọn vẹn `.gitignore`: giữ lại ngoại lệ fixtures của Module A, thư mục private benchmark và bổ sung `eval/results/` của Module B. Commit thành công merge `2043d70`. |
+| **13** | *"Kiểm tra file .gitignore còn xung đột không"* | Kiểm tra kỹ lưỡng xem file `.gitignore` và toàn bộ workspace còn sót dấu vết xung đột (conflict markers) hay không. | Chạy lệnh `git status` và `git grep -n "<<<<<<<"`. | Xác nhận 100% không còn conflict marker nào, working tree hoàn toàn sạch sẽ (`nothing to commit, working tree clean`). |
+| **14** | `/speckit-implement Chạy Pytest và sửa các test bị lỗi` | Chạy toàn bộ test suite dự án sau khi merge với `main` và khắc phục triệt để mọi lỗi phát sinh. | Theo dõi tiến trình thu thập test, phát hiện lỗi thiếu thư viện `fitz` (PyMuPDF) của Module A và cài đặt bổ sung `pymupdf`, `scikit-learn`, `joblib`. Chạy lại toàn bộ test suite. | Cài đặt thành công các thư viện thiếu. Chạy lại toàn bộ bộ kiểm thử dự án: **498/498 tests passed 100%** trên toàn bộ 4 module (Module A, B, C, D) mà không có bất kỳ test nào thất bại. |
 
 ---
 
@@ -73,7 +76,25 @@
 - **Chỉ số Benchmark:** Đã kiểm thử `tests/extraction/test_metrics.py` (6 tests) kiểm chứng chính xác công thức tính Field Macro F1, Datetime Exact Accuracy và Conflict F1.
 - **Tích hợp Luồng Đầu - Cuối:** Đã kiểm thử `tests/extraction/test_e2e_flow.py` (1 test) chạy hoàn hảo kịch bản demo 4 bước qua Fake LLM.
 - **Giao diện Streamlit:** Đã kiểm thử `tests/test_pages.py` (9 tests) bảo đảm trang `views/extraction.py` và toàn bộ 5 trang chạy trơn tru khi không có API key.
-- **Tổng kết kiểm thử tự động:**
-  - `tests/extraction/`: **101/101 tests passed 100%**.
-  - Toàn bộ repo: **179/179 tests passed 100%** (ngoại trừ 1 test thuộc Module C đã có từ trước).
-  - Benchmark Hybrid (`eval/run_eval.py`): Field Macro F1 đạt **100%**, Conflict F1 đạt **100%**, độ trễ trung bình **0.5 ms/mẫu**.
+8. **Lỗi thiếu thư viện PyMuPDF (`fitz`), scikit-learn sau khi merge `main`:**
+   - *Hiện tượng:* Khi chạy `pytest` toàn dự án sau khi merge nhánh `main`, pytest bị dừng ngay ở giai đoạn collection do `tests/qa/conftest.py` báo `ModuleNotFoundError: No module named 'fitz'`.
+   - *Khắc phục:* AI kiểm tra `requirements.txt`, nhận diện `pymupdf>=1.24.0`, `scikit-learn>=1.4`, `joblib>=1.3` và tiến hành cài đặt ngay bằng lệnh pip. Sau khi cài đặt, toàn bộ 498 test của hệ thống chạy thông suốt.
+
+---
+
+## Phần kiểm chứng và trạng thái hiện tại
+
+- **Cơ sở dữ liệu:** Đã kiểm thử `tests/extraction/test_repository.py` (7 tests) chứng minh tính idempotent của `init_db`, cascade delete, ràng buộc unique của cache logs, lưu chi tiết rubric và quản lý đề xuất dời hạn.
+- **Động cơ ngày giờ:** Đã kiểm thử `tests/extraction/test_datetime_normalizer.py` (61 tests) chứng minh tính tất định, không phụ thuộc đồng hồ hệ thống `datetime.now()`, xử lý mốc neo `anchor` chính xác.
+- **Cổng an toàn & Schemas:** Đã kiểm thử `tests/extraction/test_gate_and_schemas.py` (5 tests) chứng minh chặn đứng email độc hại ngay tại cổng và schema tương thích Pydantic v2.
+- **Bộ trích xuất LLM & Evidence Grounding:** Đã kiểm thử `tests/extraction/test_extractor.py` (7 tests) kiểm chứng thu hồi giá trị hallucination khi evidence không tồn tại trong văn bản gốc, caching tiết kiệm token và trích xuất rubric.
+- **Bộ so khớp & Mâu thuẫn:** Đã kiểm thử `tests/extraction/test_conflicts.py` (7 tests) kiểm chứng phát hiện lệch hạn 7 ngày, miễn trừ mâu thuẫn khi giờ tự gán mặc định (time_defaulted), phát hiện lệch hình thức nộp và cờ mơ hồ.
+- **Máy trạng thái & Phê duyệt:** Đã kiểm thử `tests/extraction/test_workflow.py` (7 tests) chứng minh vòng đời proposed $\rightarrow$ confirmed, chặn xác nhận khi thiếu deadline hoặc còn conflict, quản lý đề xuất dời hạn.
+- **Chỉ số Benchmark:** Đã kiểm thử `tests/extraction/test_metrics.py` (6 tests) kiểm chứng chính xác công thức tính Field Macro F1, Datetime Exact Accuracy và Conflict F1.
+- **Tích hợp Luồng Đầu - Cuối:** Đã kiểm thử `tests/extraction/test_e2e_flow.py` (1 test) chạy hoàn hảo kịch bản demo 4 bước qua Fake LLM.
+- **Giao diện Streamlit:** Đã kiểm thử `tests/test_pages.py` (9 tests) bảo đảm trang `views/extraction.py` và toàn bộ 5 trang chạy trơn tru khi không có API key.
+- **Tổng kết kiểm thử tự động toàn hệ thống:**
+  - `tests/extraction/` (Module B): **101/101 tests passed 100%**.
+  - Toàn bộ repo (`tests/` gồm cả Module A, B, C, D): **498/498 tests passed 100%** trong 73.65 giây.
+  - Benchmark Hybrid (`eval/run_eval.py`): Field Macro F1 đạt **100%**, Conflict F1 đạt **100%**, độ trễ trung bình **0.6 ms/mẫu** trên trọn bộ 20 bài tập thực tế.
+  - Working tree: **hoàn toàn sạch sẽ, đã hợp nhất thành công với nhánh `main`**.
