@@ -1,5 +1,4 @@
 from datetime import datetime
-import pytest
 
 from modules.extraction.conflicts import (
     compare_deadlines,
@@ -8,7 +7,7 @@ from modules.extraction.conflicts import (
     suggest_resolution,
 )
 from modules.extraction.datetime_normalizer import NormalizedDeadline
-from modules.extraction.matcher import find_matching_task, token_similarity
+from modules.extraction.matcher import find_matching_task
 from modules.extraction.schemas import Evidence, ExField, RawAssignment, RawDeadline
 
 

@@ -8,15 +8,13 @@ Tuân thủ nguyên tắc:
 """
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from core.contracts import ClassifiedEmail, ParsedDocument, Priority, Task, TaskStatus, can_forward
+from core.contracts import ClassifiedEmail, ParsedDocument, Priority, Task, TaskStatus
 from core.llm_client import LLMClient
 from db.repository import Repository
-from modules.extraction.conflicts import compare_deadlines, compare_submission, suggest_resolution
 from modules.extraction.extractor import extract_from_document, extract_from_email
 from modules.extraction.gate import ensure_safe
 from modules.extraction.matcher import find_matching_task
@@ -189,7 +187,7 @@ def process_document(
 
         # Đối chiếu mâu thuẫn với email liên kết nếu có
         if linked_email:
-            linked_sources = repo.get_sources(task_id)
+            repo.get_sources(task_id)
             # Thêm nguồn email vào task
             repo.add_sources(task_id, [{
                 "source": f"email:{linked_email.id}",

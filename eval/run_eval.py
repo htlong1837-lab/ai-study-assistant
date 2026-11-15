@@ -18,14 +18,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from core.contracts import ClassifiedEmail, EmailLabel, SafetyStatus
 from core.llm_client import LLMClient
 from eval.metrics import (
     compute_conflict_metrics,
     compute_datetime_accuracy,
     compute_field_metrics,
-    compute_list_field_metrics,
-    datetime_exact_match,
 )
 from modules.extraction.datetime_normalizer import normalize
 
@@ -107,7 +104,7 @@ def extract_hybrid_or_direct(
     """Cấu hình Hybrid hoặc LLM Direct."""
     # Khi chạy eval tự động độc lập, mô phỏng phản hồi từ nội dung sample
     gold = sample.get("gold", {})
-    body = sample.get("email", {}).get("body", "")
+    sample.get("email", {}).get("body", "")
     received_at_str = sample.get("email", {}).get("received_at")
     anchor = datetime.fromisoformat(received_at_str) if (use_anchor and received_at_str) else datetime.now(timezone.utc)
 

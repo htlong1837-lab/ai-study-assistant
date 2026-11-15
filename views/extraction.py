@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import streamlit as st
 
 from core import config, mocks
-from core.contracts import Priority, SafetyStatus, TaskStatus, can_forward
+from core.contracts import SafetyStatus, can_forward
 from core.llm_client import LLMClient, get_client
 from db.repository import Repository
 from modules.extraction import workflow
@@ -119,11 +119,11 @@ if conflicts:
                 st.info(f"💡 Gợi ý hệ thống: Nên ưu tiên phương án **{cf['suggestion'].upper()}** (nguồn cập nhật mới hơn).")
 
             col_a, col_b, col_m = st.columns(3)
-            if col_a.button(f"Dùng giá trị A", key=f"cf_a_{cf['id']}"):
+            if col_a.button("Dùng giá trị A", key=f"cf_a_{cf['id']}"):
                 workflow.resolve_conflict(cf["id"], choice="a", repo=repo)
                 st.success("Đã áp dụng phương án A!")
                 st.rerun()
-            if col_b.button(f"Dùng giá trị B", key=f"cf_b_{cf['id']}"):
+            if col_b.button("Dùng giá trị B", key=f"cf_b_{cf['id']}"):
                 workflow.resolve_conflict(cf["id"], choice="b", repo=repo)
                 st.success("Đã áp dụng phương án B!")
                 st.rerun()

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import unicodedata
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any
 
 
 def normalize_text(text: str | None) -> str:
