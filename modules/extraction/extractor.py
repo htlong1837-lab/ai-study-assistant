@@ -24,7 +24,7 @@ from modules.extraction.confidence import compute_confidence
 from modules.extraction.datetime_normalizer import NormalizedDeadline, normalize
 from modules.extraction.gate import ensure_safe
 from modules.extraction.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_extraction_prompt
-from modules.extraction.schemas import Evidence, ExtractionResult, RawAssignment
+from modules.extraction.schemas import ExtractionResult, RawAssignment
 
 logger = logging.getLogger(__name__)
 

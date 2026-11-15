@@ -1,3 +1,5 @@
-"""A — Hỏi đáp tài liệu qua API (Nam)
-Vào: SafeAttachment (từ D). Ra: ParsedDocument (cho B), câu trả lời có trích trang.
-"""
+"""Document Q&A module integrated with shared core contracts and services."""
+
+from .qa_service import QAService
+
+__all__ = ["QAService"]
