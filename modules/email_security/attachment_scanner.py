@@ -37,30 +37,60 @@ logger = logging.getLogger(__name__)
 #: Denylist cứng — chặn ngay, không cần VT (plan § 6.3 + yêu cầu đề bài)
 DANGEROUS_EXTENSIONS: frozenset[str] = frozenset(
     {
-        ".exe", ".bat", ".cmd", ".com", ".scr", ".pif",
-        ".vbs", ".vbe", ".js",  ".jse", ".wsf", ".wsh",
-        ".ps1", ".msi", ".msp", ".hta", ".cpl", ".jar",
-        ".reg", ".lnk", ".dll", ".sys",
+        ".exe",
+        ".bat",
+        ".cmd",
+        ".com",
+        ".scr",
+        ".pif",
+        ".vbs",
+        ".vbe",
+        ".js",
+        ".jse",
+        ".wsf",
+        ".wsh",
+        ".ps1",
+        ".msi",
+        ".msp",
+        ".hta",
+        ".cpl",
+        ".jar",
+        ".reg",
+        ".lnk",
+        ".dll",
+        ".sys",
         # thêm từ plan: iso img
-        ".iso", ".img",
+        ".iso",
+        ".img",
     }
 )
 
 #: Đuôi gây SUSPICIOUS (macro, nén, HTML) — plan § 6.3
 SUSPICIOUS_EXTENSIONS: frozenset[str] = frozenset(
     {
-        ".docm", ".xlsm", ".pptm",
-        ".zip",  ".rar",  ".7z",
-        ".html", ".htm",
+        ".docm",
+        ".xlsm",
+        ".pptm",
+        ".zip",
+        ".rar",
+        ".7z",
+        ".html",
+        ".htm",
     }
 )
 
 #: Đuôi hợp lệ, rủi ro thấp — plan § 6.3 (VT 404 → SAFE)
 LOW_RISK_EXTENSIONS: frozenset[str] = frozenset(
     {
-        ".pdf",  ".docx", ".xlsx", ".pptx",
-        ".txt",  ".csv",
-        ".png",  ".jpg",  ".jpeg",
+        ".pdf",
+        ".docx",
+        ".xlsx",
+        ".pptx",
+        ".txt",
+        ".csv",
+        ".png",
+        ".jpg",
+        ".jpeg",
     }
 )
 
@@ -68,10 +98,10 @@ LOW_RISK_EXTENSIONS: frozenset[str] = frozenset(
 # Magic bytes
 # ---------------------------------------------------------------------------
 
-MAGIC_PE     = b"\x4d\x5a"           # MZ — Windows PE executable
-MAGIC_ELF    = b"\x7fELF"            # ELF — Linux/Unix executable
-MAGIC_MACHO1 = b"\xcf\xfa\xed\xfe"   # Mach-O little-endian
-MAGIC_MACHO2 = b"\xfe\xed\xfa\xcf"   # Mach-O big-endian
+MAGIC_PE = b"\x4d\x5a"  # MZ — Windows PE executable
+MAGIC_ELF = b"\x7fELF"  # ELF — Linux/Unix executable
+MAGIC_MACHO1 = b"\xcf\xfa\xed\xfe"  # Mach-O little-endian
+MAGIC_MACHO2 = b"\xfe\xed\xfa\xcf"  # Mach-O big-endian
 
 EXECUTABLE_MAGICS: tuple[bytes, ...] = (MAGIC_PE, MAGIC_ELF, MAGIC_MACHO1, MAGIC_MACHO2)
 
@@ -80,8 +110,14 @@ MAGIC_PDF = b"%PDF-"  # 5 byte đầu của PDF hợp lệ
 #: Đuôi tài liệu/hình ảnh KHÔNG được có magic bytes thực thi
 DOCUMENT_EXTENSIONS: frozenset[str] = frozenset(
     {
-        ".pdf",  ".docx", ".xlsx", ".pptx",
-        ".txt",  ".jpg",  ".jpeg", ".png",
+        ".pdf",
+        ".docx",
+        ".xlsx",
+        ".pptx",
+        ".txt",
+        ".jpg",
+        ".jpeg",
+        ".png",
     }
 )
 
@@ -109,9 +145,7 @@ class AttachmentScanResult:
 
     def to_finding(self) -> AttachmentFinding:
         """Chuyển sang AttachmentFinding (models.py) để ghi vào ProcessedEmail."""
-        reason_objs = [
-            Reason(code=_reason_code(r), message=r) for r in self.reasons
-        ]
+        reason_objs = [Reason(code=_reason_code(r), message=r) for r in self.reasons]
         return AttachmentFinding(
             filename=self.filename,
             path=self.file_path,
@@ -150,7 +184,13 @@ def _reason_code(message: str) -> str:
         return "SIZE_EXCEEDED"
     if "NGUY HIỂM" in msg or "MỞ RỘNG" in msg:
         return "DANGEROUS_EXT"
-    if "MZ" in msg or "ELF" in msg or "MACH" in msg or "MAGIC" in msg or "THỰC THI" in msg:
+    if (
+        "MZ" in msg
+        or "ELF" in msg
+        or "MACH" in msg
+        or "MAGIC" in msg
+        or "THỰC THI" in msg
+    ):
         return "MAGIC_MISMATCH"
     if "GIẢ DANH" in msg or "GIẢ MẠO" in msg:
         return "MAGIC_SPOOF"
@@ -251,14 +291,19 @@ def scan_attachment(
         reasons.append(msg)
         logger.warning("[attachment_scanner] SIZE_EXCEEDED: %s — %s", filename, msg)
         return _make_result(
-            filename, file_path, sha, SafetyStatus.SUSPICIOUS,
-            reasons, email_id, allow_suspicious,
+            filename,
+            file_path,
+            sha,
+            SafetyStatus.SUSPICIOUS,
+            reasons,
+            email_id,
+            allow_suspicious,
         )
 
     # ------------------------------------------------------------------
     # Bước 2 — Denylist đuôi (kể cả đuôi kép baitap.pdf.exe)
     # ------------------------------------------------------------------
-    all_exts  = _all_suffixes(filename)
+    all_exts = _all_suffixes(filename)
     final_ext = _final_suffix(filename)
 
     for ext in all_exts:
@@ -267,8 +312,13 @@ def scan_attachment(
             reasons.append(msg)
             logger.warning("[attachment_scanner] DANGEROUS_EXT: %s", msg)
             return _make_result(
-                filename, file_path, sha, SafetyStatus.MALICIOUS,
-                reasons, email_id, allow_suspicious,
+                filename,
+                file_path,
+                sha,
+                SafetyStatus.MALICIOUS,
+                reasons,
+                email_id,
+                allow_suspicious,
             )
 
     # ------------------------------------------------------------------
@@ -289,8 +339,13 @@ def scan_attachment(
         reasons.append(msg)
         logger.warning("[attachment_scanner] MAGIC_SPOOF/MALICIOUS: %s", msg)
         return _make_result(
-            filename, file_path, sha, SafetyStatus.MALICIOUS,
-            reasons, email_id, allow_suspicious,
+            filename,
+            file_path,
+            sha,
+            SafetyStatus.MALICIOUS,
+            reasons,
+            email_id,
+            allow_suspicious,
         )
 
     # ------------------------------------------------------------------
@@ -318,8 +373,13 @@ def scan_attachment(
         reasons.extend(zip_reasons)
         if zip_status == SafetyStatus.MALICIOUS:
             return _make_result(
-                filename, file_path, sha, SafetyStatus.MALICIOUS,
-                reasons, email_id, allow_suspicious,
+                filename,
+                file_path,
+                sha,
+                SafetyStatus.MALICIOUS,
+                reasons,
+                email_id,
+                allow_suspicious,
             )
         if zip_status == SafetyStatus.SUSPICIOUS:
             status = SafetyStatus.SUSPICIOUS
@@ -353,8 +413,13 @@ def scan_attachment(
     # Dựng kết quả cuối
     # ------------------------------------------------------------------
     return _make_result(
-        filename, file_path, sha, status,
-        reasons, email_id, allow_suspicious,
+        filename,
+        file_path,
+        sha,
+        status,
+        reasons,
+        email_id,
+        allow_suspicious,
     )
 
 
