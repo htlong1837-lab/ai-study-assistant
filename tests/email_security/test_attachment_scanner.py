@@ -30,7 +30,7 @@ from modules.email_security.attachment_scanner import (
 # Hằng số dùng chung
 # ---------------------------------------------------------------------------
 
-EMAIL_ID  = "test-email-001"
+EMAIL_ID = "test-email-001"
 FILE_PATH = "data/real/test-email-001/file.pdf"
 
 
@@ -103,15 +103,21 @@ class TestSafeFiles:
     def test_valid_txt_safe(self) -> None:
         """File text thông thường → SAFE."""
         data = "Đây là nội dung bài tập môn AI.\n".encode("utf-8")
-        result = scan_attachment(data, "baitap.txt", "data/real/e1/baitap.txt", EMAIL_ID)
+        result = scan_attachment(
+            data, "baitap.txt", "data/real/e1/baitap.txt", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.SAFE
         assert result.safe_attachment is not None
 
     def test_clean_zip_safe(self) -> None:
         """ZIP sạch (chỉ chứa .txt và .pdf) → SAFE."""
-        zip_data = _make_zip({"readme.txt": b"hello", "baocao.pdf": MAGIC_PDF + b"content"})
-        result = scan_attachment(zip_data, "archive.zip", "data/real/e1/archive.zip", EMAIL_ID)
+        zip_data = _make_zip(
+            {"readme.txt": b"hello", "baocao.pdf": MAGIC_PDF + b"content"}
+        )
+        result = scan_attachment(
+            zip_data, "archive.zip", "data/real/e1/archive.zip", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.SAFE
         assert result.safe_attachment is not None
@@ -140,11 +146,16 @@ class TestSafeFiles:
 class TestDangerousExtensions:
     """Đuôi file ∈ DANGEROUS_EXTENSIONS → MALICIOUS, không có SafeAttachment."""
 
-    @pytest.mark.parametrize("ext", [".exe", ".bat", ".cmd", ".ps1", ".vbs", ".js", ".jar", ".lnk", ".dll", ".sys"])
+    @pytest.mark.parametrize(
+        "ext",
+        [".exe", ".bat", ".cmd", ".ps1", ".vbs", ".js", ".jar", ".lnk", ".dll", ".sys"],
+    )
     def test_dangerous_ext_malicious(self, ext: str) -> None:
         """Các đuôi nguy hiểm phổ biến → MALICIOUS."""
         filename = f"file{ext}"
-        result = scan_attachment(b"some content", filename, f"data/real/e1/{filename}", EMAIL_ID)
+        result = scan_attachment(
+            b"some content", filename, f"data/real/e1/{filename}", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.MALICIOUS
         assert result.safe_attachment is None
@@ -161,7 +172,9 @@ class TestDangerousExtensions:
 
     def test_scr_extension_malicious(self) -> None:
         """.scr (screensaver thực chất là EXE) → MALICIOUS."""
-        result = scan_attachment(b"data", "screen.scr", "data/real/e1/screen.scr", EMAIL_ID)
+        result = scan_attachment(
+            b"data", "screen.scr", "data/real/e1/screen.scr", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_hta_extension_malicious(self) -> None:
@@ -171,7 +184,9 @@ class TestDangerousExtensions:
 
     def test_msi_extension_malicious(self) -> None:
         """.msi (Windows Installer) → MALICIOUS."""
-        result = scan_attachment(b"msi content", "setup.msi", "data/real/e1/setup.msi", EMAIL_ID)
+        result = scan_attachment(
+            b"msi content", "setup.msi", "data/real/e1/setup.msi", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
 
@@ -209,7 +224,9 @@ class TestDoubleExtensions:
     def test_double_ext_safe_safe_still_safe(self) -> None:
         """file.txt.pdf → đuôi cuối .pdf hợp lệ, không có đuôi nguy hiểm → kiểm tra tiếp."""
         data = MAGIC_PDF + b"content"
-        result = scan_attachment(data, "file.txt.pdf", "data/real/e1/file.txt.pdf", EMAIL_ID)
+        result = scan_attachment(
+            data, "file.txt.pdf", "data/real/e1/file.txt.pdf", EMAIL_ID
+        )
         # Không có đuôi nguy hiểm, PDF header hợp lệ → SAFE
         assert result.status == SafetyStatus.SAFE
 
@@ -225,7 +242,9 @@ class TestMagicBytes:
     def test_pe_magic_disguised_as_pdf_malicious(self) -> None:
         """MZ magic nhưng tên file .pdf → MALICIOUS (giả danh tài liệu)."""
         data = MAGIC_PE + b"\x00" * 100
-        result = scan_attachment(data, "report.pdf", "data/real/e1/report.pdf", EMAIL_ID)
+        result = scan_attachment(
+            data, "report.pdf", "data/real/e1/report.pdf", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.MALICIOUS
         assert result.safe_attachment is None
@@ -235,7 +254,9 @@ class TestMagicBytes:
     def test_pe_magic_disguised_as_docx_malicious(self) -> None:
         """MZ magic nhưng tên .docx → MALICIOUS."""
         data = MAGIC_PE + b"\x00" * 50
-        result = scan_attachment(data, "bai_tap.docx", "data/real/e1/bai_tap.docx", EMAIL_ID)
+        result = scan_attachment(
+            data, "bai_tap.docx", "data/real/e1/bai_tap.docx", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_pe_magic_disguised_as_jpg_malicious(self) -> None:
@@ -260,7 +281,9 @@ class TestMagicBytes:
     def test_elf_magic_no_ext_malicious(self) -> None:
         """ELF magic, đuôi không phải document → MALICIOUS."""
         data = MAGIC_ELF + b"\x00" * 50
-        result = scan_attachment(data, "binary_file", "data/real/e1/binary_file", EMAIL_ID)
+        result = scan_attachment(
+            data, "binary_file", "data/real/e1/binary_file", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_macho1_magic_malicious(self) -> None:
@@ -272,7 +295,9 @@ class TestMagicBytes:
     def test_macho2_magic_malicious(self) -> None:
         """Mach-O big-endian magic → MALICIOUS."""
         data = MAGIC_MACHO2 + b"\x00" * 50
-        result = scan_attachment(data, "macos_app.docx", "data/real/e1/macos_app.docx", EMAIL_ID)
+        result = scan_attachment(
+            data, "macos_app.docx", "data/real/e1/macos_app.docx", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_pe_magic_on_exe_still_malicious(self) -> None:
@@ -334,7 +359,9 @@ class TestZipContents:
     def test_zip_with_bat_inside_malicious(self) -> None:
         """ZIP chứa file .bat → MALICIOUS."""
         zip_data = _make_zip({"readme.txt": b"safe", "run.bat": b"@echo off\ndel /f *"})
-        result = scan_attachment(zip_data, "bundle.zip", "data/real/e1/bundle.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "bundle.zip", "data/real/e1/bundle.zip", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.MALICIOUS
         assert result.safe_attachment is None
@@ -343,19 +370,25 @@ class TestZipContents:
     def test_zip_with_exe_inside_malicious(self) -> None:
         """ZIP chứa file .exe → MALICIOUS."""
         zip_data = _make_zip({"docs/setup.exe": b"MZ fake"})
-        result = scan_attachment(zip_data, "package.zip", "data/real/e1/package.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "package.zip", "data/real/e1/package.zip", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_zip_with_ps1_inside_malicious(self) -> None:
         """ZIP chứa file .ps1 (PowerShell) → MALICIOUS."""
         zip_data = _make_zip({"scripts/deploy.ps1": b"Remove-Item -Force"})
-        result = scan_attachment(zip_data, "scripts.zip", "data/real/e1/scripts.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "scripts.zip", "data/real/e1/scripts.zip", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_zip_with_js_inside_malicious(self) -> None:
         """ZIP chứa file .js → MALICIOUS."""
         zip_data = _make_zip({"payload.js": b"eval(atob('...'))"})
-        result = scan_attachment(zip_data, "files.zip", "data/real/e1/files.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "files.zip", "data/real/e1/files.zip", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_zip_clean_safe(self) -> None:
@@ -367,7 +400,9 @@ class TestZipContents:
                 "data.csv": b"a,b\n1,2",
             }
         )
-        result = scan_attachment(zip_data, "files.zip", "data/real/e1/files.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "files.zip", "data/real/e1/files.zip", EMAIL_ID
+        )
         assert result.status == SafetyStatus.SAFE
         assert result.safe_attachment is not None
 
@@ -401,7 +436,9 @@ class TestSuspiciousExtensions:
     def test_macro_ext_suspicious(self, ext: str) -> None:
         """Định dạng có macro → SUSPICIOUS."""
         filename = f"document{ext}"
-        result = scan_attachment(b"content", filename, f"data/real/e1/{filename}", EMAIL_ID)
+        result = scan_attachment(
+            b"content", filename, f"data/real/e1/{filename}", EMAIL_ID
+        )
 
         assert result.status == SafetyStatus.SUSPICIOUS
         assert result.safe_attachment is None
@@ -411,7 +448,9 @@ class TestSuspiciousExtensions:
     def test_compressed_ext_suspicious(self, ext: str) -> None:
         """Định dạng nén không hỗ trợ kiểm tra nội dung → SUSPICIOUS."""
         filename = f"archive{ext}"
-        result = scan_attachment(b"content", filename, f"data/real/e1/{filename}", EMAIL_ID)
+        result = scan_attachment(
+            b"content", filename, f"data/real/e1/{filename}", EMAIL_ID
+        )
         assert result.status == SafetyStatus.SUSPICIOUS
 
     @pytest.mark.parametrize("ext", [".html", ".htm"])
@@ -439,9 +478,7 @@ class TestSizeLimit:
         """File 1 byte vượt max → SUSPICIOUS."""
         max_b = 100
         data = b"X" * (max_b + 1)
-        result = scan_attachment(
-            data, "big.pdf", FILE_PATH, EMAIL_ID, max_bytes=max_b
-        )
+        result = scan_attachment(data, "big.pdf", FILE_PATH, EMAIL_ID, max_bytes=max_b)
         assert result.status == SafetyStatus.SUSPICIOUS
         assert result.safe_attachment is None
         assert len(result.reasons) >= 1
@@ -464,11 +501,11 @@ class TestSizeLimit:
         # Dù nội dung có MZ magic, nếu kích thước vượt → chặn vì kích thước
         max_b = 10
         data = MAGIC_PE + b"\x00" * 20  # 22 bytes > 10
-        result = scan_attachment(
-            data, "big.pdf", FILE_PATH, EMAIL_ID, max_bytes=max_b
-        )
+        result = scan_attachment(data, "big.pdf", FILE_PATH, EMAIL_ID, max_bytes=max_b)
         assert result.status == SafetyStatus.SUSPICIOUS
-        assert any("kích thước" in r.lower() or "giới hạn" in r.lower() for r in result.reasons)
+        assert any(
+            "kích thước" in r.lower() or "giới hạn" in r.lower() for r in result.reasons
+        )
 
 
 # ===========================================================================
@@ -483,7 +520,11 @@ class TestAllowSuspicious:
         """SUSPICIOUS + allow_suspicious=False → safe_attachment = None."""
         data = b"<html>phishing</html>"
         result = scan_attachment(
-            data, "page.html", "data/real/e1/page.html", EMAIL_ID, allow_suspicious=False
+            data,
+            "page.html",
+            "data/real/e1/page.html",
+            EMAIL_ID,
+            allow_suspicious=False,
         )
         assert result.status == SafetyStatus.SUSPICIOUS
         assert result.safe_attachment is None
@@ -594,7 +635,9 @@ class TestResultFields:
 
     def test_safe_attachment_has_correct_email_id(self) -> None:
         """email_id trong SafeAttachment khớp với tham số đầu vào."""
-        result = scan_attachment(MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID)
+        result = scan_attachment(
+            MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID
+        )
         assert result.safe_attachment is not None
         assert result.safe_attachment.email_id == EMAIL_ID
 
@@ -619,12 +662,16 @@ class TestResultFields:
 
     def test_reasons_is_list(self) -> None:
         """reasons luôn là list (có thể rỗng)."""
-        result = scan_attachment(MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID)
+        result = scan_attachment(
+            MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID
+        )
         assert isinstance(result.reasons, list)
 
     def test_reasons_empty_for_safe(self) -> None:
         """File SAFE không có reasons."""
-        result = scan_attachment(MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID)
+        result = scan_attachment(
+            MAGIC_PDF + b"content", "file.pdf", FILE_PATH, EMAIL_ID
+        )
         assert result.reasons == []
 
 
@@ -676,7 +723,9 @@ class TestToFinding:
 
     def test_to_finding_malicious_has_reasons(self) -> None:
         """to_finding() cho file MALICIOUS có reasons."""
-        result = scan_attachment(b"content", "virus.exe", "data/real/e1/virus.exe", EMAIL_ID)
+        result = scan_attachment(
+            b"content", "virus.exe", "data/real/e1/virus.exe", EMAIL_ID
+        )
         finding = result.to_finding()
 
         assert finding.status == SafetyStatus.MALICIOUS
@@ -694,13 +743,17 @@ class TestEdgeCases:
 
     def test_filename_uppercase_ext_detected(self) -> None:
         """Đuôi file chữ hoa (.EXE, .PDF) vẫn được nhận dạng đúng."""
-        result = scan_attachment(b"content", "VIRUS.EXE", "data/real/e1/VIRUS.EXE", EMAIL_ID)
+        result = scan_attachment(
+            b"content", "VIRUS.EXE", "data/real/e1/VIRUS.EXE", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_filename_mixed_case_pdf_header_check(self) -> None:
         """File .PDF (hoa) với header hợp lệ → SAFE."""
         data = MAGIC_PDF + b"valid content"
-        result = scan_attachment(data, "REPORT.PDF", "data/real/e1/REPORT.PDF", EMAIL_ID)
+        result = scan_attachment(
+            data, "REPORT.PDF", "data/real/e1/REPORT.PDF", EMAIL_ID
+        )
         assert result.status == SafetyStatus.SAFE
 
     def test_no_extension_file_safe(self) -> None:
@@ -722,20 +775,44 @@ class TestEdgeCases:
     def test_zip_nested_dangerous_file_malicious(self) -> None:
         """ZIP chứa file .exe trong subfolder → MALICIOUS."""
         zip_data = _make_zip({"subfolder/evil/payload.exe": b"MZ content"})
-        result = scan_attachment(zip_data, "nested.zip", "data/real/e1/nested.zip", EMAIL_ID)
+        result = scan_attachment(
+            zip_data, "nested.zip", "data/real/e1/nested.zip", EMAIL_ID
+        )
         assert result.status == SafetyStatus.MALICIOUS
 
     def test_scan_result_is_dataclass(self) -> None:
         """Kết quả trả về là AttachmentScanResult."""
-        result = scan_attachment(b"content", "file.txt", "data/real/e1/file.txt", EMAIL_ID)
+        result = scan_attachment(
+            b"content", "file.txt", "data/real/e1/file.txt", EMAIL_ID
+        )
         assert isinstance(result, AttachmentScanResult)
 
     def test_dangerous_extensions_set_contains_expected(self) -> None:
         """DANGEROUS_EXTENSIONS chứa các đuôi theo yêu cầu đề bài."""
-        required = {".exe", ".bat", ".cmd", ".com", ".scr", ".pif",
-                    ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
-                    ".ps1", ".msi", ".msp", ".hta", ".cpl", ".jar",
-                    ".reg", ".lnk", ".dll", ".sys"}
+        required = {
+            ".exe",
+            ".bat",
+            ".cmd",
+            ".com",
+            ".scr",
+            ".pif",
+            ".vbs",
+            ".vbe",
+            ".js",
+            ".jse",
+            ".wsf",
+            ".wsh",
+            ".ps1",
+            ".msi",
+            ".msp",
+            ".hta",
+            ".cpl",
+            ".jar",
+            ".reg",
+            ".lnk",
+            ".dll",
+            ".sys",
+        }
         assert required.issubset(DANGEROUS_EXTENSIONS)
 
     def test_suspicious_extensions_set_contains_expected(self) -> None:
@@ -745,8 +822,12 @@ class TestEdgeCases:
 
     def test_scan_multiple_files_independent(self) -> None:
         """Nhiều lần gọi scan_attachment độc lập nhau (không chia sẻ trạng thái)."""
-        clean = scan_attachment(MAGIC_PDF + b"content", "clean.pdf", FILE_PATH, EMAIL_ID)
-        malicious = scan_attachment(b"content", "virus.exe", "data/real/e1/virus.exe", EMAIL_ID)
+        clean = scan_attachment(
+            MAGIC_PDF + b"content", "clean.pdf", FILE_PATH, EMAIL_ID
+        )
+        malicious = scan_attachment(
+            b"content", "virus.exe", "data/real/e1/virus.exe", EMAIL_ID
+        )
         assert clean.status == SafetyStatus.SAFE
         assert malicious.status == SafetyStatus.MALICIOUS
         # Kết quả độc lập, không ảnh hưởng nhau
@@ -764,6 +845,8 @@ class TestEdgeCases:
         data = b"PK\x03\x04" + b"\x00" * 50  # ZIP magic (docx là ZIP)
         # .docx không trong SUSPICIOUS_EXTENSIONS nên sẽ được kiểm tra như file thường
         # Tuy nhiên nội dung không phải exe magic → SAFE
-        result = scan_attachment(data, "baitap.docx", "data/real/e1/baitap.docx", EMAIL_ID)
+        result = scan_attachment(
+            data, "baitap.docx", "data/real/e1/baitap.docx", EMAIL_ID
+        )
         # .docx không phải ZIP final_ext nên không kiểm tra nội dung ZIP
         assert result.status == SafetyStatus.SAFE

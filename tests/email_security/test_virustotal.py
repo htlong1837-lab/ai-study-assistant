@@ -77,22 +77,34 @@ class TestStatsMapping:
         assert map_vt_stats_to_status(malicious=0, suspicious=0) == SafetyStatus.SAFE
 
     def test_one_suspicious_is_suspicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=0, suspicious=1) == SafetyStatus.SUSPICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=0, suspicious=1) == SafetyStatus.SUSPICIOUS
+        )
 
     def test_multiple_suspicious_is_suspicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=0, suspicious=5) == SafetyStatus.SUSPICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=0, suspicious=5) == SafetyStatus.SUSPICIOUS
+        )
 
     def test_one_malicious_is_suspicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=1, suspicious=0) == SafetyStatus.SUSPICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=1, suspicious=0) == SafetyStatus.SUSPICIOUS
+        )
 
     def test_one_malicious_and_suspicious_is_suspicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=1, suspicious=2) == SafetyStatus.SUSPICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=1, suspicious=2) == SafetyStatus.SUSPICIOUS
+        )
 
     def test_two_malicious_is_malicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=2, suspicious=0) == SafetyStatus.MALICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=2, suspicious=0) == SafetyStatus.MALICIOUS
+        )
 
     def test_many_malicious_is_malicious(self) -> None:
-        assert map_vt_stats_to_status(malicious=10, suspicious=5) == SafetyStatus.MALICIOUS
+        assert (
+            map_vt_stats_to_status(malicious=10, suspicious=5) == SafetyStatus.MALICIOUS
+        )
 
 
 # ===========================================================================
@@ -166,10 +178,14 @@ class TestUrlReputation:
     def test_url_id_encoding_format(self) -> None:
         """Đặc tả VT v3: url_id = base64.urlsafe_b64encode(url.encode()).decode().strip('=')."""
         url = "https://example.com/test?a=1&b=2"
-        expected_id = base64.urlsafe_b64encode(url.encode("utf-8")).decode("ascii").strip("=")
+        expected_id = (
+            base64.urlsafe_b64encode(url.encode("utf-8")).decode("ascii").strip("=")
+        )
 
         cache = VirusTotalCache(":memory:")
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 70)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 70)
+        ) as mock_open:
             lookup_url_reputation(
                 url, api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False
             )
@@ -263,7 +279,9 @@ class TestFileHashReputation:
     def test_sha256_endpoint_called(self) -> None:
         """Tra cứu SHA-256 gọi đúng endpoint /api/v3/files/{sha256}."""
         cache = VirusTotalCache(":memory:")
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 65)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 65)
+        ) as mock_open:
             lookup_file_hash(
                 TEST_SHA256, api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False
             )
@@ -273,9 +291,14 @@ class TestFileHashReputation:
     def test_sha256_uppercase_normalized(self) -> None:
         """Mã băm chữ hoa được tự động chuẩn hóa về chữ thường."""
         cache = VirusTotalCache(":memory:")
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 65)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 65)
+        ) as mock_open:
             lookup_file_hash(
-                TEST_SHA256.upper(), api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False
+                TEST_SHA256.upper(),
+                api_key=FAKE_API_KEY,
+                cache=cache,
+                enable_rate_limit=False,
             )
             req = mock_open.call_args[0][0]
             assert f"/api/v3/files/{TEST_SHA256.lower()}" in req.full_url
@@ -409,7 +432,9 @@ class TestSQLiteCache:
         cache = VirusTotalCache(":memory:")
 
         # Lần 1: Gọi API (cache miss)
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 70)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 70)
+        ) as mock_open:
             rep1 = lookup_url_reputation(
                 TEST_URL, api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False
             )
@@ -434,13 +459,22 @@ class TestSQLiteCache:
 
         # Lưu bản ghi giả có checked_at cũ hơn 2 giây
         old_time = time.time() - 2.0
-        cache.set("url", TEST_URL, malicious_count=0, suspicious_count=0, harmless_count=70, checked_at=old_time)
+        cache.set(
+            "url",
+            TEST_URL,
+            malicious_count=0,
+            suspicious_count=0,
+            harmless_count=70,
+            checked_at=old_time,
+        )
 
         # Kiểm tra get trực tiếp thấy None vì đã hết TTL
         assert cache.get("url", TEST_URL) is None
 
         # Khi gọi lookup -> phải gọi API lại
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(2, 0, 50)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(2, 0, 50)
+        ) as mock_open:
             rep = lookup_url_reputation(
                 TEST_URL, api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False
             )
@@ -450,8 +484,20 @@ class TestSQLiteCache:
     def test_cache_stores_both_url_and_sha256(self) -> None:
         """Cache lưu độc lập giữa resource_type='url' và 'sha256'."""
         cache = VirusTotalCache(":memory:")
-        cache.set("url", "https://site.com", malicious_count=0, suspicious_count=0, harmless_count=50)
-        cache.set("sha256", "abc123sha", malicious_count=5, suspicious_count=2, harmless_count=10)
+        cache.set(
+            "url",
+            "https://site.com",
+            malicious_count=0,
+            suspicious_count=0,
+            harmless_count=50,
+        )
+        cache.set(
+            "sha256",
+            "abc123sha",
+            malicious_count=5,
+            suspicious_count=2,
+            harmless_count=10,
+        )
 
         url_entry = cache.get("url", "https://site.com")
         sha_entry = cache.get("sha256", "abc123sha")
@@ -464,8 +510,20 @@ class TestSQLiteCache:
     def test_cache_update_on_conflict(self) -> None:
         """Ghi đè bản ghi trùng khóa cập nhật các giá trị mới."""
         cache = VirusTotalCache(":memory:")
-        cache.set("url", "https://site.com", malicious_count=0, suspicious_count=0, harmless_count=50)
-        cache.set("url", "https://site.com", malicious_count=3, suspicious_count=1, harmless_count=40)
+        cache.set(
+            "url",
+            "https://site.com",
+            malicious_count=0,
+            suspicious_count=0,
+            harmless_count=50,
+        )
+        cache.set(
+            "url",
+            "https://site.com",
+            malicious_count=3,
+            suspicious_count=1,
+            harmless_count=40,
+        )
 
         entry = cache.get("url", "https://site.com")
         assert entry is not None
@@ -612,9 +670,15 @@ class TestVerifyUrlWithVT:
             reasons=[],
         )
 
-        with patch("urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 80)) as mock_open:
+        with patch(
+            "urllib.request.urlopen", return_value=_mock_vt_response(0, 0, 80)
+        ) as mock_open:
             result = verify_url_with_vt(
-                finding, api_key=FAKE_API_KEY, cache=cache, enable_rate_limit=False, force_vt=True
+                finding,
+                api_key=FAKE_API_KEY,
+                cache=cache,
+                enable_rate_limit=False,
+                force_vt=True,
             )
             assert mock_open.call_count == 1
             assert result.reputation is not None
@@ -637,7 +701,9 @@ class TestVerifyAttachmentWithVT:
             sha256=TEST_SHA256,
             status=SafetyStatus.SAFE,
             reasons=[],
-            safe_attachment=SafeAttachment("data/real/e1/baitap.pdf", TEST_SHA256, "e1"),
+            safe_attachment=SafeAttachment(
+                "data/real/e1/baitap.pdf", TEST_SHA256, "e1"
+            ),
         )
 
         with patch("urllib.request.urlopen") as mock_open:
