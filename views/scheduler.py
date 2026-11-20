@@ -6,8 +6,9 @@ import pandas as pd
 import streamlit as st
 
 from core import mocks
-from core.config import SAMPLE_DIR
+from core.config import DB_PATH, SAMPLE_DIR
 from core.contracts import TaskStatus
+from db.repository import Repository
 from modules.scheduler import ALGORITHMS, schedule
 from modules.scheduler.metrics import evaluate
 from modules.scheduler.model import WEEKDAY_VN, ScheduleSettings
@@ -15,6 +16,7 @@ from modules.scheduler.reminders import (
     TelegramSender, make_reminders, save_reminders, send_due, to_ics,
 )
 from modules.scheduler.slots import busy_intervals
+from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from views._shared import module_header
 
@@ -24,9 +26,19 @@ module_header("📅 Lập lịch & nhắc nhở", "Long (C)",
 
 # ---------------------------------------------------------------- 1. Nhiệm vụ
 st.subheader("1. Nhiệm vụ")
-st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
-           "Hiện dùng dữ liệu mẫu, sẽ thay bằng kết quả của module B.")
-base_tasks = mocks.tasks()  # TODO: thay bằng nhiệm vụ do module B lưu khi B xong
+b_tasks, b_skipped = tasks_from_b(Repository(DB_PATH))
+if b_tasks:
+    base_tasks = b_tasks
+    st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
+               f"Nguồn: {len(b_tasks)} nhiệm vụ module B đã lưu "
+               f"({sum(t.status is TaskStatus.CONFIRMED for t in b_tasks)} đã xác nhận ở trang "
+               "Trích xuất).")
+else:
+    base_tasks = mocks.tasks()
+    st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
+               "Module B chưa lưu nhiệm vụ nào, đang dùng dữ liệu mẫu.")
+for s in b_skipped:
+    st.warning(f"Không xếp được “{s.title}” ({s.task_id}): {s.reason}")
 edited = st.data_editor(pd.DataFrame([{
     "Xác nhận": t.status is TaskStatus.CONFIRMED, "Nhiệm vụ": t.title, "Môn": t.course,
     "Hạn nộp": t.deadline, "Giờ": t.estimated_hours, "Ưu tiên": t.priority.value,
