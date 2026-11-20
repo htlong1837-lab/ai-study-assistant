@@ -113,15 +113,15 @@ Tất cả định nghĩa nằm trong [`core/contracts.py`](../core/contracts.py
 ```python
 @dataclass
 class ClassifiedEmail:
-    id: str                        # UUID hoặc message-id từ header email
-    sender: str                    # Địa chỉ email người gửi
-    subject: str                   # Tiêu đề email
-    body: str                      # Nội dung văn bản thuần (đã strip HTML)
-    received_at: datetime          # Thời điểm nhận (từ header Date:)
-    label: EmailLabel              # Nhãn phân loại (xem bảng enum bên dưới)
-    safety: SafetyStatus           # Trạng thái an toàn tổng hợp
-    summary: str | None = None     # Tóm tắt LLM (None nếu không phải học tập)
-    attachments: list[str] = []    # Danh sách đường dẫn file đính kèm đã lưu
+    id: str  # UUID hoặc message-id từ header email
+    sender: str  # Địa chỉ email người gửi
+    subject: str  # Tiêu đề email
+    body: str  # Nội dung văn bản thuần (đã strip HTML)
+    received_at: datetime  # Thời điểm nhận (từ header Date:)
+    label: EmailLabel  # Nhãn phân loại (xem bảng enum bên dưới)
+    safety: SafetyStatus  # Trạng thái an toàn tổng hợp
+    summary: str | None = None  # Tóm tắt LLM (None nếu không phải học tập)
+    attachments: list[str] = []  # Danh sách đường dẫn file đính kèm đã lưu
     label_confidence: float = 1.0  # Độ tin cậy phân loại, khoảng [0.0, 1.0]
 ```
 
@@ -151,9 +151,9 @@ class ClassifiedEmail:
 ```python
 @dataclass
 class SafeAttachment:
-    path: str       # Đường dẫn file đính kèm đã lưu trên disk (data/sample/...)
-    sha256: str     # Mã băm SHA-256, 64 ký tự hex thường (lowercase)
-    email_id: str   # ID email cha để truy vết nguồn gốc
+    path: str  # Đường dẫn file đính kèm đã lưu trên disk (data/sample/...)
+    sha256: str  # Mã băm SHA-256, 64 ký tự hex thường (lowercase)
+    email_id: str  # ID email cha để truy vết nguồn gốc
 ```
 
 > **Validation tự động:** `__post_init__` kiểm tra `sha256` đúng định dạng 64 ký tự hex. File có hash trùng với entry malicious trong VirusTotal **không bao giờ** được tạo thành `SafeAttachment`.
@@ -194,15 +194,15 @@ class SafeAttachment:
 
 ```python
 {
-    "message_id": str,     # Header Message-ID (làm khóa id)
-    "sender": str,         # Header From:
-    "subject": str,        # Header Subject:
-    "date": datetime,      # Header Date: → parse thành datetime
-    "body_text": str,      # Phần text/plain (ưu tiên) hoặc strip HTML từ text/html
-    "attachments": [       # Danh sách file đính kèm
+    "message_id": str,  # Header Message-ID (làm khóa id)
+    "sender": str,  # Header From:
+    "subject": str,  # Header Subject:
+    "date": datetime,  # Header Date: → parse thành datetime
+    "body_text": str,  # Phần text/plain (ưu tiên) hoặc strip HTML từ text/html
+    "attachments": [  # Danh sách file đính kèm
         {"filename": str, "content": bytes, "mimetype": str}
     ],
-    "urls": [str]          # Tất cả URL tìm được trong body và HTML href
+    "urls": [str],  # Tất cả URL tìm được trong body và HTML href
 }
 ```
 
@@ -328,6 +328,7 @@ Header: x-apikey: {VIRUSTOTAL_API_KEY}
 
 ```python
 import hashlib
+
 
 def sha256_file(path: str) -> str:
     h = hashlib.sha256()

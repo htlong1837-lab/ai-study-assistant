@@ -112,8 +112,22 @@ def solve(tasks: list[Task], slots: list[Slot], settings: ScheduleSettings):
     solver.parameters.absolute_gap_limit = W_PEAK - 1
     status = solver.solve(model)
 
+    # Bảo đảm không tệ hơn EDF: với nhiều worker và giới hạn thời gian, solver có thể bỏ
+    # gợi ý và dừng ở một lời giải thiếu giờ nhiều hơn EDF. Khi đó (hoặc khi không tìm
+    # được lời giải) trả về chính lịch EDF.
+    weight = {t.id: PRIORITY_WEIGHT[t.priority] for t in tasks}
+    edf_count = defaultdict(int)
+    for tid, _ in hint:
+        edf_count[tid] += 1
+    edf_short = sum(weight[tid] * max(0, need[tid] - edf_count[tid]) for tid in need)
+
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        if tasks:
+            return edf.solve(tasks, slots, settings)[0], "EDF_FALLBACK"
         return [], solver.status_name(status)
+    cp_short = sum(weight[tid] * solver.value(short[tid]) for tid in need)
+    if cp_short > edf_short:
+        return edf.solve(tasks, slots, settings)[0], "EDF_FALLBACK"
     by_index = {s.index: s for s in slots}
     assignment = [(tid, by_index[i]) for (tid, i), v in x.items() if solver.value(v)]
     return to_blocks(assignment), solver.status_name(status)

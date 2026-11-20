@@ -1,0 +1,24 @@
+{
+  "id": "gold-012",
+  "category": "extension",
+  "split": "test",
+  "email": {
+    "id": "e-g12",
+    "sender": "gv.se@uni.edu.vn",
+    "subject": "[CNPM] Gia hạn nộp tài liệu SRS",
+    "received_at": "2026-11-12T10:00:00+07:00",
+    "body": "Giảng viên gia hạn nộp tài liệu đặc tả yêu cầu SRS môn Công nghệ phần mềm đến 23h59 ngày 26/11/2026 trên Google Drive."
+  },
+  "gold": {
+    "title": "Tài liệu đặc tả yêu cầu SRS",
+    "course": "Công nghệ phần mềm",
+    "deadline": "2026-11-26T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 26/11/2026",
+    "submission_platform": "Google Drive",
+    "submission_format": [".docx", ".pdf"],
+    "grading_criteria": [],
+    "is_extension_notice": true,
+    "refers_to": "Tài liệu đặc tả yêu cầu SRS",
+    "has_conflict": true
+  }
+}

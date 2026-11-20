@@ -1,0 +1,22 @@
+{
+  "id": "gold-020",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g20",
+    "sender": "gv.ds@uni.edu.vn",
+    "subject": "[CTDL-GT] Bài tập Cây AVL và B-Tree",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Nộp bài tập cài đặt Cây AVL môn Cấu trúc dữ liệu và giải thuật trước 23h59 ngày 27/11/2026 qua LMS."
+  },
+  "gold": {
+    "title": "Bài tập cài đặt Cây AVL",
+    "course": "Cấu trúc dữ liệu và giải thuật",
+    "deadline": "2026-11-27T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 27/11/2026",
+    "submission_platform": "LMS",
+    "submission_format": [".cpp"],
+    "grading_criteria": ["Các phép quay cây cân bằng", "Thao tác chèn và xóa", "Độ phức tạp O(log N)"],
+    "has_conflict": false
+  }
+}

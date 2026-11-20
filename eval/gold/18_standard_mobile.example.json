@@ -1,0 +1,22 @@
+{
+  "id": "gold-018",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g18",
+    "sender": "gv.mobile@uni.edu.vn",
+    "subject": "[Mobile] Bài tập ứng dụng Flutter",
+    "received_at": "2026-11-09T08:00:00+07:00",
+    "body": "Nộp mã nguồn bài tập Flutter môn Lập trình thiết bị di động trước 23h59 ngày 28/11/2026 lên GitHub Classroom."
+  },
+  "gold": {
+    "title": "Bài tập ứng dụng Flutter",
+    "course": "Lập trình thiết bị di động",
+    "deadline": "2026-11-28T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 28/11/2026",
+    "submission_platform": "GitHub Classroom",
+    "submission_format": [".git"],
+    "grading_criteria": ["Giao diện Responsive", "Quản lý State với Bloc", "Tích hợp API"],
+    "has_conflict": false
+  }
+}

@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import pytest
 
 from core.contracts import Priority, ReminderChannel, StudyBlock
 from modules.scheduler import notify

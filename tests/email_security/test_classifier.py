@@ -7,10 +7,10 @@ Mọi test:
 - LLMZeroShotClassifier dùng FakeLLMClient — không gọi API thực.
 - Không cần GEMINI_API_KEY hay VIRUSTOTAL_API_KEY.
 """
+
 from __future__ import annotations
 
 import json
-import textwrap
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -70,11 +70,13 @@ def make_fake_llm_client(label: str = "phishing", confidence: float = 0.9) -> LL
     """Tạo LLMClient giả trả JSON cố định."""
     client = MagicMock(spec=LLMClient)
     client.is_configured.return_value = True
-    response_text = json.dumps({
-        "label": label,
-        "confidence": confidence,
-        "reason": "Test fake response",
-    })
+    response_text = json.dumps(
+        {
+            "label": label,
+            "confidence": confidence,
+            "reason": "Test fake response",
+        }
+    )
     client.generate.return_value = LLMResponse(
         text=response_text,
         input_tokens=10,
@@ -95,6 +97,7 @@ def make_error_llm_client(exception: Exception) -> LLMClient:
 # ===========================================================================
 # PHẦN 1: _load_jsonl
 # ===========================================================================
+
 
 class TestLoadJsonl:
     def test_loads_valid_file(self, tiny_jsonl: Path):
@@ -133,8 +136,7 @@ class TestLoadJsonl:
     def test_broken_json_skipped(self, tmp_path: Path):
         p = tmp_path / "broken.jsonl"
         p.write_text(
-            'NOT_JSON\n'
-            '{"text": "valid", "label": "phishing"}\n',
+            'NOT_JSON\n{"text": "valid", "label": "phishing"}\n',
             encoding="utf-8",
         )
         texts, labels = _load_jsonl(p)
@@ -157,6 +159,7 @@ class TestLoadJsonl:
 # ===========================================================================
 # PHẦN 2: BaselineClassifier
 # ===========================================================================
+
 
 class TestBaselineClassifier:
     def test_train_from_file(self, tiny_jsonl: Path):
@@ -262,6 +265,7 @@ class TestBaselineClassifier:
 # PHẦN 3: _build_prompt & _parse_response
 # ===========================================================================
 
+
 class TestBuildPrompt:
     def test_wraps_in_email_tags(self):
         prompt = _build_prompt("Hello World")
@@ -290,8 +294,8 @@ class TestBuildPrompt:
         prompt = _build_prompt(injected)
         # Inject text phải nằm bên trong thẻ
         email_start = prompt.index("<email>")
-        email_end   = prompt.index("</email>")
-        inner = prompt[email_start:email_end + len("</email>")]
+        email_end = prompt.index("</email>")
+        inner = prompt[email_start : email_end + len("</email>")]
         assert injected[:30] in inner  # nội dung inject bị bọc trong thẻ
 
 
@@ -362,6 +366,7 @@ class TestParseResponse:
 # PHẦN 4: LLMZeroShotClassifier (dùng fake LLM)
 # ===========================================================================
 
+
 class TestLLMZeroShotClassifier:
     def test_predict_returns_email_label(self):
         client = make_fake_llm_client("phishing", 0.9)
@@ -404,7 +409,9 @@ class TestLLMZeroShotClassifier:
         client.is_configured.return_value = True
         client.generate.return_value = LLMResponse(
             text="Đây là câu trả lời không phải JSON",
-            input_tokens=5, output_tokens=10, cached=False,
+            input_tokens=5,
+            output_tokens=10,
+            cached=False,
         )
         clf = LLMZeroShotClassifier(client=client)
         label, conf = clf.predict("test email")
@@ -493,6 +500,7 @@ class TestLLMZeroShotClassifier:
 # ===========================================================================
 # PHẦN 5: Tích hợp với dataset thực
 # ===========================================================================
+
 
 class TestIntegrationWithRealDataset:
     """Test với dataset thực trong data/emails_labeled.jsonl."""
