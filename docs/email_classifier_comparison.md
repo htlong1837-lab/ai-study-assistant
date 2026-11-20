@@ -1,12 +1,14 @@
 # Báo cáo So sánh Classifier — Module D Email & Bảo mật
 
-> **Ngày tạo:** 2026-11-11 10:14  
+> **Ngày tạo:** 2026-11-20 17:52  
 > **Dataset:** `data\emails_labeled.jsonl` (44 mẫu)  
 > **Phương pháp đánh giá:** Stratified 5-Fold Cross Validation
 
 ---
 
 ## 1. Baseline — TF-IDF (word + char\_wb) + Logistic Regression
+
+**Mô hình:** `sklearn.linear_model.LogisticRegression` (C=1.0, class_weight=balanced, max_iter=200) trên `FeatureUnion` gồm word và char\_wb TF-IDF.
 
 ### Kết quả Cross Validation (5 fold)
 
@@ -15,7 +17,7 @@
 | **Macro-F1 trung bình** | **0.8602** |
 | Độ lệch chuẩn Macro-F1 | ±0.1350 |
 | F1 từng fold | 1.0000, 0.6429, 1.0000, 0.7917, 0.8667 |
-| Thời gian inference TB | 0.385 ms/mẫu |
+| Thời gian inference TB | 1.786 ms/mẫu |
 
 ### Classification Report (tích lũy 5 fold)
 
@@ -35,15 +37,14 @@ weighted avg       0.88      0.86      0.86        44
 
 ---
 
-## 2. LLM Zero-Shot (Gemini / fake)
+## 2. LLM Zero-Shot (fake / gemini-2.5-flash)
 
-> **Lưu ý:** Đo thời gian trên `LLM_PROVIDER=fake` (offline).  
-> Với Gemini API thực tế, latency ≈ 500–2000 ms/request.
+> Macro-F1 chưa được đánh giá bằng LLM thật trong kịch bản này. Thời gian và ví dụ bên dưới chỉ phản ánh provider/model đang cấu hình.
 
 | Chỉ số | Giá trị |
 |---|---|
 | Số mẫu đo | 3 |
-| Thời gian inference TB | 0.0 ms/mẫu (fake) |
+| Thời gian inference TB | 26.8 ms/mẫu |
 
 #### Kết quả mẫu (fake LLM — không phản ánh chất lượng thực):
 
@@ -62,7 +63,7 @@ weighted avg       0.88      0.86      0.86        44
 | | Baseline TF-IDF+LR | LLM Zero-shot |
 |---|---|---|
 | Macro-F1 | 0.8602 ± 0.1350 | Chưa đánh giá CV (cần quota) |
-| Inference | 0.38 ms/mẫu | ~500–2000 ms/mẫu |
+| Inference | 1.79 ms/mẫu | 26.8 ms/mẫu theo provider cấu hình |
 | Phụ thuộc mạng | ❌ Không | ✅ Có (hoặc fake) |
 | Chi phí | Miễn phí | Tốn API quota |
 | Chạy offline | ✅ Hoàn toàn | ✅ Với `LLM_PROVIDER=fake` |
@@ -72,7 +73,7 @@ weighted avg       0.88      0.86      0.86        44
 **Chọn: Baseline TF-IDF+LR** làm phương pháp mặc định vì:
 
 1. **Chạy offline hoàn toàn** — đảm bảo Constitution V (demo không phụ thuộc mạng).
-2. **Nhanh hơn ~100x** — phù hợp xử lý batch nhiều email.
+2. **Thời gian baseline đo được:** 1.786 ms/mẫu trên lần chạy này; không suy rộng thành tỷ lệ so sánh với API LLM.
 3. **Miễn phí** — không tốn API quota.
 4. **Macro-F1 ≥ 0.86** trên dataset tổng hợp.
 

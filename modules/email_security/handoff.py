@@ -48,3 +48,31 @@ def publish_to_modules(
             # Parsing errors stay at the A boundary; D can still deliver the email to B.
             continue
     return True
+
+
+def verified_email_batches(state: MutableMapping[str, Any]) -> list[tuple[Any, bool]]:
+    """Return only emails accepted by D's gate, paired with approval status."""
+    from .safety import can_forward_email
+
+    approved = state.get("approved_suspicious_email_ids", set())
+    emails = state.get("verified_emails", {})
+    values = emails.values() if isinstance(emails, dict) else emails
+    result = []
+    for email in values:
+        allow_suspicious = email.id in approved
+        if can_forward_email(email, user_approved=allow_suspicious):
+            result.append((email, allow_suspicious))
+    return result
+
+
+def verified_document_batches(state: MutableMapping[str, Any]) -> list[tuple[Any, Any]]:
+    """Return parsed documents only when a matching D-approved SafeAttachment exists."""
+    attachments = state.get("safe_attachments", {})
+    documents = state.get("verified_documents", {})
+    if not isinstance(attachments, dict) or not isinstance(documents, dict):
+        return []
+    return [
+        (attachments[sha], document)
+        for sha, document in documents.items()
+        if sha in attachments and attachments[sha].sha256 == sha
+    ]

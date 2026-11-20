@@ -18,13 +18,13 @@ URL được chuẩn hóa trước khi tra; chỉ URL `SUSPICIOUS` được gử
 
 ## Kết quả đánh giá mô phỏng
 
-Ngày chạy: 2026-11-17. Bộ dữ liệu mô phỏng ẩn danh gồm 60 email (10 mẫu mỗi nhãn: coursework, announcement, schedule, phishing, spam, other). Dữ liệu được lưu ở `eval/module_d_samples.jsonl`; đây là template mô phỏng, không phải email thu thập từ người dùng.
+Ngày chạy: 2026-11-20. Bộ dữ liệu mô phỏng ẩn danh gồm 60 email (10 mẫu mỗi nhãn: coursework, announcement, schedule, phishing, spam, other). Dữ liệu được lưu ở `eval/module_d_samples.jsonl`; đây là template mô phỏng, không phải email thu thập từ người dùng.
 
 ## Phân loại email
 
 | Phương pháp | Macro-F1 | Ghi chú |
 |---|---:|---|
-| TF-IDF word/char + Logistic Regression (Stratified 5-fold) | 0.502 | Đánh giá out-of-fold |
+| TF-IDF word/char + `sklearn.linear_model.LogisticRegression` (Stratified 5-fold) | 0.502 | Đánh giá out-of-fold |
 | LLM zero-shot | 0.048 | Kết quả zero-shot theo provider cấu hình; fake không đại diện LLM thật. |
 
 Phishing TF-IDF (precision 0.250, recall 0.300) được tính trên cùng bộ template mô phỏng; đây không phải ước lượng trên email thực tế.
