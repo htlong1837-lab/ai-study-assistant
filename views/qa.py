@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import re
+from pathlib import Path
 from uuid import uuid4
 
 import streamlit as st
 
 from core import config
+from core.contracts import SafeAttachment
 from core.llm_client import LLMClient, get_client
 from modules.qa import QAService
-from modules.qa.loader import load_document_bytes
+from modules.qa.loader import load_safe_attachment
 from modules.qa.messages import rejection_message
 from modules.qa.reader.component import render_reader
 from modules.qa.reader.threads import ThreadStore, export_markdown
@@ -69,30 +71,70 @@ api_key = st.session_state.get("qa_api_key", "")
 if api_key:
     st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
 
-uploaded = st.file_uploader(
-    "Chọn PDF, TXT hoặc Markdown", type=["pdf", "txt", "md"], key="qa_upload"
-)
-if uploaded is not None:
-    try:
-        raw = uploaded.getvalue()
-        document = load_document_bytes(uploaded.name, raw)
-        file_hash = hashlib.sha256(raw).hexdigest()
-        if st.session_state.get("qa_document_hash") != file_hash:
+# ---------------------------------------------------------------------------
+# Nguồn tài liệu: chỉ nhận file đính kèm đã qua cổng D
+# ---------------------------------------------------------------------------
+# Ưu tiên: file từ Module D (SafeAttachment) — đã được quét an toàn.
+safe_attachments = [
+    item
+    for item in st.session_state.get("qa_safe_attachments", [])
+    if isinstance(item, SafeAttachment)
+]
+
+if safe_attachments:
+    st.info(
+        f"📎 Có {len(safe_attachments)} file đính kèm đã qua kiểm tra an toàn từ Module D. "
+        "Chọn file để đọc và hỏi đáp.",
+        icon="🛡️",
+    )
+    attachment_labels = [
+        f"{Path(sa.path).name} (email: {sa.email_id[:12]}…)"
+        for sa in safe_attachments
+    ]
+    selected_idx = st.selectbox(
+        "Chọn file đính kèm từ D",
+        range(len(safe_attachments)),
+        format_func=lambda i: attachment_labels[i],
+        key="qa_attachment_picker",
+    )
+    selected_sa = safe_attachments[selected_idx]
+    sa_hash = selected_sa.sha256
+    if st.session_state.get("qa_document_hash") != sa_hash:
+        st.session_state.pop("qa_document", None)
+        st.session_state.pop("qa_pdf_bytes", None)
+        try:
+            document = load_safe_attachment(selected_sa)
+            raw = Path(selected_sa.path).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != sa_hash:
+                raise ValueError("File đính kèm đã thay đổi sau khi D kiểm tra.")
             st.session_state["qa_document"] = document
-            st.session_state["qa_document_hash"] = file_hash
+            st.session_state["qa_document_hash"] = sa_hash
             st.session_state["qa_pdf_bytes"] = (
-                raw if uploaded.name.lower().endswith(".pdf") else None
+                raw if selected_sa.path.lower().endswith(".pdf") else None
             )
             st.session_state.pop("qa_reader_sent_doc_id", None)
             st.session_state["qa_threads"] = {}
             st.session_state["qa_seen_events"] = []
             st.session_state["qa_answer_cache"] = {}
-    except Exception as exc:
-        st.error(f"Không thể mở tài liệu: {_safe_error(exc)}")
+        except Exception as exc:
+            st.error(f"Không thể mở file đính kèm: {_safe_error(exc)}")
+
+else:
+    # Không tái sử dụng tài liệu cũ (ví dụ từ phiên bản còn cho upload trực tiếp).
+    for state_key in (
+        "qa_document",
+        "qa_document_hash",
+        "qa_pdf_bytes",
+        "qa_reader_sent_doc_id",
+        "qa_threads",
+        "qa_seen_events",
+        "qa_answer_cache",
+    ):
+        st.session_state.pop(state_key, None)
 
 document = st.session_state.get("qa_document")
 if document is None:
-    st.info("Tải tệp lên để bắt đầu đọc. Chưa nhập key vẫn có thể mở và đọc tài liệu.")
+    st.info("Chuyển file đính kèm đã qua kiểm tra ở Module D sang đây để bắt đầu đọc.")
     st.stop()
 
 empty_pages = sum(len(p.text.strip()) < 20 for p in document.pages)

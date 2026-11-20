@@ -18,3 +18,8 @@ theo [TEMPLATE.md](TEMPLATE.md), ghi **ngay sau phiên**.
 | AI-D002 | Hoàng Minh | 2026-11-08 | Claude Web (như ghi trong nhật ký) | Kế hoạch chi tiết module D — [chi tiết](AI-D002-minh-claude-plan.md) |
 | AI-D003 | Hoàng Minh | 2026-11-09 | Antigravity (Claude Sonnet 4.6 Thinking) | Khung pipeline, đọc .eml (WP-00, WP-01) — [chi tiết](AI-D003-minh-antigravity-code.md) |
 | AI-D004 | Hoàng Minh | 2026-11-11 | Antigravity | Phân loại TF-IDF + LR, LLM zero-shot, so sánh F1 — [chi tiết](AI-D004-minh-antigravity-classifiers.md) |
+| AI-A001 | Nam | 2026-11-08 | Google Antigravity (Gemini 3.8 Flash) | Rà soát bảo mật và lập kế hoạch Module A — [chi tiết](AI-A001-module-a-phase0.md) |
+| AI-A002 | Nam | 2026-11-09 | Codex (GPT-6) | Thực thi fixes Module A theo review — [chi tiết](AI-A002-codex-module-a-review-fixes.md) |
+| AI-A003 | Nam | 2026-11-09 | Codex (GPT-6) | Ghi nhận thu hồi API key cũ — [chi tiết](AI-A003-key-revocation-confirmed.md) |
+| AI-A004 | Nam | 2026-11-09 | Codex (GPT-6) | Ghi nhận fixture lịch sử chưa xác định — [chi tiết](AI-A004-fixture-uncertain.md) |
+| AI-A005 | Nam | 2026-11-09 | Codex (GPT-6) | Xác nhận fixture key-like là dữ liệu giả — [chi tiết](AI-A005-fixture-confirmed-fake.md) |
