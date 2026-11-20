@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -224,13 +225,13 @@ URL được chuẩn hóa trước khi tra; chỉ URL `SUSPICIOUS` được gử
 
 ## Kết quả đánh giá mô phỏng
 
-Ngày chạy: 2026-11-17. Bộ dữ liệu mô phỏng ẩn danh gồm {len(texts)} email (10 mẫu mỗi nhãn: coursework, announcement, schedule, phishing, spam, other). Dữ liệu được lưu ở `eval/module_d_samples.jsonl`; đây là template mô phỏng, không phải email thu thập từ người dùng.
+Ngày chạy: {date.today().isoformat()}. Bộ dữ liệu mô phỏng ẩn danh gồm {len(texts)} email (10 mẫu mỗi nhãn: coursework, announcement, schedule, phishing, spam, other). Dữ liệu được lưu ở `eval/module_d_samples.jsonl`; đây là template mô phỏng, không phải email thu thập từ người dùng.
 
 ## Phân loại email
 
 | Phương pháp | Macro-F1 | Ghi chú |
 |---|---:|---|
-| TF-IDF word/char + Logistic Regression (Stratified 5-fold) | {baseline:.3f} | Đánh giá out-of-fold |
+| TF-IDF word/char + `sklearn.linear_model.LogisticRegression` (Stratified 5-fold) | {baseline:.3f} | Đánh giá out-of-fold |
 | LLM zero-shot | {llm_f1:.3f} | {provider_note} |
 
 Phishing TF-IDF (precision {phishing_pr[0]:.3f}, recall {phishing_pr[1]:.3f}) được tính trên cùng bộ template mô phỏng; đây không phải ước lượng trên email thực tế.

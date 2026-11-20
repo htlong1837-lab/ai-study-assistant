@@ -30,6 +30,7 @@
 
 Yêu cầu: Code sạch, type hint đầy đủ Python 3.11+, tuân thủ core/contracts.py, không dùng thư viện ngoài danh mục requirements.txt.` |
 | **Phản hồi đầy đủ** | Sinh các file mã nguồn: `data/emails_labeled.jsonl`, `modules/email_security/classifier/tfidf_lr.py`, `modules/email_security/classifier/llm_zeroshot.py`, `modules/email_security/classifier/compare.py`, `tests/email_security/test_classifier.py` và tài liệu đối sánh `docs/email_classifier_comparison.md`. |
+| **Tên mô hình** | Baseline là `sklearn.linear_model.LogisticRegression` trên TF-IDF word/char `FeatureUnion`. Bộ phân loại zero-shot là `LLMZeroShotClassifier` qua `core.llm_client`; provider/model lấy từ `LLM_PROVIDER`/`LLM_MODEL`. Cấu hình hiện tại mặc định `gemini-2.5-flash`; nhật ký gốc không lưu giá trị provider/model đã dùng trong lần chạy ngày 11/11. |
 | **Nhận xét, đánh giá** | - **Ưu điểm:** Khởi tạo cấu trúc Pipeline Scikit-learn chuẩn với FeatureUnion bắt tốt tiếng Việt; prompt LLM có bọc thẻ XML `<email>` chống injection.<br>- **Hạn chế:** Bộ dữ liệu ban đầu 40 mẫu hơi nhỏ, cần mở rộng dần lên 300 mẫu ở các tuần tiếp theo. |
 | **Nội dung được sử dụng** | Tiếp thu toàn bộ logic phân loại n-gram TF-IDF + Logistic Regression, hàm gọi LLM phân loại bọc XML và script chạy 5-fold CV. |
 | **Nội dung chỉnh sửa hoặc loại bỏ** | Tự sửa lại hàm fallback trong `llm_zeroshot.py` để bắt thêm ngoại lệ `TimeoutError` và bổ sung mock cho bài test để pass 100% khi ngắt mạng. |

@@ -6,7 +6,11 @@ from core.contracts import (
     SafeAttachment,
     SafetyStatus,
 )
-from modules.email_security.handoff import publish_to_modules
+from modules.email_security.handoff import (
+    publish_to_modules,
+    verified_document_batches,
+    verified_email_batches,
+)
 from modules.email_security.models import ProcessedEmail
 
 
@@ -47,6 +51,16 @@ def test_safe_email_and_gated_document_are_published(tmp_path):
     assert result.email.id in state["verified_email_ids"]
     assert "a" * 64 in state["safe_attachments"]
     assert state["verified_documents"]["a" * 64].pages[0].text == "Deadline: Friday"
+    assert len(verified_document_batches(state)) == 1
+
+
+def test_a_handoff_discards_parsed_document_without_safe_attachment():
+    state = {
+        "verified_documents": {"a" * 64: object()},
+        "safe_attachments": {},
+    }
+
+    assert verified_document_batches(state) == []
 
 
 def test_approved_suspicious_email_is_published_with_approval_marker():
@@ -71,3 +85,21 @@ def test_unapproved_suspicious_email_is_not_published():
 
     assert not publish_to_modules(result, state)
     assert state == {}
+
+
+def test_b_handoff_marks_suspicious_email_as_explicitly_allowed():
+    result = _processed(SafetyStatus.SUSPICIOUS, approved=True)
+    state = {}
+    assert publish_to_modules(result, state)
+
+    assert verified_email_batches(state) == [(result.email, True)]
+
+
+def test_b_handoff_filters_malicious_email_even_if_state_is_tampered():
+    result = _processed(SafetyStatus.MALICIOUS, approved=True)
+    state = {
+        "verified_emails": {result.email.id: result.email},
+        "approved_suspicious_email_ids": {result.email.id},
+    }
+
+    assert verified_email_batches(state) == []
