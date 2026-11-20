@@ -93,6 +93,13 @@ def do_forward(p) -> None:
         return
     if not p.can_forward:
         return
+    # --- Gửi cho Module A: file đính kèm đã qua cổng D ---
+    if p.safe_attachments:
+        pending = st.session_state.setdefault("qa_safe_attachments", [])
+        for sa in p.safe_attachments:
+            if sa not in pending:
+                pending.append(sa)
+    # TODO: gọi Module B (p.email) tại đây.
     if not publish_to_modules(p, st.session_state):
         st.error("Email chưa vượt qua cổng an toàn hoặc chưa được người dùng duyệt.")
         return
