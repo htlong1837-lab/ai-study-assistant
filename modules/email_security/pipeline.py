@@ -1,196 +1,212 @@
-"""Pipeline tích hợp Module D — WP-00 stub + WP-01 (plan_module_d.md § 4).
+"""Luồng xử lý email thật cho Module D, với cổng chặn fail-closed."""
 
-Thứ tự pipeline (xem plan § 4):
-  1. parse_eml()
-  2. Lưu file đính kèm (đã làm trong parser)
-  3. Quét offline (stub ở WP-00: đánh SUSPICIOUS, sẽ hoàn thiện WP-06, WP-08)
-  4. Quét online (stub: bỏ qua)
-  5. aggregate_safety (từ kết quả scanner)
-  6. classify (stub: EmailLabel.OTHER, confidence 0.0)
-  7. aggregate_safety với nhãn
-  8. summarize (stub: None)
-  9. Dựng ClassifiedEmail + SafeAttachment
-  10. can_forward
-
-Chế độ stub (SCANNERS_ARE_STUBS = True):
-  - Mọi email tiếp nhận đều có safety tối thiểu SUSPICIOUS (kể cả email không có
-    URL / file đính kèm), vì chưa có scanner thật để kết luận SAFE.
-  - can_forward chỉ thành True sau khi người dùng bấm duyệt trên UI, tức là sau
-    khi gọi approve_suspicious(). Email MALICIOUS không bao giờ được chuyển.
-
-Khi WP-06, WP-08 hoàn thành: thay các hàm _stub_* bằng scanner thật rồi đặt
-SCANNERS_ARE_STUBS = False.
-"""
 from __future__ import annotations
 
 import logging
+import os
 from datetime import timezone
 from pathlib import Path
 
 from core.contracts import ClassifiedEmail, EmailLabel, SafeAttachment, SafetyStatus
 
+from .attachment_scanner import scan_attachment
+from .classifier import BaselineClassifier, LLMZeroShotClassifier
 from .config import Settings, get_settings
-from .models import (
-    AttachmentFinding,
-    ParsedEmail,
-    ProcessedEmail,
-    Reason,
-    UrlFinding,
-)
+from .models import AttachmentFinding, ParsedEmail, ProcessedEmail, Reason
 from .parser import SavedAttachment, parse_eml
+from .redact import redact_pii
 from .safety import aggregate_safety, can_forward_email, max_status
-
-# ---------------------------------------------------------------------------
-# Cờ chế độ stub — ĐẶT False khi WP-06 (URL) và WP-08 (file đính kèm) hoàn thành
-# ---------------------------------------------------------------------------
-# True  → scanner chưa thật: mọi email mặc định SUSPICIOUS, chỉ chuyển cho A/B
-#         sau khi gọi approve_suspicious().
-# False → dùng kết quả scanner thật.
-SCANNERS_ARE_STUBS = True
+from .summarizer import summarize_email
+from .url_scanner import scan_url, scan_urls
+from .urls import normalize_url
+from .virustotal import VirusTotalClient, verify_attachment_with_vt, verify_url_with_vt
 
 logger = logging.getLogger(__name__)
+_CLASSIFIER: BaselineClassifier | None = None
 
 
-def _apply_stub_floor(status: SafetyStatus) -> SafetyStatus:
-    """Ở chế độ stub, không bao giờ trả mức thấp hơn SUSPICIOUS (Constitution II)."""
-    if SCANNERS_ARE_STUBS:
-        return max_status(status, SafetyStatus.SUSPICIOUS)
-    return status
+def _get_baseline() -> BaselineClassifier:
+    global _CLASSIFIER
+    if _CLASSIFIER is None:
+        data_path = Path("data/emails_labeled.jsonl")
+        model_path = Path("data/models/email_classifier.joblib")
+        _CLASSIFIER = BaselineClassifier.load_or_train(model_path, data_path)
+    return _CLASSIFIER
 
 
-# ---------------------------------------------------------------------------
-# Classifier stub (WP-00) — sẽ được thay bằng WP-02b/03
-# ---------------------------------------------------------------------------
+def _classify(
+    parsed: ParsedEmail, *, allow_llm: bool, settings: Settings
+) -> tuple[EmailLabel, float, str]:
+    """Dùng TF-IDF mặc định; chỉ chuyển sang zero-shot khi được cấu hình."""
+    text = f"{parsed.subject}\n{parsed.body_text}".strip()
+    mode = os.getenv("EMAIL_CLASSIFIER", "tfidf").strip().lower()
+    if mode in {"llm", "zero-shot", "zeroshot"} and allow_llm:
+        label, confidence = LLMZeroShotClassifier().predict(redact_pii(text))
+        if confidence > 0.0 or label is not EmailLabel.OTHER:
+            return label, confidence, "llm"
+        try:
+            label, confidence = _get_baseline().predict(text)
+            return label, confidence, "fallback"
+        except Exception:
+            return EmailLabel.OTHER, 0.0, "fallback"
+    try:
+        label, confidence = _get_baseline().predict(text)
+        return label, confidence, "tfidf"
+    except Exception as exc:  # dataset/model lỗi vẫn trả contract hợp lệ
+        logger.warning("TF-IDF classifier unavailable; using OTHER: %s", exc)
+        return EmailLabel.OTHER, 0.0, "fallback"
 
-def _stub_classify(parsed: ParsedEmail) -> tuple[EmailLabel, float]:
-    """Stub phân loại: luôn trả OTHER với confidence 0.0 để pipeline chạy được ngay."""
-    return EmailLabel.OTHER, 0.0
 
+def _scan_urls(parsed: ParsedEmail, settings: Settings, vt: VirusTotalClient | None):
+    normalized = list(
+        dict.fromkeys(u for raw in parsed.urls if (u := normalize_url(raw)))
+    )
+    findings = scan_urls(normalized)
+    if vt:
+        for finding in findings:
+            if finding.status is SafetyStatus.SUSPICIOUS:
+                old_status = finding.status
+                verify_url_with_vt(finding, client=vt)
+                # Ngưỡng cấu hình VT, đồng thời không để verdict sạch xóa heuristic.
+                rep = finding.reputation
+                vt_status = SafetyStatus.SAFE
+                if rep and rep.malicious >= settings.vt_malicious_threshold:
+                    vt_status = SafetyStatus.MALICIOUS
+                elif rep and (
+                    rep.malicious > 0
+                    or rep.suspicious >= settings.vt_suspicious_threshold
+                ):
+                    vt_status = SafetyStatus.SUSPICIOUS
+                finding.status = max_status(old_status, vt_status)
 
-# ---------------------------------------------------------------------------
-# Scanner stubs (WP-00) — sẽ được thay bằng WP-06, WP-08
-# ---------------------------------------------------------------------------
-
-def _stub_scan_urls(
-    urls: list[str],
-    html_links: list[tuple[str, str]],
-    sender: str,
-    settings: Settings,
-) -> tuple[list[UrlFinding], list[Reason]]:
-    """Stub quét URL: chưa quét được nên đánh SUSPICIOUS (mặc định chặn)."""
-    findings = [
-        UrlFinding(
-            url=u,
-            defanged=u,  # chưa defang — sẽ dùng urls.defang_url() ở WP-06
-            status=SafetyStatus.SUSPICIOUS,
-            reasons=[],
-            reputation=None,
+    sender_reasons: list[Reason] = []
+    sender = scan_url(parsed.sender) if "://" in parsed.sender else None
+    if sender:
+        sender_reasons.extend(sender.reasons)
+    if parsed.reply_to and parsed.sender:
+        from_domain = parsed.sender.rsplit("@", 1)[-1].lower().strip(" >")
+        reply_domain = parsed.reply_to.rsplit("@", 1)[-1].lower().strip(" >")
+        if from_domain and reply_domain and from_domain != reply_domain:
+            sender_reasons.append(
+                Reason("REPLY_TO_MISMATCH", "Reply-To khác tên miền người gửi.")
+            )
+    auth = (parsed.auth_results or "").lower()
+    if any(signal in auth for signal in ("spf=fail", "dkim=fail", "dmarc=fail")):
+        sender_reasons.append(
+            Reason(
+                "AUTHENTICATION_FAILED", "Email không vượt qua kiểm tra SPF/DKIM/DMARC."
+            )
         )
-        for u in urls
-    ]
-    return findings, []  # (url_findings, sender_reasons)
+    return findings, sender_reasons
 
 
-def _stub_scan_attachments(
+def _scan_attachments(
+    parsed: ParsedEmail,
     saved: list[SavedAttachment],
     settings: Settings,
+    vt: VirusTotalClient | None,
 ) -> list[AttachmentFinding]:
-    """Stub quét file đính kèm: chưa quét được nên đánh SUSPICIOUS (mặc định chặn)."""
-    return [
-        AttachmentFinding(
-            filename=sa.filename,
-            path=sa.path,
-            sha256=sa.sha256,
-            size=sa.size,
-            status=SafetyStatus.SUSPICIOUS,
-            reasons=[],
-            reputation=None,
+    by_name = {item.filename: item for item in saved}
+    results: list[AttachmentFinding] = []
+    for item in parsed.raw_attachments:
+        filename = str(item.get("filename") or "attachment")
+        content = item.get("content") or b""
+        saved_item = by_name.get(filename)
+        path = saved_item.path if saved_item else ""
+        if item.get("oversized"):
+            results.append(
+                AttachmentFinding(
+                    filename,
+                    path,
+                    "",
+                    0,
+                    SafetyStatus.SUSPICIOUS,
+                    [
+                        Reason(
+                            "SIZE_EXCEEDED",
+                            "Tệp vượt giới hạn kích thước nên chưa quét đầy đủ.",
+                        )
+                    ],
+                )
+            )
+            continue
+        result = scan_attachment(
+            content,
+            filename,
+            path,
+            parsed.message_id,
+            max_bytes=settings.attach_max_bytes,
         )
-        for sa in saved
-    ]
+        finding = result.to_finding()
+        finding.size = len(content)
+        if vt and finding.status is SafetyStatus.SUSPICIOUS:
+            old_status = finding.status
+            verify_attachment_with_vt(finding, client=vt, email_id=parsed.message_id)
+            rep = finding.reputation
+            vt_status = SafetyStatus.SAFE
+            if rep and rep.malicious >= settings.vt_malicious_threshold:
+                vt_status = SafetyStatus.MALICIOUS
+            elif rep and (
+                rep.malicious > 0 or rep.suspicious >= settings.vt_suspicious_threshold
+            ):
+                vt_status = SafetyStatus.SUSPICIOUS
+            finding.status = max_status(old_status, vt_status)
+        results.append(finding)
+    return results
 
-
-# ---------------------------------------------------------------------------
-# Pipeline chính
-# ---------------------------------------------------------------------------
 
 def process_email(
-    raw: bytes | Path,
-    *,
-    settings: Settings | None = None,
+    raw: bytes | Path, *, settings: Settings | None = None
 ) -> ProcessedEmail:
-    """Pipeline tích hợp Module D: bytes .eml → ProcessedEmail.
-
-    Đây là API công khai duy nhất mà Module B, Module A và UI gọi.
-
-    Args:
-        raw: Nội dung .eml dưới dạng bytes, hoặc Path đến file .eml.
-        settings: Cấu hình. None → tự đọc từ .env qua get_settings().
-
-    Returns:
-        ProcessedEmail với ClassifiedEmail (cho B) và SafeAttachment[] (cho A).
-        Khi SCANNERS_ARE_STUBS=True: safety >= SUSPICIOUS và can_forward=False
-        cho đến khi gọi approve_suspicious().
-    """
+    """Parse, quét, phân loại và dựng kết quả chỉ chuyển tiếp khi qua cổng."""
     cfg = settings or get_settings()
+    try:
+        raw_bytes = raw.read_bytes() if isinstance(raw, Path) else raw
+    except OSError as exc:
+        logger.error("Không đọc được file .eml '%s': %s", raw, exc)
+        raw_bytes = b""
 
-    # --- 0. Đọc file nếu cần ---
-    if isinstance(raw, Path):
-        try:
-            raw_bytes = raw.read_bytes()
-        except OSError as exc:
-            logger.error("Không đọc được file .eml '%s': %s", raw, exc)
-            raw_bytes = b""
-    else:
-        raw_bytes = raw
-
-    # --- 1–2. Parse + lưu đính kèm ---
-    parsed, saved_attachments = parse_eml(
+    parsed, saved = parse_eml(
         raw_bytes,
         attachments_dir=cfg.attachments_dir,
         max_attach_bytes=cfg.attach_max_bytes,
-        save_attachments=bool(raw_bytes),  # không lưu khi bytes rỗng
+        save_attachments=bool(raw_bytes),
+    )
+    vt = (
+        VirusTotalClient(api_key=cfg.virustotal_api_key) if cfg.has_virustotal else None
+    )
+    url_findings, sender_reasons = _scan_urls(parsed, cfg, vt)
+    attachment_findings = _scan_attachments(parsed, saved, cfg, vt)
+    pre_statuses = [f.status for f in url_findings] + [
+        f.status for f in attachment_findings
+    ]
+    if sender_reasons:
+        pre_statuses.append(SafetyStatus.SUSPICIOUS)
+    safety_pre = aggregate_safety(*pre_statuses)
+
+    label, confidence, method = _classify(
+        parsed, allow_llm=safety_pre is not SafetyStatus.MALICIOUS, settings=cfg
+    )
+    safety = aggregate_safety(
+        *pre_statuses, label_is_phishing=label is EmailLabel.PHISHING
     )
 
-    # --- 3–4. Quét (stub WP-00) ---
-    url_findings, sender_reasons = _stub_scan_urls(
-        parsed.urls, parsed.html_links, parsed.sender, cfg
-    )
-    attach_findings = _stub_scan_attachments(saved_attachments, cfg)
-
-    url_statuses = [f.status for f in url_findings]
-    attach_statuses = [f.status for f in attach_findings]
-
-    # --- 5. Tổng hợp safety trước phân loại ---
-    # Ở chế độ stub: email không URL/file vẫn bị nâng lên SUSPICIOUS.
-    safety_pre = _apply_stub_floor(aggregate_safety(*url_statuses, *attach_statuses))
-
-    # --- 6. Phân loại ---
-    # Plan § 4: nếu safety_pre == MALICIOUS → chỉ dùng TF-IDF cục bộ, không gọi LLM.
-    # Ở WP-00 cả hai đều là stub nên chưa có khác biệt.
-    label, confidence = _stub_classify(parsed)
-    classifier_method = "stub"
-
-    # --- 7. Tổng hợp safety cuối (áp dụng quy tắc nhãn) ---
-    safety_final = _apply_stub_floor(
-        aggregate_safety(
-            *url_statuses,
-            *attach_statuses,
-            label_is_phishing=(label is EmailLabel.PHISHING),
+    summary = None
+    if safety is SafetyStatus.SAFE and label in {
+        EmailLabel.ASSIGNMENT,
+        EmailLabel.ANNOUNCEMENT,
+        EmailLabel.SCHEDULE,
+    }:
+        summary = summarize_email(
+            parsed.subject,
+            parsed.body_text,
+            label,
+            safety,
         )
-    )
-    safety_final = max_status(safety_final, safety_pre)
 
-    # --- 8. Tóm tắt (stub: None) ---
-    summary: str | None = None
-
-    # --- 9. Dựng ClassifiedEmail ---
     received_at = parsed.received_at
-    if hasattr(received_at, "tzinfo") and received_at.tzinfo is None:
+    if received_at.tzinfo is None:
         received_at = received_at.replace(tzinfo=timezone.utc)
-
-    attachment_paths = [sa.path for sa in saved_attachments if sa.path]
-
     classified = ClassifiedEmail(
         id=parsed.message_id,
         sender=parsed.sender,
@@ -198,82 +214,51 @@ def process_email(
         body=parsed.body_text,
         received_at=received_at,
         label=label,
-        safety=safety_final,
+        safety=safety,
         summary=summary,
-        attachments=attachment_paths,
+        attachments=[a.path for a in saved if a.path],
         label_confidence=confidence,
     )
-
-    # --- 9b. Dựng SafeAttachment chỉ cho file SAFE ---
-    # Ở chế độ stub mọi file là SUSPICIOUS nên danh sách này rỗng cho tới khi
-    # người dùng duyệt (approve_suspicious tạo SafeAttachment cho file SUSPICIOUS).
-    safe_attachments: list[SafeAttachment] = []
-    for finding in attach_findings:
-        if finding.status is SafetyStatus.SAFE and finding.path and finding.sha256:
-            try:
-                safe_attachments.append(
-                    SafeAttachment(
-                        path=finding.path,
-                        sha256=finding.sha256,
-                        email_id=parsed.message_id,
+    safe_attachments = []
+    if safety is not SafetyStatus.MALICIOUS:
+        for finding in attachment_findings:
+            if finding.status is SafetyStatus.SAFE and finding.path and finding.sha256:
+                try:
+                    safe_attachments.append(
+                        SafeAttachment(finding.path, finding.sha256, parsed.message_id)
                     )
-                )
-            except ValueError as exc:
-                logger.error("Không tạo SafeAttachment cho '%s': %s", finding.filename, exc)
-
-    # --- 10. Quyết định chuyển tiếp (chưa có sự đồng ý của người dùng) ---
-    forward = can_forward_email(classified, user_approved=False)
-    if SCANNERS_ARE_STUBS:
-        # Chốt chặn thứ hai: ở chế độ stub, trước khi duyệt thì tuyệt đối không chuyển,
-        # bất kể can_forward_email() trả gì.
-        forward = False
-
+                except ValueError as exc:
+                    logger.error(
+                        "Không thể tạo SafeAttachment cho %s: %s", finding.filename, exc
+                    )
     return ProcessedEmail(
         email=classified,
         safe_attachments=safe_attachments,
         url_findings=url_findings,
-        attachment_findings=attach_findings,
+        attachment_findings=attachment_findings,
         sender_reasons=sender_reasons,
-        classifier_method=classifier_method,
-        can_forward=forward,
+        classifier_method=method,
+        can_forward=can_forward_email(classified),
         user_approved=False,
     )
 
 
 def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
-    """Người dùng bấm duyệt trên UI để chuyển tiếp email SUSPICIOUS.
-
-    - Tạo SafeAttachment cho các file có status SUSPICIOUS (nếu chưa có).
-    - Đặt user_approved=True và tính lại can_forward.
-    - Đây là đường DUY NHẤT để can_forward thành True khi SCANNERS_ARE_STUBS=True.
-
-    Email MALICIOUS: không thay đổi kết quả (can_forward vẫn False).
-    """
+    """Duyệt email nghi ngờ; MALICIOUS tuyệt đối không thể được duyệt."""
     if processed.email.safety is SafetyStatus.MALICIOUS:
-        logger.warning(
-            "approve_suspicious() bị bỏ qua: email '%s' là MALICIOUS",
-            processed.email.id,
-        )
         return processed
-
-    existing_paths = {sa.path for sa in processed.safe_attachments}
-    extra: list[SafeAttachment] = []
+    extra = []
+    existing = {attachment.path for attachment in processed.safe_attachments}
     for finding in processed.attachment_findings:
-        if finding.status is SafetyStatus.SUSPICIOUS and finding.path not in existing_paths:
-            if finding.path and finding.sha256:
-                try:
-                    extra.append(
-                        SafeAttachment(
-                            path=finding.path,
-                            sha256=finding.sha256,
-                            email_id=processed.email.id,
-                        )
-                    )
-                except ValueError as exc:
-                    logger.error("approve_suspicious: không tạo SafeAttachment: %s", exc)
-
-    new_forward = can_forward_email(processed.email, user_approved=True)
-
+        if (
+            finding.status is SafetyStatus.SUSPICIOUS
+            and finding.path
+            and finding.sha256
+            and finding.path not in existing
+        ):
+            extra.append(
+                SafeAttachment(finding.path, finding.sha256, processed.email.id)
+            )
     return ProcessedEmail(
         email=processed.email,
         safe_attachments=processed.safe_attachments + extra,
@@ -281,19 +266,16 @@ def approve_suspicious(processed: ProcessedEmail) -> ProcessedEmail:
         attachment_findings=processed.attachment_findings,
         sender_reasons=processed.sender_reasons,
         classifier_method=processed.classifier_method,
-        can_forward=new_forward,
+        can_forward=can_forward_email(processed.email, user_approved=True),
         user_approved=True,
     )
 
 
 def process_many(
-    raws: list[bytes | Path],
-    *,
-    settings: Settings | None = None,
+    raws: list[bytes | Path], *, settings: Settings | None = None
 ) -> list[ProcessedEmail]:
-    """Xử lý nhiều email, bỏ qua lỗi đơn lẻ."""
     cfg = settings or get_settings()
-    results: list[ProcessedEmail] = []
+    results = []
     for raw in raws:
         try:
             results.append(process_email(raw, settings=cfg))
