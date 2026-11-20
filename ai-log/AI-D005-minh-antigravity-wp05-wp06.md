@@ -6,7 +6,7 @@
 | **Thời gian** | 14/11/2026, 19:45 |
 | **Công cụ AI** | Google Antigravity (VS Code Extension) |
 | **Mục đích** | Triển khai WP-05 (Ẩn danh thông tin cá nhân PII & Tóm tắt email học tập) và WP-06 (Quét an toàn URL offline bằng luật heuristic). |
-| **Prompt đầy đủ** | `Tôi là Hoàng Minh (Module D - Email & Bảo mật)... [Dán toàn bộ prompt ở Bước 1 vào đây]` |
+| **Prompt đầy đủ** | `[Không lưu prompt gốc trong repo; cần người thực hiện cung cấp bản nguyên văn, không thể khôi phục chính xác từ kế hoạch và code.]` |
 | **Phản hồi đầy đủ** | Sinh mã nguồn cho `modules/email_security/redact.py`, `modules/email_security/summarizer.py`, `modules/email_security/url_scanner.py` cùng 2 bộ kiểm thử `tests/email_security/test_redact_summarizer.py` và `tests/email_security/test_url_scanner.py`. |
 | **Nhận xét, đánh giá** | - **Ưu điểm:** Tuân thủ nghiêm ngặt quy tắc "Chặn tại cổng" (không gửi email độc sang LLM), che đủ email/SĐT/MSSV trước khi tóm tắt và có bộ luật heuristic phát hiện domain mạo danh trường học.<br>- **Hạn chế:** Danh sách tên miền trường học và domain rút gọn cần được cập nhật mở rộng thêm nếu gặp trường hợp mới. |
 | **Nội dung được sử dụng** | Tiếp thu toàn bộ logic regex ẩn danh PII, luồng chặn tóm tắt email độc, bộ luật quét URL heuristic và các ca kiểm thử unit test. |
