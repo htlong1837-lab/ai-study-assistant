@@ -1,0 +1,22 @@
+{
+  "id": "gold-007",
+  "category": "standard",
+  "split": "test",
+  "email": {
+    "id": "e-g07",
+    "sender": "gv.algo@uni.edu.vn",
+    "subject": "[TTUD] Bài tập Quy hoạch động",
+    "received_at": "2026-11-04T14:00:00+07:00",
+    "body": "Các bạn nộp bài tập Quy hoạch động môn Thuật toán ứng dụng trước 23h59 ngày 19/11/2026 lên hệ thống VNOJ."
+  },
+  "gold": {
+    "title": "Bài tập Quy hoạch động",
+    "course": "Thuật toán ứng dụng",
+    "deadline": "2026-11-19T23:59:00+07:00",
+    "raw_deadline_text": "23h59 ngày 19/11/2026",
+    "submission_platform": "VNOJ",
+    "submission_format": [".cpp"],
+    "grading_criteria": ["Độ phức tạp thuật toán O(N^2)", "Vượt qua 20 test case"],
+    "has_conflict": false
+  }
+}

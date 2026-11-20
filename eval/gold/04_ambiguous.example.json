@@ -1,0 +1,23 @@
+{
+  "id": "gold-004",
+  "category": "ambiguous",
+  "split": "test",
+  "email": {
+    "id": "e-g04",
+    "sender": "mangmaytinh@uni.edu.vn",
+    "subject": "[MMT] Bài tập cấu hình Router",
+    "received_at": "2026-11-04T10:00:00+07:00",
+    "body": "Các bạn sinh viên hoàn thành bài tập cấu hình Router và nộp trong tuần sau."
+  },
+  "gold": {
+    "title": "Bài tập cấu hình Router",
+    "course": "Mạng máy tính",
+    "deadline": "2026-11-15T23:59:00+07:00",
+    "raw_deadline_text": "trong tuần sau",
+    "submission_platform": null,
+    "submission_format": [],
+    "grading_criteria": [],
+    "has_conflict": false,
+    "is_ambiguous": true
+  }
+}

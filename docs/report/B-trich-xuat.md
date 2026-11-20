@@ -1,6 +1,6 @@
 # SP2 — Phần B: Trích xuất yêu cầu bài tập
 
-*Người phụ trách: Trường (46 giờ). Bản nháp tài liệu đặc tả chức năng và đánh giá phục vụ Báo cáo sản phẩm SP2 (Application Track). Bám sát kế hoạch tổng thể đồ án, hợp đồng dữ liệu trong `core/contracts.py` và nguyên tắc thiết kế chung của hệ thống.*
+*Người phụ trách: Duy (46 giờ). Bản nháp tài liệu đặc tả chức năng và đánh giá phục vụ Báo cáo sản phẩm SP2 (Application Track). Bám sát kế hoạch tổng thể đồ án, hợp đồng dữ liệu trong `core/contracts.py` và nguyên tắc thiết kế chung của hệ thống.*
 
 ---
 
