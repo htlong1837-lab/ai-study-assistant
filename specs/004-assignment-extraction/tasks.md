@@ -57,7 +57,7 @@
 - [x] T014 [P] [US1] Cài đặt `modules/extraction/prompts.py` (PROMPT_VERSION, system prompt trợ lý học vụ, chống prompt injection, 4 ví dụ few-shot chuẩn)
 - [x] T015 [P] [US1] Cài đặt `modules/extraction/confidence.py` (hàm compute_confidence bằng code tất định dựa trên độ đầy đủ bằng chứng và cờ cảnh báo)
 - [x] T016 [US1] Cài đặt `modules/extraction/extractor.py` (hàm extract_from_email, extract_from_document, retry 1 lần khi lỗi JSON, kiểm tra quote là substring trong văn bản gốc, gọi datetime_normalizer)
-- [ ] T017 [US1] Cài đặt hàm `process_email` và `process_document` trong `modules/extraction/workflow.py` để kết nối extractor với repository
+- [x] T017 [US1] Cài đặt hàm `process_email` và `process_document` trong `modules/extraction/workflow.py` để kết nối extractor với repository
 
 **Checkpoint**: Hoạt động trích xuất độc lập hoàn chỉnh; test `pytest tests/extraction/test_extractor.py` xanh hoàn toàn với Fake LLM.
 
@@ -70,12 +70,12 @@
 **Kiểm thử độc lập**: Chạy giao diện `views/extraction.py`, chọn một đề xuất bài tập, sửa hạn nộp và bấm "Xác nhận vào lịch"; task chuyển trạng thái sang `confirmed`, được hàm `schedulable()` chấp thuận và có thể chuyển đổi thành `contracts.Task`.
 
 ### Tests cho User Story 2
-- [ ] T018 [P] [US2] Viết unit test `tests/extraction/test_workflow.py` (kiểm tra vòng đời proposed → confirmed, proposed → cancelled, chặn confirm khi thiếu deadline, kiểm tra to_contract_task)
+- [x] T018 [P] [US2] Viết unit test `tests/extraction/test_workflow.py` (kiểm tra vòng đời proposed → confirmed, proposed → cancelled, chặn confirm khi thiếu deadline, kiểm tra to_contract_task)
 
 ### Cài đặt cho User Story 2
-- [ ] T019 [US2] Cài đặt các hàm chuyển đổi trạng thái trong `modules/extraction/workflow.py` (`confirm`, `cancel`, `to_contract_task`)
-- [ ] T020 [US2] Xây dựng giao diện Streamlit Mức 1 trong `views/extraction.py` (danh sách email an toàn, danh sách thẻ proposed, form chỉnh sửa inline deadline / số giờ / ưu tiên, nút Xác nhận và Từ chối)
-- [ ] T021 [US2] Cập nhật `tests/test_pages.py` kiểm tra trang `views/extraction.py` render thành công không có ngoại lệ runtime
+- [x] T019 [US2] Cài đặt các hàm chuyển đổi trạng thái trong `modules/extraction/workflow.py` (`confirm`, `cancel`, `to_contract_task`)
+- [x] T020 [US2] Xây dựng giao diện Streamlit Mức 1 trong `views/extraction.py` (danh sách email an toàn, danh sách thẻ proposed, form chỉnh sửa inline deadline / số giờ / ưu tiên, nút Xác nhận và Từ chối)
+- [x] T021 [US2] Cập nhật `tests/test_pages.py` kiểm tra trang `views/extraction.py` render thành công không có ngoại lệ runtime
 
 **Checkpoint**: Hoàn thiện toàn bộ luồng MVP cốt lõi (User Story 1 + User Story 2) từ trích xuất đến người dùng duyệt bài tập.
 
@@ -88,11 +88,11 @@
 **Kiểm thử độc lập**: Cung cấp tài liệu đề bài có rubric và yêu cầu đặt tên; hệ thống trích xuất và lưu đầy đủ vào bảng `assignment_details`, hiển thị mục mở rộng trên UI.
 
 ### Tests cho User Story 3
-- [ ] T022 [P] [US3] Bổ sung test kiểm tra trích xuất chi tiết rubric và định dạng nộp trong `tests/extraction/test_extractor.py`
+- [x] T022 [P] [US3] Bổ sung test kiểm tra trích xuất chi tiết rubric và định dạng nộp trong `tests/extraction/test_extractor.py`
 
 ### Cài đặt cho User Story 3
-- [ ] T023 [US3] Mở rộng `modules/extraction/extractor.py` để lưu trữ dữ liệu chi tiết vào bảng `assignment_details`
-- [ ] T024 [US3] Bổ sung thành phần hiển thị chi tiết (expander/dialog) trên giao diện `views/extraction.py` hiển thị quy cách đặt tên, kênh nộp và bảng tiêu chí chấm
+- [x] T023 [US3] Mở rộng `modules/extraction/extractor.py` để lưu trữ dữ liệu chi tiết vào bảng `assignment_details`
+- [x] T024 [US3] Bổ sung thành phần hiển thị chi tiết (expander/dialog) trên giao diện `views/extraction.py` hiển thị quy cách đặt tên, kênh nộp và bảng tiêu chí chấm
 
 ---
 
@@ -103,13 +103,13 @@
 **Kiểm thử độc lập**: Cung cấp email dời hạn cho một bài tập đã tồn tại; hệ thống nhận diện đúng bài tập, giữ nguyên task gốc và sinh một bản ghi `task_update_proposals` ở trạng thái pending kèm cảnh báo lệch hạn trên UI.
 
 ### Tests cho User Story 4
-- [ ] T025 [P] [US4] Viết unit test `tests/extraction/test_conflicts.py` (test lệch hạn 7 ngày, test cùng ngày khác giờ mặc định không báo lỗi, test đề xuất dời hạn cho task đã confirmed)
+- [x] T025 [P] [US4] Viết unit test `tests/extraction/test_conflicts.py` (test lệch hạn 7 ngày, test cùng ngày khác giờ mặc định không báo lỗi, test đề xuất dời hạn cho task đã confirmed)
 
 ### Cài đặt cho User Story 4
-- [ ] T026 [P] [US4] Cài đặt `modules/extraction/matcher.py` (hàm find_matching_task so khớp theo mã bài, refers_to và độ tương đồng tên môn/tên bài)
-- [ ] T027 [US4] Cài đặt `modules/extraction/conflicts.py` (hàm compare_deadlines, compare_submission, detect_ambiguity, gợi ý phương án thông minh)
-- [ ] T028 [US4] Bổ sung hàm `resolve_conflict`, `accept_update_proposal`, `reject_update_proposal` vào `modules/extraction/workflow.py`
-- [ ] T029 [US4] Bổ sung Hộp cảnh báo mâu thuẫn (`st.warning`) và Danh sách đề xuất dời hạn (`task_update_proposals`) trên giao diện `views/extraction.py`
+- [x] T026 [P] [US4] Cài đặt `modules/extraction/matcher.py` (hàm find_matching_task so khớp theo mã bài, refers_to và độ tương đồng tên môn/tên bài)
+- [x] T027 [US4] Cài đặt `modules/extraction/conflicts.py` (hàm compare_deadlines, compare_submission, detect_ambiguity, gợi ý phương án thông minh)
+- [x] T028 [US4] Bổ sung hàm `resolve_conflict`, `accept_update_proposal`, `reject_update_proposal` vào `modules/extraction/workflow.py`
+- [x] T029 [US4] Bổ sung Hộp cảnh báo mâu thuẫn (`st.warning`) và Danh sách đề xuất dời hạn (`task_update_proposals`) trên giao diện `views/extraction.py`
 
 ---
 
@@ -117,12 +117,12 @@
 
 **Mục tiêu**: Xây dựng bộ công cụ benchmark đo số cho Báo cáo SP2, kiểm thử tích hợp toàn bộ luồng và kịch bản demo.
 
-- [ ] T030 Cài đặt `eval/metrics.py` (Field F1-score, Datetime Exact Accuracy, Conflict Precision/Recall) và test `tests/extraction/test_metrics.py`
-- [ ] T031 [P] Soạn thảo bộ dữ liệu mẫu vàng `eval/gold/*.example.json` (đại diện 4 nhóm: chuẩn, dời hạn, thời gian phức tạp, mơ hồ)
-- [ ] T032 Cài đặt script chạy đánh giá benchmark `eval/run_eval.py` (hỗ trợ cờ `--config regex_only|llm_direct|hybrid` và `--no-anchor`, xuất `eval/results/<timestamp>/summary.md`)
-- [ ] T033 Viết bài kiểm thử luồng tích hợp đầu - cuối `tests/extraction/test_e2e_flow.py` chạy qua 4 bước kịch bản demo bằng Fake LLM
-- [ ] T034 [P] Soạn thảo tài liệu hướng dẫn demo `docs/module_b/DEMO.md` và chụp ảnh màn hình lưu vào `docs/module_b/screens/`
-- [ ] T035 Rà soát toàn bộ Checklist Định nghĩa Hoàn thành (Definition of Done) trong Kế hoạch Master
+- [x] T030 Cài đặt `eval/metrics.py` (Field F1-score, Datetime Exact Accuracy, Conflict Precision/Recall) và test `tests/extraction/test_metrics.py`
+- [x] T031 [P] Soạn thảo bộ dữ liệu mẫu vàng `eval/gold/*.example.json` (đại diện 4 nhóm: chuẩn, dời hạn, thời gian phức tạp, mơ hồ)
+- [x] T032 Cài đặt script chạy đánh giá benchmark `eval/run_eval.py` (hỗ trợ cờ `--config regex_only|llm_direct|hybrid` và `--no-anchor`, xuất `eval/results/<timestamp>/summary.md`)
+- [x] T033 Viết bài kiểm thử luồng tích hợp đầu - cuối `tests/extraction/test_e2e_flow.py` chạy qua 4 bước kịch bản demo bằng Fake LLM
+- [x] T034 [P] Soạn thảo tài liệu hướng dẫn demo `docs/module_b/DEMO.md` và chụp ảnh màn hình lưu vào `docs/module_b/screens/`
+- [x] T035 Rà soát toàn bộ Checklist Định nghĩa Hoàn thành (Definition of Done) trong Kế hoạch Master
 
 ---
 
