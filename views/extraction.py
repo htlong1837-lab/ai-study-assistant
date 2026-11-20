@@ -6,6 +6,7 @@ from core.contracts import SafetyStatus, can_forward
 from core.llm_client import LLMClient, get_client
 from db.repository import Repository
 from modules.extraction import workflow
+from modules.extraction.intake import intake_from_d
 from views._shared import llm_status, module_header
 
 # Khởi tạo Repository dùng chung
@@ -53,6 +54,7 @@ module_header(
     "Task trạng thái đề xuất → người dùng xác nhận",
 )
 llm_ready = llm_status()
+intake = intake_from_d(st.session_state, mocks.emails, mocks.documents)
 
 # ---------------------------------------------------------------- 1. Cổng tiếp nhận Nguồn dữ liệu (Gate)
 st.subheader("1. Nguồn dữ liệu đầu vào (Email & Tài liệu)")
@@ -62,9 +64,15 @@ c_email, c_doc = st.columns(2)
 
 with c_email:
     st.markdown("##### 📧 Email từ Module D")
-    for e in mocks.emails():
-        is_safe = can_forward(e)
-        if is_safe:
+    if intake.from_d:
+        st.caption(f"{len(intake.emails)} email đã duyệt ở trang Email & bảo mật.")
+    else:
+        st.caption("Chưa có email nào được chuyển từ trang Email & bảo mật, đang dùng dữ liệu mẫu.")
+    for e in intake.emails:
+        is_safe = can_forward(e, allow_suspicious=intake.allow_suspicious(e))
+        if is_safe and e.safety is SafetyStatus.SUSPICIOUS:
+            st.warning(f"**[NGHI NGỜ – ĐÃ DUYỆT] {e.subject}**  \n*Từ:* `{e.sender}` — {e.summary or e.body[:60]}...")
+        elif is_safe:
             st.success(f"**[AN TOÀN] {e.subject}**  \n*Từ:* `{e.sender}` — {e.summary or e.body[:60]}...")
         elif e.safety is SafetyStatus.SUSPICIOUS:
             st.warning(f"**[NGHI NGỜ] {e.subject}**  \n*Từ:* `{e.sender}` — {e.body[:60]}...")
@@ -73,21 +81,24 @@ with c_email:
 
 with c_doc:
     st.markdown("##### 📄 Tài liệu từ Module A")
-    for doc in mocks.documents():
+    if intake.from_d and not intake.documents:
+        st.caption("Email đã duyệt không có tệp đính kèm đọc được.")
+    for doc in intake.documents:
         st.info(f"**{doc.filename}** ({len(doc.pages)} trang)  \n*Nội dung:* {doc.pages[0].text[:80]}...")
 
 # Nút kích hoạt trích xuất & Demo
 c_act1, c_act2 = st.columns(2)
 with c_act1:
-    if st.button("🚀 Bắt đầu trích xuất email & tài liệu mẫu vào DB", key="btn_run_extract"):
+    if st.button("🚀 Bắt đầu trích xuất email & tài liệu vào DB", key="btn_run_extract"):
         client = get_client() if llm_ready else LLMClient(provider="fake", model="fake-model")
         with st.spinner("Đang trích xuất và chuẩn hóa bài tập..."):
             total_created = 0
-            for e in mocks.emails():
-                if can_forward(e):
-                    created = workflow.process_email(e, client, repo)
+            for e in intake.emails:
+                allow = intake.allow_suspicious(e)
+                if can_forward(e, allow_suspicious=allow):
+                    created = workflow.process_email(e, client, repo, allow_suspicious=allow)
                     total_created += len(created)
-            for d in mocks.documents():
+            for d in intake.documents:
                 created = workflow.process_document(d, client, repo)
                 total_created += len(created)
             st.success(f"Đã xử lý xong! Tạo mới/cập nhật {total_created} bài tập trong cơ sở dữ liệu.")
