@@ -34,6 +34,9 @@ dist/
 .dist/
 *.egg-info/
 
+# Benchmark results (Module B)
+eval/results/
+
 # Local/private QA benchmark material (never commit copyrighted source PDFs)
 benchmarks/qa/source/
 benchmarks/qa/*.pdf
