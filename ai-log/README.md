@@ -23,4 +23,5 @@ theo [TEMPLATE.md](TEMPLATE.md), ghi **ngay sau phiên**.
 | AI-D002 | Hoàng Minh | 2026-11-08 | Claude Web (như ghi trong nhật ký) | Kế hoạch chi tiết module D — [chi tiết](AI-D002-minh-claude-plan.md) |
 | AI-D003 | Hoàng Minh | 2026-11-09 | Antigravity (Claude Sonnet 4.6 Thinking) | Khung pipeline, đọc .eml (WP-00, WP-01) — [chi tiết](AI-D003-minh-antigravity-code.md) |
 | AI-D004 | Hoàng Minh | 2026-11-11 | Antigravity | Phân loại TF-IDF + LR, LLM zero-shot, so sánh F1 — [chi tiết](AI-D004-minh-antigravity-classifiers.md) |
-| AI-D005 | Hoàng Minh | 2026-11-12 | Antigravity | Hoàn thành WP-05, WP-06: tích hợp classifier và pipeline bảo mật — [chi tiết](AI-D005-minh-antigravity-wp05-wp06.md) |
+| AI-D005 | Hoàng Minh | 2026-11-14 | Antigravity | Ẩn danh PII, tóm tắt email, quét URL heuristic — [chi tiết](AI-D005-minh-antigravity-wp05-wp06.md) |
+| AI-D006 | Hoàng Minh | 2026-11-17 | Gemini | VirusTotal, cache SQLite, quét file đính kèm — [chi tiết](AI-D006-minh-gemini-wp07-wp08.md) |

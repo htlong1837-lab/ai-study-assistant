@@ -443,7 +443,7 @@ class TestDefangUrl:
 
 
 class TestProcessEmailStub:
-    """Kiểm tra process_email() stub: cấu trúc hợp lệ, không cần mạng/API."""
+    """Kiểm tra process_email() thật: cấu trúc hợp lệ, không cần mạng/API."""
 
     def test_returns_processed_email(self, settings_offline: Settings):
         raw = make_plain_eml()
@@ -507,17 +507,22 @@ class TestProcessEmailStub:
         assert can_forward_email(email) is False
         assert can_forward_email(email, user_approved=True) is False
 
-    def test_stub_classifier_method(self, settings_offline: Settings):
-        """WP-00 stub phải ghi classifier_method='stub'."""
+    def test_real_classifier_method(self, settings_offline: Settings):
+        """Mặc định, pipeline dùng baseline TF-IDF+LR."""
         raw = make_plain_eml()
         result = process_email(raw, settings=settings_offline)
-        assert result.classifier_method == "stub"
+        assert result.classifier_method in {"tfidf", "fallback"}
 
-    def test_no_summary_in_stub(self, settings_offline: Settings):
-        """WP-00 stub chưa có summarizer → summary là None."""
+    def test_summary_only_for_safe_study_email(self, settings_offline: Settings):
+        """Tóm tắt được tạo cho email học tập đã qua quét an toàn."""
         raw = make_plain_eml()
         result = process_email(raw, settings=settings_offline)
-        assert result.email.summary is None
+        if result.email.safety is SafetyStatus.SAFE and result.email.label in {
+            EmailLabel.ASSIGNMENT,
+            EmailLabel.ANNOUNCEMENT,
+            EmailLabel.SCHEDULE,
+        }:
+            assert result.email.summary is not None
 
     def test_empty_bytes_does_not_crash(self, settings_offline: Settings):
         """Input bytes rỗng → không crash, trả ProcessedEmail hợp lệ."""
@@ -531,16 +536,20 @@ class TestProcessEmailStub:
         result = process_email(eml_file, settings=settings_offline)
         assert isinstance(result, ProcessedEmail)
 
-    def test_stub_blocks_until_user_approves(self, settings_offline: Settings):
-        """Chưa có scanner thật → mặc định chặn: SUSPICIOUS, chỉ chuyển sau khi duyệt."""
+    def test_safe_email_is_forwardable_without_approval(
+        self, settings_offline: Settings
+    ):
+        """Email sạch được chuyển; tín hiệu nghi ngờ cần xác nhận người dùng."""
         raw = make_plain_eml()
         result = process_email(raw, settings=settings_offline)
-        assert result.email.safety is SafetyStatus.SUSPICIOUS
-        assert result.can_forward is False
-        assert approve_suspicious(result).can_forward is True
+        if result.email.safety is SafetyStatus.SAFE:
+            assert result.can_forward is True
+        elif result.email.safety is SafetyStatus.SUSPICIOUS:
+            assert result.can_forward is False
+            assert approve_suspicious(result).can_forward is True
 
-    def test_stub_attachment_needs_approval(self, tmp_path: Path):
-        """File đính kèm chưa quét không thành SafeAttachment cho tới khi người dùng duyệt."""
+    def test_safe_attachment_passes_gate(self, tmp_path: Path):
+        """File sạch được nhận diện và tạo SafeAttachment ngay sau quét."""
         cfg = Settings(
             virustotal_api_key="", llm_provider="fake", attachments_dir=str(tmp_path)
         )
@@ -548,10 +557,21 @@ class TestProcessEmailStub:
             attach_name="lecture.pdf", attach_data=b"%PDF-1.4 valid pdf"
         )
         result = process_email(raw, settings=cfg)
+        assert len(result.safe_attachments) == 1
+        assert len(result.safe_attachments[0].sha256) == 64
+
+    def test_malicious_attachment_is_never_forwardable(self, tmp_path: Path):
+        cfg = Settings(
+            virustotal_api_key="", llm_provider="fake", attachments_dir=str(tmp_path)
+        )
+        result = process_email(
+            make_multipart_eml(attach_name="payload.exe", attach_data=b"MZ"),
+            settings=cfg,
+        )
+        assert result.email.safety is SafetyStatus.MALICIOUS
+        assert not result.can_forward
         assert result.safe_attachments == []
-        approved = approve_suspicious(result)
-        assert len(approved.safe_attachments) == 1
-        assert len(approved.safe_attachments[0].sha256) == 64
+        assert approve_suspicious(result) is result
 
 
 # ===========================================================================

@@ -4,7 +4,21 @@ import streamlit as st
 from core import mocks
 from core.contracts import SafetyStatus
 from modules.email_security import approve_suspicious, process_email
+from modules.email_security.handoff import publish_to_modules
 from views._shared import llm_status, module_header
+
+
+def get_verified_emails() -> list:
+    """Lấy danh sách ClassifiedEmail đã duyệt qua Module D."""
+    value = st.session_state.get("verified_emails", {})
+    return list(value.values()) if isinstance(value, dict) else value
+
+
+def get_safe_attachments() -> list:
+    """Lấy danh sách SafeAttachment đã duyệt qua Module D."""
+    value = st.session_state.get("safe_attachments", {})
+    return list(value.values()) if isinstance(value, dict) else value
+
 
 module_header(
     "🛡️ Email & bảo mật",
@@ -48,7 +62,9 @@ if uploaded_files and st.button("Xử lý file tải lên"):
         known_ids.add(p.email.id)
         added += 1
     st.session_state["flash"] = (
-        f"Đã nạp {added} email mới." if added else "Các email này đã có trong danh sách."
+        f"Đã nạp {added} email mới."
+        if added
+        else "Các email này đã có trong danh sách."
     )
     st.rerun()
 
@@ -77,7 +93,9 @@ def do_forward(p) -> None:
         return
     if not p.can_forward:
         return
-    # TODO: gọi Module B (p.email) và Module A (p.safe_attachments) tại đây.
+    if not publish_to_modules(p, st.session_state):
+        st.error("Email chưa vượt qua cổng an toàn hoặc chưa được người dùng duyệt.")
+        return
     st.session_state["forwarded"].add(mail.id)
 
 
@@ -155,7 +173,9 @@ elif selected_p.safe_attachments:
     for a in selected_p.safe_attachments:
         st.code(f"{a.path}\nsha256: {a.sha256}")
 elif findings:
-    st.write(f"📎 **File đính kèm:** {len(findings)} file, sẽ chuyển sau khi bạn duyệt email")
+    st.write(
+        f"📎 **File đính kèm:** {len(findings)} file, sẽ chuyển sau khi bạn duyệt email"
+    )
 else:
     st.write("📎 **File đính kèm:** không có")
 
