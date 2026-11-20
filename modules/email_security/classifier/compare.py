@@ -116,11 +116,12 @@ def _baseline_cv(
 def _llm_inference_sample(texts: list[str], n_samples: int = 3) -> dict:
     """Đo thời gian inference của LLMZeroShotClassifier trên n_samples mẫu.
 
-    Dùng LLM_PROVIDER=fake nên không cần mạng (Constitution V).
+    Dùng provider đang cấu hình; đặt LLM_PROVIDER=fake để chạy hoàn toàn offline.
     """
     from .llm_zeroshot import LLMZeroShotClassifier
 
     clf = LLMZeroShotClassifier()
+    client = clf._get_client()
     sample = texts[:n_samples]
     times: list[float] = []
     results: list[tuple] = []
@@ -136,10 +137,9 @@ def _llm_inference_sample(texts: list[str], n_samples: int = 3) -> dict:
         "n_samples": len(sample),
         "avg_inference_ms": avg_ms,
         "sample_results": results,
-        "note": (
-            "Đo trên LLM_PROVIDER=fake (offline). "
-            "Latency thực với Gemini API sẽ cao hơn (~500-2000ms/request)."
-        ),
+        "provider": client.provider,
+        "model": client.model,
+        "note": "Thời gian đo chỉ phản ánh provider/model trong cấu hình hiện tại.",
     }
 
 
@@ -167,6 +167,8 @@ def _write_markdown(
 
 ## 1. Baseline — TF-IDF (word + char\\_wb) + Logistic Regression
 
+**Mô hình:** `sklearn.linear_model.LogisticRegression` (C=1.0, class_weight=balanced, max_iter=200) trên `FeatureUnion` gồm word và char\\_wb TF-IDF.
+
 ### Kết quả Cross Validation (5 fold)
 
 | Chỉ số | Giá trị |
@@ -184,17 +186,16 @@ def _write_markdown(
 
 ---
 
-## 2. LLM Zero-Shot (Gemini / fake)
+## 2. LLM Zero-Shot ({llm["provider"]} / {llm["model"]})
 
-> **Lưu ý:** Đo thời gian trên `LLM_PROVIDER=fake` (offline).  
-> Với Gemini API thực tế, latency ≈ 500–2000 ms/request.
+> Macro-F1 chưa được đánh giá bằng LLM thật trong kịch bản này. Thời gian và ví dụ bên dưới chỉ phản ánh provider/model đang cấu hình.
 
 | Chỉ số | Giá trị |
 |---|---|
 | Số mẫu đo | {llm["n_samples"]} |
-| Thời gian inference TB | {llm["avg_inference_ms"]:.1f} ms/mẫu (fake) |
+| Thời gian inference TB | {llm["avg_inference_ms"]:.1f} ms/mẫu |
 
-#### Kết quả mẫu (fake LLM — không phản ánh chất lượng thực):
+#### Kết quả mẫu (kết quả phụ thuộc provider/model cấu hình):
 
 | Mẫu | Nhãn dự đoán | Confidence |
 |---|---|---|
@@ -209,7 +210,7 @@ def _write_markdown(
 | | Baseline TF-IDF+LR | LLM Zero-shot |
 |---|---|---|
 | Macro-F1 | {baseline["macro_f1_mean"]:.4f} ± {baseline["macro_f1_std"]:.4f} | Chưa đánh giá CV (cần quota) |
-| Inference | {baseline["avg_inference_ms"]:.2f} ms/mẫu | ~500–2000 ms/mẫu |
+| Inference | {baseline["avg_inference_ms"]:.2f} ms/mẫu | {llm["avg_inference_ms"]:.1f} ms/mẫu theo provider cấu hình |
 | Phụ thuộc mạng | ❌ Không | ✅ Có (hoặc fake) |
 | Chi phí | Miễn phí | Tốn API quota |
 | Chạy offline | ✅ Hoàn toàn | ✅ Với `LLM_PROVIDER=fake` |
@@ -219,7 +220,7 @@ def _write_markdown(
 **Chọn: Baseline TF-IDF+LR** làm phương pháp mặc định vì:
 
 1. **Chạy offline hoàn toàn** — đảm bảo Constitution V (demo không phụ thuộc mạng).
-2. **Nhanh hơn ~100x** — phù hợp xử lý batch nhiều email.
+2. **Thời gian baseline đo được:** {baseline["avg_inference_ms"]:.3f} ms/mẫu trên lần chạy này; không suy rộng thành tỷ lệ so sánh với API LLM.
 3. **Miễn phí** — không tốn API quota.
 4. **Macro-F1 ≥ {baseline["macro_f1_mean"]:.2f}** trên dataset tổng hợp.
 

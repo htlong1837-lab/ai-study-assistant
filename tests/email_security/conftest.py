@@ -22,16 +22,21 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 @pytest.fixture(autouse=True)
 def block_network(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Chặn mọi kết nối mạng trong suốt test.
+    """Chặn kết nối ngoài; cho phép loopback nội bộ dùng bởi Streamlit AppTest.
 
     Nếu code gọi socket.connect → test sẽ fail ngay với lỗi rõ ràng
     thay vì treo hoặc phụ thuộc kết nối thực.
     """
 
+    real_connect = socket.socket.connect
+
     def _blocked_connect(self, address):  # type: ignore[override]
+        host = address[0] if isinstance(address, tuple) else address
+        if host in {"127.0.0.1", "::1", "localhost"}:
+            return real_connect(self, address)
         raise ConnectionRefusedError(
-            f"[TEST] Kết nối mạng bị chặn: {address}. "
-            "Module D test phải chạy 100% offline."
+            f"[TEST] Kết nối mạng ngoài bị chặn: {address}. "
+            "Module D test phải chạy offline."
         )
 
     monkeypatch.setattr(socket.socket, "connect", _blocked_connect)
