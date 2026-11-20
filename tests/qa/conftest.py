@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-import fitz
+import pymupdf as fitz  # pymupdf>=1.24 — tên import cũ "fitz" sắp bị bỏ
 import pytest
 
 from core.contracts import Page

@@ -7,7 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from core.contracts import Page, ParsedDocument
+from core.contracts import Page, ParsedDocument, SafeAttachment
 
 from . import document_parser
 from .document_parser import parse_document
@@ -99,3 +99,39 @@ def load_document_bytes(
     if len(document.pages) > MAX_PAGES:
         raise ValueError("Tài liệu vượt giới hạn 1000 trang.")
     return document
+
+
+def load_safe_attachment(
+    attachment: SafeAttachment,
+    *,
+    parse_timeout_seconds: float = PARSE_TIMEOUT_SECONDS,
+) -> ParsedDocument:
+    """Nhận SafeAttachment từ Module D, đọc file và trả về ParsedDocument.
+
+    Chỉ chấp nhận file đã qua cổng an toàn của D (SafeAttachment).
+    File phải tồn tại trên đĩa và SHA-256 phải khớp với giá trị D đã ghi nhận.
+    """
+    path = Path(attachment.path)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"File đính kèm không tồn tại: {attachment.path}"
+        )
+    data = path.read_bytes()
+    if not data:
+        raise ValueError("File đính kèm rỗng.")
+    actual_hash = hashlib.sha256(data).hexdigest()
+    if actual_hash != attachment.sha256:
+        raise ValueError(
+            f"SHA-256 không khớp — file có thể đã bị thay đổi sau khi D quét. "
+            f"Kỳ vọng {attachment.sha256[:16]}…, thực tế {actual_hash[:16]}…"
+        )
+    # Tạo doc_id ổn định từ email_id + sha256 để tránh trùng
+    doc_id = hashlib.sha256(
+        f"{attachment.email_id}:{attachment.sha256}".encode()
+    ).hexdigest()[:16]
+    return load_document_bytes(
+        path.name,
+        data,
+        doc_id=doc_id,
+        parse_timeout_seconds=parse_timeout_seconds,
+    )

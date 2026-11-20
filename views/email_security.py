@@ -77,7 +77,13 @@ def do_forward(p) -> None:
         return
     if not p.can_forward:
         return
-    # TODO: gọi Module B (p.email) và Module A (p.safe_attachments) tại đây.
+    # --- Gửi cho Module A: file đính kèm đã qua cổng D ---
+    if p.safe_attachments:
+        pending = st.session_state.setdefault("qa_safe_attachments", [])
+        for sa in p.safe_attachments:
+            if sa not in pending:
+                pending.append(sa)
+    # TODO: gọi Module B (p.email) tại đây.
     st.session_state["forwarded"].add(mail.id)
 
 
