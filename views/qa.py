@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import re
 from pathlib import Path
 from uuid import uuid4
@@ -10,7 +9,7 @@ import streamlit as st
 from core import config
 from core.llm_client import LLMClient, get_client
 from modules.qa import QAService
-from modules.qa.loader import load_document_bytes
+from modules.qa.loader import read_verified_attachment
 from modules.qa.messages import rejection_message
 from modules.qa.reader.component import render_reader
 from modules.qa.reader.threads import ThreadStore, export_markdown
@@ -55,7 +54,7 @@ def _safe_error(error: Exception) -> str:
 
 st.title("💬 Đọc và hỏi đáp tài liệu")
 st.caption(
-    "Tải tài liệu lên, đọc theo trang, bôi đen đoạn cần hỏi hoặc đặt câu hỏi cho toàn tài liệu."
+    "Mở tệp đính kèm đã qua Module D, đọc theo trang, bôi đen đoạn cần hỏi hoặc đặt câu hỏi cho toàn tài liệu."
 )
 key_input = st.text_input(
     "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
@@ -71,56 +70,60 @@ api_key = st.session_state.get("qa_api_key", "")
 if api_key:
     st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
 
+# ---------------------------------------------------------------------------
+# Nguồn tài liệu: chỉ nhận tệp đính kèm đã qua cổng Module D (quyết định của A,
+# xem docs/module-a/decisions.md). D chuyển sang qua handoff chung (safe_attachments +
+# verified_documents); trước khi mở, kiểm tra lại SHA-256 của tệp trên đĩa.
+# ---------------------------------------------------------------------------
 verified_documents = verified_document_batches(st.session_state)
-source_options = {"Tải tài liệu lên": None}
-for attachment, parsed in verified_documents:
-    source_options[f"Từ Module D · {parsed.filename} · {attachment.sha256[:10]}"] = (
-        attachment,
-        parsed,
-    )
-document_source = st.selectbox("Nguồn tài liệu", list(source_options))
-selected_d_document = source_options[document_source]
+options = {
+    f"Từ Module D · {parsed.filename} · {attachment.sha256[:10]}": (attachment, parsed)
+    for attachment, parsed in verified_documents
+}
 
-if selected_d_document is None:
-    uploaded = st.file_uploader(
-        "Chọn PDF, TXT hoặc Markdown", type=["pdf", "txt", "md"], key="qa_upload"
+if options:
+    st.info(
+        f"📎 Có {len(options)} tệp đính kèm đã qua kiểm tra an toàn từ Module D. "
+        "Chọn tệp để đọc và hỏi đáp.",
+        icon="🛡️",
     )
-    if uploaded is not None:
-        try:
-            raw = uploaded.getvalue()
-            document = load_document_bytes(uploaded.name, raw)
-            file_hash = hashlib.sha256(raw).hexdigest()
-            if st.session_state.get("qa_document_hash") != file_hash:
-                st.session_state["qa_document"] = document
-                st.session_state["qa_document_hash"] = file_hash
-                st.session_state["qa_pdf_bytes"] = (
-                    raw if uploaded.name.lower().endswith(".pdf") else None
-                )
-                st.session_state.pop("qa_reader_sent_doc_id", None)
-                st.session_state["qa_threads"] = {}
-                st.session_state["qa_seen_events"] = []
-                st.session_state["qa_answer_cache"] = {}
-        except Exception as exc:
-            st.error(f"Không thể mở tài liệu: {_safe_error(exc)}")
-else:
-    attachment, parsed_document = selected_d_document
+    choice = st.selectbox("Tài liệu từ Module D", list(options), key="qa_attachment_picker")
+    attachment, parsed_document = options[choice]
     selected_hash = f"module-d:{attachment.sha256}"
     if st.session_state.get("qa_document_hash") != selected_hash:
-        st.session_state["qa_document"] = parsed_document
-        st.session_state["qa_document_hash"] = selected_hash
-        path = Path(attachment.path)
-        st.session_state["qa_pdf_bytes"] = (
-            path.read_bytes() if path.suffix.lower() == ".pdf" else None
-        )
-        st.session_state.pop("qa_reader_sent_doc_id", None)
-        st.session_state["qa_threads"] = {}
-        st.session_state["qa_seen_events"] = []
-        st.session_state["qa_answer_cache"] = {}
-    st.success(f"Tài liệu {parsed_document.filename} đã qua cổng Module D.")
+        for state_key in ("qa_document", "qa_pdf_bytes"):
+            st.session_state.pop(state_key, None)
+        try:
+            raw = read_verified_attachment(attachment)
+            st.session_state["qa_document"] = parsed_document
+            st.session_state["qa_document_hash"] = selected_hash
+            st.session_state["qa_pdf_bytes"] = (
+                raw if Path(attachment.path).suffix.lower() == ".pdf" else None
+            )
+            st.session_state.pop("qa_reader_sent_doc_id", None)
+            st.session_state["qa_threads"] = {}
+            st.session_state["qa_seen_events"] = []
+            st.session_state["qa_answer_cache"] = {}
+        except Exception as exc:
+            st.error(f"Không thể mở tệp đính kèm: {_safe_error(exc)}")
+    if st.session_state.get("qa_document_hash") == selected_hash:
+        st.success(f"Tài liệu {parsed_document.filename} đã qua cổng Module D.")
+else:
+    # Không tái sử dụng tài liệu cũ khi D chưa chuyển tệp nào.
+    for state_key in (
+        "qa_document",
+        "qa_document_hash",
+        "qa_pdf_bytes",
+        "qa_reader_sent_doc_id",
+        "qa_threads",
+        "qa_seen_events",
+        "qa_answer_cache",
+    ):
+        st.session_state.pop(state_key, None)
 
 document = st.session_state.get("qa_document")
 if document is None:
-    st.info("Tải tệp lên để bắt đầu đọc. Chưa nhập key vẫn có thể mở và đọc tài liệu.")
+    st.info("Chuyển file đính kèm đã qua kiểm tra ở Module D sang đây để bắt đầu đọc.")
     st.stop()
 
 empty_pages = sum(len(p.text.strip()) < 20 for p in document.pages)

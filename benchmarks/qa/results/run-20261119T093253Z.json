@@ -1,0 +1,203 @@
+{
+  "created_at": "2026-11-19T09:32:53.935611+00:00",
+  "model": "gemini-2.5-flash",
+  "source_filename": "2eae0e86-e7c6-431d-aa08-b8f89ba71921_giaotrinhkinhtechinhtri.pdf",
+  "metrics_by_type": {
+    "whole_document": {
+      "records": 0,
+      "answer_exact_match": null,
+      "page_hit_rate": null,
+      "gold_evidence_verbatim_rate": null,
+      "citation_verbatim_record_rate": null,
+      "abstain_precision": null,
+      "unanswerable_abstain_rate": null,
+      "fallback_rate": null,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "cost_total": null
+    },
+    "passage": {
+      "records": 0,
+      "answer_exact_match": null,
+      "page_hit_rate": null,
+      "gold_evidence_verbatim_rate": null,
+      "citation_verbatim_record_rate": null,
+      "abstain_precision": null,
+      "unanswerable_abstain_rate": null,
+      "fallback_rate": null,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "cost_total": null
+    },
+    "unanswerable": {
+      "records": 0,
+      "answer_exact_match": null,
+      "page_hit_rate": null,
+      "gold_evidence_verbatim_rate": null,
+      "citation_verbatim_record_rate": null,
+      "abstain_precision": null,
+      "unanswerable_abstain_rate": null,
+      "fallback_rate": null,
+      "latency_p50_ms": null,
+      "latency_p95_ms": null,
+      "cost_total": null
+    }
+  },
+  "records": [
+    {
+      "id": "qa_01",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_02",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_03",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_04",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_05",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_06",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_07",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_08",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_09",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_10",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_11",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_12",
+      "type": "whole_document",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_13",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_14",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_15",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_16",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_17",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_18",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_19",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_20",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_21",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_22",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_23",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_24",
+      "type": "passage",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_25",
+      "type": "unanswerable",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_26",
+      "type": "unanswerable",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_27",
+      "type": "unanswerable",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_28",
+      "type": "unanswerable",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_29",
+      "type": "unanswerable",
+      "error": "ClientError"
+    },
+    {
+      "id": "qa_30",
+      "type": "unanswerable",
+      "error": "ClientError"
+    }
+  ],
+  "errors": 30,
+  "metric_notes": {
+    "answer_exact_match": "literal normalized exact match; not semantic judging",
+    "cost_total": "not measured; model pricing was not verified"
+  }
+}

@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,11 +45,10 @@ def test_qa_page_offers_only_safe_attachment_handoff(monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_PROVIDER", "fake")
     path = tmp_path / "assignment.txt"
     path.write_text("Deadline bài tập là thứ Sáu.", encoding="utf-8")
-    attachment = SafeAttachment(
-        path=str(path), sha256="b" * 64, email_id="page-handoff-safe"
-    )
+    sha = hashlib.sha256(path.read_bytes()).hexdigest()
+    attachment = SafeAttachment(path=str(path), sha256=sha, email_id="page-handoff-safe")
     document = ParsedDocument(
-        doc_id="b" * 64,
+        doc_id=sha,
         filename=path.name,
         pages=[Page(number=1, text="Deadline bài tập là thứ Sáu.")],
     )
@@ -56,11 +56,25 @@ def test_qa_page_offers_only_safe_attachment_handoff(monkeypatch, tmp_path):
     app.session_state["safe_attachments"] = {attachment.sha256: attachment}
     app.session_state["verified_documents"] = {attachment.sha256: document}
     app.run()
-    d_option = next(
-        option for option in app.selectbox[0].options if "Từ Module D" in option
-    )
-    app.selectbox[0].set_value(d_option).run()
+    assert all("Từ Module D" in option for option in app.selectbox[0].options)
+    assert not app.file_uploader  # không cho tải thẳng, chỉ nhận tệp qua D
 
     assert not app.exception
     assert app.session_state["qa_document"].doc_id == document.doc_id
     assert any("đã qua cổng Module D" in item.value for item in app.success)
+
+
+def test_qa_page_rejects_attachment_changed_after_scan(monkeypatch, tmp_path):
+    monkeypatch.setenv("LLM_PROVIDER", "fake")
+    path = tmp_path / "assignment.txt"
+    path.write_text("Nội dung gốc.", encoding="utf-8")
+    attachment = SafeAttachment(path=str(path), sha256="c" * 64, email_id="tampered")
+    document = ParsedDocument(doc_id="c" * 64, filename=path.name,
+                              pages=[Page(number=1, text="Nội dung gốc.")])
+    app = AppTest.from_file(str(ROOT / "views" / "qa.py"), default_timeout=30)
+    app.session_state["safe_attachments"] = {attachment.sha256: attachment}
+    app.session_state["verified_documents"] = {attachment.sha256: document}
+    app.run()
+    assert not app.exception
+    assert "qa_document" not in app.session_state
+    assert any("SHA-256 không khớp" in item.value for item in app.error)

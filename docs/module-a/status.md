@@ -14,7 +14,7 @@ Cập nhật: 2026-11-11
 | Phase 4.5: upload an toàn | Code hoàn tất cho upload dạng bytes | Whitelist, PDF magic bytes, 50 MB/1000 trang, temp file cleanup và parser process timeout 60 giây. Path traversal/symlink không áp dụng vì ứng dụng không nhận đường dẫn từ người dùng. |
 | Phase 4.6: logging | Đã triển khai và có test | JSON logging metadata, che API key; không ghi nội dung câu hỏi/tài liệu. |
 | Phase 5.1: kiểm tra tự động | Đạt cục bộ | `pytest --cov=modules/qa --cov-fail-under=80 -q`: **206 passed, 1 skipped, coverage 86.94%**. Ruff pass. JS logic test skip vì Node chưa cài cục bộ; CI cài Node. |
-| Phase 5.2: tích hợp app và module khác | Một phần | AppTest cho `app.py`, QA view, điều hướng và xóa key khi rời trang đều pass. Cần bạn xác minh browser và chuyển qua lại với B/D. |
+| Phase 5.2: tích hợp app và module khác | Một phần | Luồng D → A nhận `SafeAttachment`, xác minh SHA-256 và chỉ cho phép tài liệu đã qua D vào QA; upload trực tiếp đã tắt. Cần xác minh browser và luồng đầu-cuối với B/D. |
 | Phase 5.3: tài liệu | Code/docs hoàn tất | README, changelog, quyết định, trạng thái, compliance report và checklist được đồng bộ; benchmark thật ghi rõ chưa đo. |
 | Phase 5.4–5.6: nhật ký và bàn giao | Còn việc người dùng/nhóm | Người dùng điền nội dung nhật ký AI đúng sự thật; cần checklist trình duyệt, review nhóm và merge/PR. |
 

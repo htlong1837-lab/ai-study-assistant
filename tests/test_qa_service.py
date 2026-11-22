@@ -46,7 +46,6 @@ def test_qa_service_approves_valid_answer() -> None:
     assert answer.citations[0].page_num in {1, 2}
 
 
-
 class _ScriptedClient:
     model = "fake-model"
 

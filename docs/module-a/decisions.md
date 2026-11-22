@@ -1,5 +1,9 @@
 # Quyết định triển khai Module A
 
+## 2026-11-18 — Chỉ nhận tài liệu qua cổng D
+
+Trang Q&A chỉ nhận `SafeAttachment` do Module D chuyển sau khi email được phép chuyển tiếp. A kiểm tra SHA-256 của file trước khi gọi `load_document_bytes` để tạo `ParsedDocument`; không cung cấp upload trực tiếp trên trang Q&A. Tệp chưa được D xác nhận không thể đi vào reader qua giao diện A.
+
 ## 2026-11-10 — PDF.js đã vendor từ registry chính thức
 
 Vendored `pdfjs-dist@6.4.299` theo yêu cầu người dùng, gồm ESM build, worker, viewer CSS/images, LICENSE và VERSION. Đọc đúng gói README và type declarations trước khi tích hợp `getDocument({data})` cùng `TextLayer({textContentSource, container, viewport}).render()`. PDF bytes chỉ truyền vào component khi document đổi hoặc iframe yêu cầu lại; API key không đưa vào component.
