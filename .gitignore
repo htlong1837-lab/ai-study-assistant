@@ -18,6 +18,7 @@ data/private/
 *.eml
 # Ngoại lệ: email mẫu tự sinh để test (không phải email thật)
 !tests/**/fixtures/*.eml
+!data/demo/*.eml
 eval/gold/*.json
 !eval/gold/*.example.json
 
