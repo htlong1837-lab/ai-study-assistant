@@ -1,0 +1,12 @@
+# Giao diện sáng, tông san hô nhẹ, bo góc lớn (phong cách app planner).
+[theme]
+base = "light"
+primaryColor = "#F07167"
+backgroundColor = "#FFF9F6"
+secondaryBackgroundColor = "#FDECE7"
+textColor = "#2B2D42"
+font = "sans serif"
+baseRadius = "large"
+
+[theme.sidebar]
+backgroundColor = "#FDECE7"

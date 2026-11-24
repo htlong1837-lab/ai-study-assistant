@@ -18,6 +18,7 @@ from modules.scheduler.reminders import (
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
+from views import _timeline
 from views._shared import module_header
 
 module_header("📅 Lập lịch & nhắc nhở", "Long (C)",
@@ -118,6 +119,23 @@ week = st.select_slider("Tuần", weeks, format_func=lambda w: f"{w:%d/%m} – {
 week_days = [week + timedelta(days=i) for i in range(7)]
 day_label = {d: f"{WEEKDAY_VN[d.weekday()]} {d:%d/%m}" for d in week_days}
 
+used_ids = [t.id for t in r_tasks if t.id in {b.task_id for b in result.blocks}]
+task_color = {tid: _timeline.PALETTE[i % len(_timeline.PALETTE)] for i, tid in enumerate(used_ids)}
+default_day = date.today() if date.today() in week_days else week_days[0]
+day = st.segmented_control(
+    "Ngày", week_days, default=default_day, key=f"tl_day_{week}",
+    format_func=lambda d: f"{WEEKDAY_VN[d.weekday()]} · {d:%d}") or default_day
+day_sessions = busy_intervals(r_sessions, replace(r_settings, start=day, days=1, not_before=None))
+items = [_timeline.Item(b0, b1, s.course, f"Lên lớp · {s.room}" if s.room else "Lên lớp", "🏫",
+                        _timeline.CLASS_COLOR) for b0, b1, s in day_sessions]
+items += [_timeline.Item(b.start, b.end, r_titles[b.task_id], "Tự học", "📖",
+                         task_color.get(b.task_id, _timeline.PALETTE[0]))
+          for b in result.blocks if b.start.date() == day]
+items += [_timeline.Item(t.deadline, t.deadline, f"Hạn nộp: {t.title}", t.course, "📌",
+                         _timeline.DEADLINE_COLOR)
+          for t in r_tasks if t.status is TaskStatus.CONFIRMED and t.deadline.date() == day]
+st.markdown(_timeline.render(items), unsafe_allow_html=True)
+
 
 def _hour(dt: datetime) -> float:
     return dt.hour + dt.minute / 60
@@ -132,11 +150,11 @@ rows += [{"Ngày": day_label[b.start.date()], "Từ": _hour(b.start), "Đến": 
           "Màu": r_titles[b.task_id], "Nội dung": r_titles[b.task_id],
           "Giờ": f"{b.start:%H:%M}–{b.end:%H:%M}"}
          for b in result.blocks if b.start.date() in day_label]
+week_view = st.expander("Xem cả tuần")
 if rows:
     df = pd.DataFrame(rows)
     df["Nhãn"] = df["Nội dung"].map(lambda s: s if len(s) <= 13 else s[:12] + "…")
     task_names = [r_titles[t.id] for t in r_tasks if t.id in {b.task_id for b in result.blocks}]
-    palette = ["#4c78a8", "#f58518", "#54a24b", "#e45756", "#b279a2", "#eeca3b", "#72b7b2", "#ff9da6"]
     days_order = list(day_label.values())
     base = alt.Chart(df).encode(
         x=alt.X("Ngày:N", sort=days_order, scale=alt.Scale(domain=days_order),
@@ -148,12 +166,13 @@ if rows:
         y2="Đến:Q",
         color=alt.Color("Màu:N", title=None, legend=alt.Legend(orient="bottom", columns=2),
                         scale=alt.Scale(domain=[CLASS, *task_names],
-                                        range=["#8a8f98", *palette[:len(task_names)]])))
+                                        range=[_timeline.CLASS_COLOR,
+                                               *[task_color[t] for t in used_ids]])))
     labels = base.mark_text(align="left", baseline="top", dx=-38, dy=3, fontSize=10,
                             color="white").encode(text="Nhãn:N")
-    st.altair_chart((bars + labels).properties(height=560), width="stretch")
+    week_view.altair_chart((bars + labels).properties(height=560), width="stretch")
 else:
-    st.caption("Tuần này không có lịch.")
+    week_view.caption("Tuần này không có lịch.")
 
 with st.expander("Danh sách khối học"):
     st.dataframe(pd.DataFrame([{
