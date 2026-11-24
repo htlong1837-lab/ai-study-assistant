@@ -122,6 +122,29 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 .nh-mod:hover {transform: translateY(-4px); box-shadow: 0 16px 32px rgba(43,45,66,.10);}
 .nh-mod .i {font-size: 24px;} .nh-mod b {display: block; margin-top: 6px; color: #2B2D42;}
 .nh-mod span {font-size: 12.5px; color: #8D99AE;}
+.nh-week {display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end;
+  height: 150px; padding: 6px 4px 0;}
+.nh-week .col {display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;}
+.nh-week .stack {width: 62%; min-width: 16px; max-width: 38px; display: flex; flex-direction: column-reverse; border-radius: 10px;
+  overflow: hidden; transform-origin: bottom; animation: nh-grow .8s cubic-bezier(.2,.7,.2,1) both;}
+.nh-week .stack i {display: block;}
+.nh-week .h {font-size: 11px; font-weight: 700; color: #5C677D; margin-bottom: 4px;}
+.nh-week .d {font-size: 11.5px; color: #8D99AE; margin-top: 6px; font-weight: 600;}
+.nh-week .today .d {color: #F07167;} .nh-week .today .stack {box-shadow: 0 0 0 3px rgba(240,113,103,.25);}
+.nh-legend {display: flex; gap: 14px; font-size: 12px; color: #8D99AE; margin-top: 8px;}
+.nh-legend span::before {content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+  margin-right: 5px; vertical-align: -1px; background: var(--c);}
+@keyframes nh-grow {from {transform: scaleY(0);}}
+/* Màn nhỏ (điện thoại) */
+@media (max-width: 640px) {
+  .nh-hero {flex-direction: column; align-items: flex-start; padding: 20px 18px; gap: 14px;}
+  .nh-hero h1 {font-size: 25px;}
+  .nh-hero p {font-size: 14px;}
+  .nh-ringwrap {align-self: flex-end; margin-top: -8px;}
+  .nh-head .ic {width: 42px; height: 42px; font-size: 21px; border-radius: 13px;}
+  .nh-head h1 {font-size: 23px;}
+  .nh-week {gap: 5px;}
+}
 @media (prefers-reduced-motion: reduce) {* {animation: none !important; transition: none !important;}}
 </style>
 """
@@ -439,3 +462,23 @@ def link(page: str, label: str, icon: str | None = None) -> None:
         st.page_link(page, label=label, icon=icon)
     except StreamlitPageNotFoundError:
         pass
+
+
+def week_bars(days: list, study: dict, classes: dict, today) -> str:
+    """Biểu đồ cột 7 ngày: giờ tự học (san hô) chồng lên giờ lên lớp (xám)."""
+    from modules.scheduler.model import WEEKDAY_VN
+
+    peak = max([study.get(d, 0) + classes.get(d, 0) for d in days] + [4])
+    cols = []
+    for i, d in enumerate(days):
+        s_h, c_h = study.get(d, 0), classes.get(d, 0)
+        total = s_h + c_h
+        px = lambda h: f"{h / peak * 110:.0f}px"  # noqa: E731
+        cols.append(
+            f'<div class="col{" today" if d == today else ""}"><div class="h">{round(total, 1):g}h</div>'
+            f'<div class="stack" style="animation-delay:{i * 70}ms">'
+            f'<i style="height:{px(c_h)};background:#ADB5BD"></i>'
+            f'<i style="height:{px(s_h)};background:linear-gradient(180deg,#F49CBB,#F07167)"></i></div>'
+            f'<div class="d">{WEEKDAY_VN[d.weekday()].replace("Thứ ", "T")}</div></div>')
+    return ('<div class="nh-week">' + "".join(cols) + '</div><div class="nh-legend">'
+            '<span style="--c:#F07167">Tự học</span><span style="--c:#ADB5BD">Lên lớp</span></div>')

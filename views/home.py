@@ -1,5 +1,6 @@
 """Trang chủ: bảng "Hôm nay" — lời chào, tiến độ tuần, dòng thời gian hôm nay, hạn nộp sắp tới,
 thêm nhanh nhiệm vụ, lối vào 4 module."""
+from dataclasses import replace
 from datetime import datetime, timedelta
 
 import streamlit as st
@@ -11,6 +12,7 @@ from db.repository import Repository
 from modules.scheduler import schedule
 from modules.scheduler.model import WEEKDAY_VN, ScheduleSettings
 from modules.scheduler.progress import ProgressStore, block_key
+from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from views import _planner, _timeline, _ui
@@ -72,6 +74,14 @@ with left:
         items = _planner.day_items(today, result.blocks, tasks, sessions, settings, done, colors)
         st.html(_timeline.render(items, now))
         _ui.link("views/scheduler.py", "Mở lịch đầy đủ", "📅")
+    with st.container(border=True):
+        st.markdown("#### 📊 Nhịp tuần")
+        days7 = [week_start + timedelta(days=i) for i in range(7)]
+        study_h = {d: sum(b.hours for b in week_blocks if b.start.date() == d) for d in days7}
+        class_h = {}
+        for b0, b1, _s in busy_intervals(sessions, replace(settings, start=week_start, days=7, not_before=None)):
+            class_h[b0.date()] = class_h.get(b0.date(), 0) + (b1 - b0).total_seconds() / 3600
+        st.html(_ui.week_bars(days7, study_h, class_h, today))
 with right:
     with st.container(border=True):
         st.markdown("#### ⏳ Sắp đến hạn")

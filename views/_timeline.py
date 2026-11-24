@@ -38,6 +38,11 @@ CSS = """
 .tl-now i::before {content: ""; position: absolute; left: 22px; top: -4px; width: 10px; height: 10px;
                    border-radius: 50%; background: #E63946; box-shadow: 0 0 0 4px rgba(230,57,70,.18);}
 .tl-empty {color: #8D99AE; font-size: 14px; padding: 22px 0; text-align: center;}
+@media (max-width: 640px) {
+  .tl-row {grid-template-columns: 42px 48px 1fr 26px;}
+  .tl-gap {grid-template-columns: 42px 48px 1fr;}
+  .tl-pill {width: 38px;} .tl-title {font-size: 14px;}
+}
 </style>
 """
 

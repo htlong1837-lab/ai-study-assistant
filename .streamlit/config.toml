@@ -14,3 +14,7 @@ backgroundColor = "#FDECE7"
 [browser]
 # Không gửi thống kê sử dụng cho Streamlit.
 gatherUsageStats = false
+
+[client]
+# Giao diện sản phẩm: ẩn nút Deploy và các mục dành cho nhà phát triển.
+toolbarMode = "minimal"
