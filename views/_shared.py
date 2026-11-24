@@ -17,8 +17,7 @@ def llm_status() -> bool:
 
 def module_header(title: str, owner: str, inputs: str, outputs: str) -> None:
     st.title(title)
-    st.caption(f"Phụ trách: **{owner}** · Trạng thái: đang phát triển")
+    st.caption(f"Phụ trách: **{owner}**")
     c1, c2 = st.columns(2)
     c1.markdown(f"**Đầu vào:** {inputs}")
     c2.markdown(f"**Đầu ra:** {outputs}")
-    st.info("Đang dùng dữ liệu giả từ `core/mocks.py`.", icon="🧪")

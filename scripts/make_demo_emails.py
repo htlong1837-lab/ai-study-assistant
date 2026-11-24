@@ -26,7 +26,9 @@ Tiêu chí chấm: đúng thuật toán (4 điểm), thí nghiệm và so sánh 
 def _pdf_bytes(text: str) -> bytes:
     doc = fitz.open()
     page = doc.new_page()
-    page.insert_textbox(fitz.Rect(50, 50, 550, 800), text, fontsize=11, fontname="helv")
+    # insert_htmlbox dùng font có sẵn hỗ trợ Unicode; insert_textbox với "helv" làm mất dấu tiếng Việt.
+    html = "".join(f"<p>{line}</p>" for line in text.strip().splitlines())
+    page.insert_htmlbox(fitz.Rect(50, 50, 550, 800), html, css="* {font-size: 11pt;}")
     data = doc.tobytes()
     doc.close()
     return data

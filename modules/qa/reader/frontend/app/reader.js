@@ -1,5 +1,5 @@
 import * as pdfjs from "../vendor/pdfjs/pdf.mjs";
-import {findTextInSpans, newEventId, normalizeRect, normalizeText, selectionStartPage} from "./reader_logic.mjs";
+import {findTextInSpans, newEventId, normalizeRect, normalizeText, selectionStartPage} from "../reader_logic.mjs";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL("../vendor/pdfjs/pdf.worker.mjs", import.meta.url).href;
 const send = value => window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setComponentValue",value},"*");
