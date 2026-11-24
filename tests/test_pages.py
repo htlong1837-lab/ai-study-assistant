@@ -28,7 +28,9 @@ def test_page_runs_without_api_key(page):
 def test_app_entry_runs():
     at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
     assert not at.exception, at.exception
-    assert "Trợ lý AI học tập" in at.title[0].value
+    bodies = [e.proto.body for e in at.get("html")]
+    assert any("nh-hero" in b for b in bodies)  # trang chủ dựng bảng "Hôm nay"
+    assert any("Trợ lý AI học tập" in b for b in bodies)  # thương hiệu ở thanh bên
 
 
 def test_home_warns_ai_off():

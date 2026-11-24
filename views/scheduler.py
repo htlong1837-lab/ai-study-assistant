@@ -18,7 +18,8 @@ from modules.scheduler.reminders import (
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
-from views import _timeline
+from modules.scheduler.progress import ProgressStore, block_key
+from views import _planner, _timeline, _ui
 from views._shared import module_header
 
 module_header("📅 Lập lịch & nhắc nhở", "Long (C)",
@@ -32,14 +33,15 @@ if b_tasks:
     base_tasks = b_tasks
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
                f"Nguồn: {len(b_tasks)} nhiệm vụ module B đã lưu "
-               f"({sum(t.status is TaskStatus.CONFIRMED for t in b_tasks)} đã xác nhận ở trang "
-               "Trích xuất).")
+               f"({sum(t.status is TaskStatus.CONFIRMED for t in b_tasks)} đã xác nhận).")
 else:
     base_tasks = mocks.tasks()
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
                "Module B chưa lưu nhiệm vụ nào, đang dùng dữ liệu mẫu.")
 for s in b_skipped:
     st.warning(f"Không xếp được “{s.title}” ({s.task_id}): {s.reason}")
+_tt_courses, _ = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
+_planner.quick_add(Repository(DB_PATH), sorted({c.course for c in _tt_courses}), key="sched")
 edited = st.data_editor(pd.DataFrame([{
     "Xác nhận": t.status is TaskStatus.CONFIRMED, "Nhiệm vụ": t.title, "Môn": t.course,
     "Hạn nộp": t.deadline, "Giờ": t.estimated_hours, "Ưu tiên": t.priority.value,
@@ -109,8 +111,13 @@ st.dataframe(pd.DataFrame([evaluate(r, r_tasks, r_sessions, r_settings)
 shown = st.radio("Xem lịch của", list(results), horizontal=True) if len(results) > 1 \
     else next(iter(results))
 result = results[shown]
+r_deadline = {t.id: t.deadline for t in r_tasks}
 for tid, h in result.missing_hours.items():
-    st.warning(f"**{r_titles[tid]}** thiếu {h:g} giờ trước hạn nộp — không đủ thời gian rảnh.")
+    if r_deadline[tid] <= datetime.now():
+        st.warning(f"**{r_titles[tid]}** đã quá hạn nộp ({r_deadline[tid]:%H:%M %d/%m}) — "
+                   "không còn thời gian để xếp.", icon="⌛")
+    else:
+        st.warning(f"**{r_titles[tid]}** thiếu {h:g} giờ trước hạn nộp — không đủ thời gian rảnh.")
 
 # Lịch tuần
 weeks = sorted({d - timedelta(days=d.weekday()) for d in
@@ -120,21 +127,38 @@ week_days = [week + timedelta(days=i) for i in range(7)]
 day_label = {d: f"{WEEKDAY_VN[d.weekday()]} {d:%d/%m}" for d in week_days}
 
 used_ids = [t.id for t in r_tasks if t.id in {b.task_id for b in result.blocks}]
-task_color = {tid: _timeline.PALETTE[i % len(_timeline.PALETTE)] for i, tid in enumerate(used_ids)}
+task_color = _planner.task_colors(r_tasks)
+progress = ProgressStore(DB_PATH)
+done = progress.done()
 default_day = date.today() if date.today() in week_days else week_days[0]
 day = st.segmented_control(
     "Ngày", week_days, default=default_day, key=f"tl_day_{week}",
     format_func=lambda d: f"{WEEKDAY_VN[d.weekday()]} · {d:%d}") or default_day
-day_sessions = busy_intervals(r_sessions, replace(r_settings, start=day, days=1, not_before=None))
-items = [_timeline.Item(b0, b1, s.course, f"Lên lớp · {s.room}" if s.room else "Lên lớp", "🏫",
-                        _timeline.CLASS_COLOR) for b0, b1, s in day_sessions]
-items += [_timeline.Item(b.start, b.end, r_titles[b.task_id], "Tự học", "📖",
-                         task_color.get(b.task_id, _timeline.PALETTE[0]))
-          for b in result.blocks if b.start.date() == day]
-items += [_timeline.Item(t.deadline, t.deadline, f"Hạn nộp: {t.title}", t.course, "📌",
-                         _timeline.DEADLINE_COLOR)
-          for t in r_tasks if t.status is TaskStatus.CONFIRMED and t.deadline.date() == day]
-st.markdown(_timeline.render(items), unsafe_allow_html=True)
+
+col_tl, col_side = st.columns([3, 2], gap="large")
+with col_side:
+    day_blocks = [b for b in result.blocks if b.start.date() == day]
+    if day_blocks:
+        with st.container(border=True):
+            st.markdown("##### ✅ Đánh dấu đã học")
+            for b in day_blocks:
+                k = block_key(b.task_id, b.start)
+                ticked = st.checkbox(f"{b.start:%H:%M}–{b.end:%H:%M} · {r_titles[b.task_id]}",
+                                     value=k in done, key=f"done_{k}")
+                if ticked != (k in done):
+                    done = progress.set_done(k, ticked)
+                    if ticked and all(block_key(x.task_id, x.start) in done for x in day_blocks):
+                        st.session_state["celebrate"] = True
+                    st.rerun()
+            n_done = sum(block_key(b.task_id, b.start) in done for b in day_blocks)
+            st.progress(n_done / len(day_blocks), text=f"{n_done}/{len(day_blocks)} khối hôm nay")
+    _ui.focus_timer()
+with col_tl:
+    items = _planner.day_items(day, result.blocks, r_tasks, r_sessions, r_settings, done, task_color)
+    st.html(_timeline.render(items, datetime.now()))
+if st.session_state.pop("celebrate", False):
+    _ui.confetti()
+    st.toast("Xong hết các khối học trong ngày! 🎉", icon="🏆")
 
 
 def _hour(dt: datetime) -> float:

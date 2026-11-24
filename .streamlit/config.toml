@@ -10,3 +10,7 @@ baseRadius = "large"
 
 [theme.sidebar]
 backgroundColor = "#FDECE7"
+
+[browser]
+# Không gửi thống kê sử dụng cho Streamlit.
+gatherUsageStats = false

@@ -15,9 +15,13 @@ def llm_status() -> bool:
     return True
 
 
+OWNER_COLOR = {"A": "#4D96FF", "B": "#FFB84C", "C": "#F07167", "D": "#00AFB9"}
+
+
 def module_header(title: str, owner: str, inputs: str, outputs: str) -> None:
-    st.title(title)
-    st.caption(f"Phụ trách: **{owner}**")
-    c1, c2 = st.columns(2)
-    c1.markdown(f"**Đầu vào:** {inputs}")
-    c2.markdown(f"**Đầu ra:** {outputs}")
+    """Tiêu đề trang: biểu tượng trong ô màu theo module, dòng phụ ghi đầu vào → đầu ra."""
+    icon, _, name = title.partition(" ")
+    code = owner.strip()[-2:-1] if owner.strip().endswith(")") else ""
+    color = OWNER_COLOR.get(code, "#F07167")
+    st.html(f'<div class="nh-head"><div class="ic" style="background:{color}22">{icon}</div>'
+            f'<div><h1>{name}</h1><p>Phụ trách: {owner} · {inputs} → {outputs}</p></div></div>')

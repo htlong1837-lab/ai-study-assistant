@@ -46,3 +46,5 @@ benchmarks/qa/results/
 
 # Mô hình phân loại email do Module D tự huấn luyện khi chạy (sinh lại được)
 data/models/
+# Tiến độ khối học (sinh khi dùng app)
+data/progress.json

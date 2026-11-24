@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
@@ -45,31 +47,48 @@ processed_items = st.session_state["processed_list"]
 if "flash" in st.session_state:
     st.success(st.session_state.pop("flash"))
 
-# ---- Tải file .eml thật ----
-uploaded_files = st.file_uploader(
-    "Tải lên file .eml để kiểm tra",
-    type=["eml"],
-    accept_multiple_files=True,
-)
-if uploaded_files and st.button("Xử lý file tải lên"):
+DEMO_DIR = Path(__file__).resolve().parents[1] / "data" / "demo"
+
+
+def _ingest(raws: list[bytes]) -> None:
     known_ids = {p.email.id for p in processed_items}
     added = 0
-    for f in uploaded_files:
-        p = process_email(f.read())
+    for raw in raws:
+        p = process_email(raw)
         if p.email.id in known_ids:  # tránh nạp trùng khi bấm nhiều lần
             continue
         processed_items.append(p)
         known_ids.add(p.email.id)
         added += 1
     st.session_state["flash"] = (
-        f"Đã nạp {added} email mới."
-        if added
-        else "Các email này đã có trong danh sách."
+        f"Đã nạp {added} email mới." if added else "Các email này đã có trong danh sách."
     )
     st.rerun()
 
+
+# ---- Tải file .eml thật, hoặc dùng bộ email mẫu ----
+c_up, c_demo = st.columns([3, 1], vertical_alignment="bottom")
+uploaded_files = c_up.file_uploader(
+    "Tải lên file .eml để kiểm tra",
+    type=["eml"],
+    accept_multiple_files=True,
+)
+demo_files = sorted(DEMO_DIR.glob("*.eml"))
+if demo_files and c_demo.button(
+    "✨ Thử với email mẫu", help="3 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo."
+):
+    _ingest([f.read_bytes() for f in demo_files])
+if uploaded_files and st.button("Xử lý file tải lên", type="primary"):
+    _ingest([f.read() for f in uploaded_files])
+
 if not processed_items:
-    st.info("Chưa có email nào. Hãy tải lên file .eml.")
+    st.html(
+        '<div style="text-align:center;padding:42px 20px;border-radius:22px;background:#fff;'
+        'box-shadow:0 6px 20px rgba(0,175,185,.10)"><div style="font-size:44px">📭</div>'
+        '<div style="font-weight:700;font-size:17px;color:#2B2D42;margin-top:6px">Hộp thư đang trống</div>'
+        '<div style="color:#8D99AE;font-size:13.5px;margin-top:4px">Tải lên file .eml, hoặc bấm '
+        '<b>Thử với email mẫu</b> để xem hệ thống phân loại, quét link và chặn email độc.</div></div>'
+    )
     st.stop()
 
 
