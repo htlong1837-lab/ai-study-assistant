@@ -12,20 +12,21 @@ python -m scripts.make_demo_emails
 ```
 
 1. Xoá CSDL cũ để task mẫu không lẫn vào luồng thật: xoá `data/app.db`.
-2. `.env`: `LLM_PROVIDER=gemini` và điền `GEMINI_API_KEY` (B cần LLM thật để trích bài tập; không có
-   khóa thì B không trích ra gì). Có `VIRUSTOTAL_API_KEY` thì D tra thêm VirusTotal, không có vẫn chạy.
+2. `.env`: có `GEMINI_API_KEY` thì B trích bằng LLM và trang Hỏi đáp trả lời được; không có khóa thì
+   B tự dùng bộ trích xuất theo luật (vẫn ra nhiệm vụ cho email mẫu), chỉ phần hỏi đáp không chạy.
+   Có `VIRUSTOTAL_API_KEY` thì D tra thêm VirusTotal, không có vẫn chạy.
 3. `streamlit run app.py`. Chuẩn bị sẵn file `data/demo/*.eml` (3 email tự soạn) và
    `data/sample/thoi_khoa_bieu.csv`.
 4. Mở trước trang chủ; tắt thông báo máy.
 
 ## Các bước
 
-Bước 2 đã chạy thử với D (22/11): `01`, `02` ra *bài tập / an toàn*; `03` ra *lừa đảo / độc hại*, tệp bị chặn, link `bit.ly` nghi ngờ. Các bước 3–10 là kỳ vọng theo code, phải kiểm tra trong buổi tổng duyệt (bước 4–8 cần Gemini thật).
+Đã chạy thử trọn bước 1–6 và 9 trên app ngày 25/11, không có khóa API (B dùng bộ trích xuất theo luật). Bước 2 chạy thử với D (22/11): `01`, `02` ra *bài tập / an toàn*; `03` ra *lừa đảo / độc hại*, tệp bị chặn, link `bit.ly` nghi ngờ. Các bước 3–10 là kỳ vọng theo code, phải kiểm tra trong buổi tổng duyệt (bước 4–8 cần Gemini thật).
 
 | # | Người nói | Trang | Thao tác | Điều cần thấy (kỳ vọng) | Ý cần nói |
 |---|---|---|---|---|---|
 | 1 | Long | Trang chủ | Giới thiệu luồng | Sơ đồ D → B → C, D → A | Vấn đề: bài tập phân tán, hạn tiếng Việt, email độc. AI chỉ đề xuất |
-| 2 | Minh | Email & bảo mật | Tải 3 file `data/demo/*.eml`, bấm "Xử lý file tải lên" | `01` và `02`: nhãn bài tập, an toàn. `03`: lừa đảo, **độc hại** — link `bit.ly` nghi ngờ, tệp `.pdf` thật ra là `.exe` | Cổng chặn: email độc không bao giờ sang A/B; tệp chỉ tra VirusTotal bằng SHA-256, không tải lên |
+| 2 | Minh | Email & bảo mật | Bấm "✨ Thử với email mẫu" (hoặc tải 3 file `data/demo/*.eml`) | `01` và `02`: nhãn bài tập, an toàn. `03`: lừa đảo, **độc hại** — link `bit.ly` nghi ngờ, tệp `.pdf` thật ra là `.exe` | Cổng chặn: email độc không bao giờ sang A/B; tệp chỉ tra VirusTotal bằng SHA-256, không tải lên |
 | 3 | Minh | Email & bảo mật | Bấm "Chuyển sang B/A" cho `01` và `02` | Báo đã chuyển; `03` không có nút chuyển | Người dùng quyết định chuyển tiếp |
 | 4 | Duy | Trích xuất | Thấy 2 email từ D; bấm "Bắt đầu trích xuất" | Đề xuất "Bài tập lớn số 2", hạn 05/12 kèm câu trích; email dời hạn tạo **đề xuất cập nhật** hạn 12/12 | Chuẩn hoá ngày giờ tiếng Việt; câu trích phải có thật trong email; phát hiện thay đổi |
 | 5 | Duy | Trích xuất | Chấp nhận đề xuất dời hạn, xác nhận nhiệm vụ | Nhiệm vụ chuyển sang "đã xác nhận" | AI chỉ đề xuất — người dùng xác nhận |

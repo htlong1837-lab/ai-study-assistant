@@ -1,7 +1,29 @@
-# Trợ lý AI học tập và lịch trình
+# Nhịp — Trợ lý AI học tập và lịch trình
 
 Bài tập lớn môn Trí tuệ nhân tạo (Application Track). Hệ thống gom email, đề bài và giáo trình
 thành lịch học có nhắc nhở, kèm hỏi đáp có trích dẫn trang. AI chỉ đề xuất, người dùng xác nhận.
+
+**Thử nhanh trong 1 phút** (không cần khóa API):
+
+1. `streamlit run app.py` → trang **Hôm nay** mở với màn dựng trang bằng 4 con trỏ (mỗi con trỏ là
+   một module).
+2. **Email & bảo mật** → bấm **✨ Thử với email mẫu**: 2 email bài tập qua cổng, 1 email lừa đảo bị chặn.
+   Chọn từng email bài tập → **Duyệt & chuyển sang B/A**.
+3. **Trích xuất bài tập** → **Bắt đầu trích xuất**: ra nhiệm vụ có hạn nộp, tiêu chí chấm lấy từ đề
+   PDF đính kèm, và đề xuất dời hạn từ email thứ hai. Chấp nhận, rồi **Xác nhận vào lịch**.
+4. **Lập lịch & nhắc nhở** → **Xếp lịch**: dòng thời gian từng ngày, đánh dấu khối đã học, đồng hồ
+   tập trung, tải file `.ics`.
+5. **Hỏi đáp tài liệu**: đề bài từ email đã có sẵn để đọc và hỏi (cần khóa Gemini để hỏi).
+
+Tính năng nổi bật:
+
+- **Không có khóa AI vẫn chạy trọn luồng**: module B tự chuyển sang bộ trích xuất theo luật
+  (`modules/extraction/rule_extractor.py`), mọi câu trích vẫn được kiểm chứng như khi dùng LLM.
+- **Thêm nhanh bằng tiếng Việt**: gõ “Báo cáo CSDL 23h59 thứ Sáu tuần sau, 3 giờ, gấp” ở trang Hôm
+  nay hoặc Lập lịch; hệ thống đọc hạn nộp, số giờ, độ gấp, môn (hiểu cả viết tắt CSDL).
+- **Trang Hôm nay**: dòng thời gian trong ngày với vạch giờ hiện tại, hạn nộp đếm ngược theo độ gấp,
+  vòng tiến độ tuần, biểu đồ “Nhịp tuần”.
+- **Đánh dấu đã học** từng khối (pháo giấy khi xong cả ngày) và **đồng hồ Pomodoro** 25/50/5 phút.
 
 | Module | Phụ trách | Thư mục | Trang |
 |---|---|---|---|
