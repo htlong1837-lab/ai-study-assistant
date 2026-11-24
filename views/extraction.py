@@ -288,6 +288,6 @@ if confirmed_tasks:
             "Độ tin cậy": f"{float(t.get('confidence', 1.0)):.0%}",
         }
         for t in confirmed_tasks
-    ], use_container_width=True)
+    ], width="stretch")
 else:
     st.caption("Chưa có bài tập nào được xác nhận.")
