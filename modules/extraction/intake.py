@@ -23,6 +23,10 @@ class Intake:
     documents: list[ParsedDocument]
     approved_suspicious: set[str] = field(default_factory=set)
     from_d: bool = False  # False: chưa có gì từ D, đang dùng dữ liệu mẫu
+    doc_email: dict[str, ClassifiedEmail] = field(default_factory=dict)  # doc_id → email chứa tệp
+
+    def linked_email(self, doc: ParsedDocument) -> ClassifiedEmail | None:
+        return self.doc_email.get(doc.doc_id)
 
     def allow_suspicious(self, email: ClassifiedEmail) -> bool:
         return email.id in self.approved_suspicious
@@ -33,5 +37,13 @@ def intake_from_d(state: Mapping[str, Any], mock_emails, mock_documents) -> Inta
     emails = list(state.get("verified_emails", {}).values())
     documents = list(state.get("verified_documents", {}).values())
     if emails or documents:
-        return Intake(emails, documents, set(state.get("approved_suspicious_email_ids", set())), True)
+        by_id = {e.id: e for e in emails}
+        attachments = state.get("safe_attachments", {}) or {}
+        doc_email = {}
+        for sha, doc in (state.get("verified_documents", {}) or {}).items():
+            att = attachments.get(sha) if isinstance(attachments, dict) else None
+            if att is not None and att.email_id in by_id:
+                doc_email[doc.doc_id] = by_id[att.email_id]
+        return Intake(emails, documents, set(state.get("approved_suspicious_email_ids", set())), True,
+                      doc_email)
     return Intake(list(mock_emails()), list(mock_documents()))

@@ -14,6 +14,12 @@ from modules.qa.messages import rejection_message
 from modules.qa.reader.component import render_reader
 from modules.qa.reader.threads import ThreadStore, export_markdown
 from modules.email_security.handoff import verified_document_batches
+from views import _ui
+
+
+def _display_name(filename: str) -> str:
+    """Bỏ tiền tố mã băm D thêm vào tên tệp khi lưu (``6f08…_de_bai.pdf`` → ``de_bai.pdf``)."""
+    return re.sub(r"^[0-9a-f]{16}_", "", filename)
 
 
 def _configured_key() -> str:
@@ -52,10 +58,9 @@ def _safe_error(error: Exception) -> str:
     return re.sub(r"AIza[0-9A-Za-z_-]{20,}", "[đã ẩn khóa]", message)
 
 
-st.title("💬 Đọc và hỏi đáp tài liệu")
-st.caption(
-    "Mở tệp đính kèm đã qua Module D, đọc theo trang, bôi đen đoạn cần hỏi hoặc đặt câu hỏi cho toàn tài liệu."
-)
+_ui.page_header("💬", "Đọc và hỏi đáp tài liệu",
+                "Mở tệp đính kèm đã qua Module D, đọc theo trang, bôi đen đoạn cần hỏi hoặc hỏi cả tài liệu.",
+                _ui.BLUE)
 key_input = st.text_input(
     "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
 )
@@ -77,7 +82,7 @@ if api_key:
 # ---------------------------------------------------------------------------
 verified_documents = verified_document_batches(st.session_state)
 options = {
-    f"Từ Module D · {parsed.filename} · {attachment.sha256[:10]}": (attachment, parsed)
+    f"Từ Module D · {_display_name(parsed.filename)} · {attachment.sha256[:10]}": (attachment, parsed)
     for attachment, parsed in verified_documents
 }
 
@@ -107,7 +112,7 @@ if options:
         except Exception as exc:
             st.error(f"Không thể mở tệp đính kèm: {_safe_error(exc)}")
     if st.session_state.get("qa_document_hash") == selected_hash:
-        st.success(f"Tài liệu {parsed_document.filename} đã qua cổng Module D.")
+        st.success(f"Tài liệu {_display_name(parsed_document.filename)} đã qua cổng Module D.")
 else:
     # Không tái sử dụng tài liệu cũ khi D chưa chuyển tệp nào.
     for state_key in (

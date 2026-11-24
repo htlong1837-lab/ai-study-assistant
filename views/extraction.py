@@ -3,11 +3,20 @@ import streamlit as st
 
 from core import config, mocks
 from core.contracts import SafetyStatus, can_forward
-from core.llm_client import LLMClient, get_client
+from core.llm_client import get_client
 from db.repository import Repository
 from modules.extraction import workflow
 from modules.extraction.intake import intake_from_d
+from modules.extraction.rule_extractor import NoCacheRepository, RuleBasedLLM
 from views._shared import llm_status, module_header
+
+def _fmt_value(v):
+    """Ngày giờ ISO → 'HH:MM dd/mm/yyyy'; giá trị khác giữ nguyên."""
+    try:
+        return datetime.fromisoformat(str(v)).strftime("%H:%M %d/%m/%Y")
+    except (TypeError, ValueError):
+        return v if v not in (None, "") else "—"
+
 
 # Khởi tạo Repository dùng chung
 repo = Repository(config.DB_PATH)
@@ -54,6 +63,8 @@ module_header(
     "Task trạng thái đề xuất → người dùng xác nhận",
 )
 llm_ready = llm_status()
+if msg := st.session_state.pop("extract_flash", None):
+    st.toast(msg, icon="📝")
 intake = intake_from_d(st.session_state, mocks.emails, mocks.documents)
 
 # ---------------------------------------------------------------- 1. Cổng tiếp nhận Nguồn dữ liệu (Gate)
@@ -89,20 +100,27 @@ with c_doc:
 # Nút kích hoạt trích xuất & Demo
 c_act1, c_act2 = st.columns(2)
 with c_act1:
-    if st.button("🚀 Bắt đầu trích xuất email & tài liệu vào DB", key="btn_run_extract"):
-        client = get_client() if llm_ready else LLMClient(provider="fake", model="fake-model")
+    if not llm_ready:
+        st.caption("🧩 Chưa có khóa AI: dùng bộ trích xuất theo luật (đọc hạn nộp, tên bài, định dạng, "
+                   "tiêu chí chấm). Độ phủ thấp hơn LLM; câu trích vẫn được kiểm chứng như thường.")
+    if st.button("🚀 Bắt đầu trích xuất email & tài liệu vào DB", key="btn_run_extract", type="primary"):
+        if llm_ready:
+            client, work_repo = get_client(), repo
+        else:
+            client, work_repo = RuleBasedLLM(), NoCacheRepository(repo)
         with st.spinner("Đang trích xuất và chuẩn hóa bài tập..."):
-            total_created = 0
+            touched: set[str] = set()
             for e in intake.emails:
                 allow = intake.allow_suspicious(e)
                 if can_forward(e, allow_suspicious=allow):
-                    created = workflow.process_email(e, client, repo, allow_suspicious=allow)
-                    total_created += len(created)
+                    touched |= set(workflow.process_email(e, client, work_repo, allow_suspicious=allow))
             for d in intake.documents:
-                created = workflow.process_document(d, client, repo)
-                total_created += len(created)
-            st.success(f"Đã xử lý xong! Tạo mới/cập nhật {total_created} bài tập trong cơ sở dữ liệu.")
-            st.rerun()
+                touched |= set(workflow.process_document(d, client, work_repo,
+                                                         linked_email=intake.linked_email(d)))
+        st.session_state["extract_flash"] = (
+            f"Đã xử lý xong: {len(touched)} bài tập được tạo hoặc cập nhật." if touched
+            else "Không tìm thấy bài tập nào có hạn nộp trong các nguồn này.")
+        st.rerun()
 
 with c_act2:
     if st.button("⚡ Tạo tình huống mâu thuẫn mẫu để demo", key="btn_demo_conflict"):
@@ -145,9 +163,10 @@ if proposals:
     st.subheader("🔔 Đề xuất Dời hạn / Thay đổi Yêu cầu")
     for prop in proposals:
         with st.container(border=True):
-            st.markdown(f"**Bài tập:** `{prop['task_id']}` | **Trường thay đổi:** `{prop['field']}`")
-            st.write(f"- Giá trị cũ: `{prop.get('old_value')}`")
-            st.write(f"- Giá trị đề xuất mới: **`{prop.get('new_value')}`**")
+            task_row = repo.get_task(prop["task_id"]) or {}
+            field_vn = {"deadline": "Hạn nộp"}.get(prop["field"], prop["field"])
+            st.markdown(f"**{task_row.get('title', prop['task_id'])}** · {field_vn}")
+            st.markdown(f"~~{_fmt_value(prop.get('old_value'))}~~ → **{_fmt_value(prop.get('new_value'))}**")
             if prop.get("quote"):
                 st.caption(f"Trích dẫn: \"{prop['quote']}\" (từ `{prop.get('source')}`)")
 
@@ -222,7 +241,9 @@ else:
                 curr_p = t.get("priority", "medium")
                 p_idx = p_opts.index(curr_p) if curr_p in p_opts else 1
                 new_priority = c2.selectbox("Mức ưu tiên", options=p_opts, index=p_idx, key=f"p_{tid}")
-                new_deadline_input = c3.text_input("Ghi đè hạn nộp (YYYY-MM-DD HH:MM)", value=dl_str if "⚠️" not in dl_str else "", key=f"dl_{tid}")
+                new_deadline_input = c3.text_input("Ghi đè hạn nộp (YYYY-MM-DD HH:MM)", value=dl_str if "⚠️" not in dl_str else "",
+                                                   # khoá gắn với hạn hiện tại: khi hạn đổi (chấp nhận dời hạn) ô được làm mới
+                                                   key=f"dl_{tid}_{t.get('deadline')}")
 
             # Nút Xác nhận và Từ chối
             btn_col1, btn_col2, _ = st.columns([2, 2, 4])
@@ -231,7 +252,7 @@ else:
                     "estimated_hours": new_hours,
                     "priority": new_priority,
                 }
-                if new_deadline_input.strip():
+                if new_deadline_input.strip() and new_deadline_input.strip() != dl_str:  # chỉ ghi khi người dùng sửa
                     try:
                         clean_dl = new_deadline_input.strip().replace(" ", "T")
                         if len(clean_dl) == 16:

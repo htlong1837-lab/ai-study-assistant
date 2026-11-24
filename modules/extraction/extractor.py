@@ -14,14 +14,14 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from core.contracts import ClassifiedEmail, ParsedDocument
 from core.llm_client import LLMClient
 from db.repository import Repository
 from modules.extraction.confidence import compute_confidence
-from modules.extraction.datetime_normalizer import NormalizedDeadline, normalize
+from modules.extraction.datetime_normalizer import HO_CHI_MINH_TZ, NormalizedDeadline, normalize
 from modules.extraction.gate import ensure_safe
 from modules.extraction.prompts import PROMPT_VERSION, SYSTEM_PROMPT, build_extraction_prompt
 from modules.extraction.schemas import ExtractionResult, RawAssignment
@@ -238,7 +238,8 @@ def extract_from_document(
     anchor: datetime | None = None,
 ) -> ExtractionOutcome:
     """Trích xuất bài tập từ tài liệu PDF / văn bản theo trang."""
-    anchor_dt = anchor or datetime.now(timezone.utc)
+    # Mốc neo theo giờ Việt Nam: neo UTC làm "23h59" thành 23:59 UTC (06:59 sáng hôm sau).
+    anchor_dt = anchor or datetime.now(HO_CHI_MINH_TZ)
 
     # 1. Chọn trang
     selected_pages = doc.pages

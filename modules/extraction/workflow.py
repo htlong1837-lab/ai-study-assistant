@@ -15,6 +15,7 @@ from typing import Any, Literal
 from core.contracts import ClassifiedEmail, ParsedDocument, Priority, Task, TaskStatus
 from core.llm_client import LLMClient
 from db.repository import Repository
+from modules.extraction.conflicts import compare_deadlines, compare_submission, suggest_resolution
 from modules.extraction.extractor import extract_from_document, extract_from_email
 from modules.extraction.gate import ensure_safe
 from modules.extraction.matcher import find_matching_task
@@ -137,17 +138,26 @@ def process_document(
 ) -> list[str]:
     """Xử lý tài liệu đề bài: Trích xuất thông tin, đối chiếu mâu thuẫn với email liên kết (nếu có),
     lưu vào DB ở trạng thái 'proposed'."""
-    outcome = extract_from_document(doc, llm, repo=repo, pages=pages)
+    anchor = linked_email.received_at if linked_email else None  # hạn tương đối tính từ ngày gửi email
+    outcome = extract_from_document(doc, llm, repo=repo, pages=pages, anchor=anchor)
     if outcome.is_empty or not outcome.items:
         return []
 
     created_task_ids: list[str] = []
+    email_task = _task_from_email(repo, linked_email.id) if linked_email else None
 
     for item in outcome.items:
         raw_a = item.assignment
         norm_deadline = item.normalized_deadlines[0] if item.normalized_deadlines else None
         deadline_dt = norm_deadline.value if norm_deadline else None
         deadline_iso = deadline_dt.isoformat() if deadline_dt else None
+
+        # Đề bài đính kèm chính email đã tạo nhiệm vụ: gộp vào nhiệm vụ đó (không tạo bản trùng),
+        # bổ sung chi tiết còn thiếu và ghi mâu thuẫn nếu đề bài nói khác email.
+        if email_task is not None and len(outcome.items) == 1:
+            _merge_document_into(repo, email_task, item, doc, linked_email, norm_deadline)
+            created_task_ids.append(email_task["id"])
+            continue
 
         task_id = f"t-{uuid.uuid4().hex[:8]}"
         title_val = (raw_a.title.value or doc.filename).strip()
@@ -199,6 +209,59 @@ def process_document(
         created_task_ids.append(task_id)
 
     return created_task_ids
+
+
+def _task_from_email(repo: Repository, email_id: str) -> dict[str, Any] | None:
+    """Nhiệm vụ đã được trích từ email này (nguồn ``email:<id>``), nếu có."""
+    for t in repo.list_tasks():
+        if t.get("status") == "cancelled":
+            continue
+        if any(s.get("source") == f"email:{email_id}" and s.get("field") != "linked_email"
+               for s in repo.get_sources(t["id"])):
+            return t
+    return None
+
+
+def _merge_document_into(repo: Repository, task: dict[str, Any], item: Any, doc: ParsedDocument,
+                         email: ClassifiedEmail, norm_deadline: Any) -> None:
+    raw_a = item.assignment
+    tid = task["id"]
+    if item.sources:
+        repo.add_sources(tid, item.sources)
+
+    details = repo.get_assignment_details(tid) or {}
+    doc_vals = {
+        "submission_platform": raw_a.submission_platform.value if raw_a.submission_platform else None,
+        "submission_format": raw_a.submission_format.value if raw_a.submission_format else None,
+        "naming_convention": raw_a.naming_convention.value if raw_a.naming_convention else None,
+        "grading_criteria": raw_a.grading_criteria.value if raw_a.grading_criteria else None,
+    }
+    merged = dict(details)
+    merged.pop("task_id", None)
+    for k, v in doc_vals.items():
+        if v and not merged.get(k):
+            merged[k] = v
+    merged.setdefault("raw_deadline_text", raw_a.deadlines[0].raw_text if raw_a.deadlines else None)
+    merged.setdefault("assumptions", [])
+    repo.save_assignment_details(tid, merged)
+
+    src_a, src_b = f"email:{email.id}", f"doc:{doc.doc_id}"
+    found = []
+    dl = compare_deadlines(task.get("deadline"), norm_deadline) if norm_deadline else None
+    if dl:
+        found.append(dl)
+    found += compare_submission(details.get("submission_platform"), doc_vals["submission_platform"],
+                                details.get("submission_format"), doc_vals["submission_format"])
+    for c in found:
+        a_val, b_val = str(c["value_a"]).lower(), str(c["value_b"]).lower()
+        if c["kind"] == "submission_platform" and (a_val in b_val or b_val in a_val):
+            continue  # "LMS" và "LMS của trường" là một
+        repo.add_conflict({
+            "task_id": tid, "kind": "deadline" if c["kind"] == "deadline" else "submission",
+            "value_a": c["value_a"], "source_a": src_a,
+            "value_b": c["value_b"], "source_b": src_b,
+            "suggestion": suggest_resolution(is_extension_b=raw_a.is_extension_notice),
+        })
 
 
 def confirm(
