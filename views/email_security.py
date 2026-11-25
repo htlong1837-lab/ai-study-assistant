@@ -6,11 +6,15 @@ import streamlit as st
 
 from core import mocks
 from core.contracts import SafetyStatus
-from modules.email_security import approve_suspicious, process_email
+from dataclasses import replace as _replace
+
+from modules.email_security import approve_suspicious
+from modules.email_security import process_email as _process_email
+from modules.email_security.config import get_settings
 from modules.email_security.handoff import publish_to_modules
 from modules.email_security import gmail
 from modules.email_security.mailbox import MailboxError, fetch_recent
-from views import _ui
+from views import _account, _ui
 from views._shared import llm_status, module_header
 
 
@@ -27,6 +31,7 @@ def get_safe_attachments() -> list:
 
 
 module_header("📬 Hộp thư", "D")
+ws = _account.current()
 llm_status()
 
 ICON = {
@@ -34,6 +39,11 @@ ICON = {
     SafetyStatus.SUSPICIOUS: "🟡 nghi ngờ",
     SafetyStatus.MALICIOUS: "🔴 độc",
 }
+
+def process_email(raw):
+    """Quét email; tệp đính kèm an toàn lưu vào thư mục riêng của người đang dùng."""
+    return _process_email(raw, settings=_replace(get_settings(), attachments_dir=str(ws.attachments_dir)))
+
 
 # ---- Trạng thái phiên (Streamlit chạy lại script sau mỗi lần bấm) ----
 if "processed_list" not in st.session_state:
@@ -68,23 +78,6 @@ def _ingest(raws: list[bytes]) -> None:
 GMAIL_DAYS = 14
 
 
-def _google_configured() -> bool:
-    """App đã có khóa "Đăng nhập bằng Google" trong .streamlit/secrets.toml chưa."""
-    try:
-        auth = st.secrets.get("auth")
-    except Exception:  # noqa: BLE001 — chưa có file secrets
-        return False
-    return bool(auth) and "google" in auth
-
-
-def _google_user():
-    """``st.user`` nếu đang đăng nhập Google, ngược lại ``None``."""
-    try:
-        return st.user if st.user.is_logged_in else None
-    except Exception:  # noqa: BLE001 — chưa cấu hình đăng nhập
-        return None
-
-
 def _sync_google(user) -> None:
     token = (getattr(user, "tokens", None) or {}).get("access", "")
     with st.spinner("Đang lấy thư Gmail…"):
@@ -117,7 +110,7 @@ def _sync_imap(address: str, password: str, host: str) -> None:
 # ---- Đăng nhập bằng Google (lối chính) ----
 if "mailbox_error" in st.session_state:
     st.error(st.session_state.pop("mailbox_error"), icon="🔐")
-user = _google_user()
+user = _account.google_user()
 if user is not None:
     if not st.session_state.get("gmail_synced"):  # vừa đăng nhập: tự lấy thư luôn
         _sync_google(user)
@@ -133,7 +126,7 @@ else:
     with st.container(border=True, key="google_card"):
         st.html('<div class="nh-login"><div class="i">📬</div><b>Kết nối Gmail</b></div>')
         if st.button("Đăng nhập bằng Google", key="google_login", icon=":material/login:"):
-            if _google_configured():
+            if _account.google_configured():
                 st.session_state.pop("gmail_synced", None)
                 st.login("google")
             else:

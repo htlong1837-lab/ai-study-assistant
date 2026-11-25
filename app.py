@@ -2,10 +2,20 @@
 
 import streamlit as st
 
-from views import _ui
+from core import workspace
+from views import _account, _ui
 
 st.set_page_config(page_title="DP · Daily Planner", page_icon=str(_ui.FAVICON), layout="wide")
 _ui.apply()
+
+
+@st.cache_resource
+def _cleanup_guests_once() -> int:
+    return workspace.cleanup_guests()  # dọn thư mục khách cũ hơn một ngày, mỗi lần khởi động
+
+
+_cleanup_guests_once()
+_account.sidebar()
 
 pages = [
     st.Page("views/home.py", title="Hôm nay", icon=":material/wb_sunny:", default=True),

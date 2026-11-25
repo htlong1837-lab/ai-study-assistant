@@ -116,6 +116,8 @@ def test_inbox_page_shows_login_error(monkeypatch):
 
 
 def test_google_button_explains_missing_setup(monkeypatch):
+    import views._account as account
+    monkeypatch.setattr(account, "google_configured", lambda: False)  # máy có thể đã có secrets.toml thật
     at = _inbox_app(monkeypatch, lambda *a, **k: [])
     assert not at.exception
     at.button(key="google_login").click().run()

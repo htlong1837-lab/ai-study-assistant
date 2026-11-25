@@ -1,14 +1,14 @@
-from datetime import datetime, timezone
+from datetime import datetime
 import streamlit as st
 
-from core import config, mocks
+from core import mocks
 from core.contracts import SafetyStatus, can_forward
 from core.llm_client import get_client
 from db.repository import Repository
 from modules.extraction import workflow
 from modules.extraction.intake import intake_from_d
 from modules.extraction.rule_extractor import NoCacheRepository, RuleBasedLLM
-from views import _ui
+from views import _account, _ui
 from views._shared import llm_status, module_header
 
 def _fmt_value(v):
@@ -19,50 +19,17 @@ def _fmt_value(v):
         return v if v not in (None, "") else "—"
 
 
-# Khởi tạo Repository dùng chung
-repo = Repository(config.DB_PATH)
-
-
-def _seed_db_from_mocks_if_empty():
-    """Nạp dữ liệu mẫu ban đầu từ core.mocks vào CSDL SQLite nếu bảng tasks trống."""
-    existing = repo.list_tasks()
-    if not existing:
-        for t in mocks.tasks():
-            repo.create_task({
-                "id": t.id,
-                "title": t.title,
-                "course": t.course,
-                "deadline": t.deadline.isoformat() if t.deadline else None,
-                "estimated_hours": t.estimated_hours,
-                "priority": t.priority.value,
-                "confidence": t.confidence,
-                "status": t.status.value,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            })
-            repo.add_sources(t.id, [{
-                "source": t.source,
-                "field": "title",
-                "quote": t.title,
-                "kind": "mock",
-            }])
-            repo.save_assignment_details(t.id, {
-                "raw_deadline_text": f"{t.deadline:%d/%m %H:%M}" if t.deadline else None,
-                "submission_platform": "LMS Đại học Bách Khoa",
-                "submission_format": [".pdf", ".zip"],
-                "naming_convention": "MSSV_HoTen_BaiTap.zip",
-                "grading_criteria": ["Đúng yêu cầu đề bài", "Báo cáo rõ ràng, mạch lạc"],
-                "assumptions": ["Giờ mặc định là 23:59 nếu không ghi rõ"],
-            })
-
-
-_seed_db_from_mocks_if_empty()
+ws = _account.current()
+repo = Repository(ws.db_path)
 
 module_header(
     "📝 Trích xuất bài tập", "B")
 llm_ready = llm_status()
 if msg := st.session_state.pop("extract_flash", None):
     st.toast(msg, icon="📝")
-intake = intake_from_d(st.session_state, mocks.emails, mocks.documents)
+# Khách thấy email mẫu để dùng thử; người đã đăng nhập chỉ thấy email của chính họ.
+intake = (intake_from_d(st.session_state, mocks.emails, mocks.documents) if ws.is_guest
+          else intake_from_d(st.session_state, list, list))
 
 # ---------------------------------------------------------------- 1. Cổng tiếp nhận Nguồn dữ liệu (Gate)
 st.subheader("1. Nguồn dữ liệu đầu vào (Email & Tài liệu)")

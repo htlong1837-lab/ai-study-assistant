@@ -94,6 +94,19 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 .nh-brand small {display: block; color: #8D99AE; font-size: 11.5px; font-weight: 600; margin-top: 3px;
   letter-spacing: .04em; text-transform: uppercase;}
 
+/* Tài khoản ở đáy thanh bên */
+[data-testid="stSidebarContent"] {position: relative; min-height: 100%;}
+.st-key-acct_box {position: absolute; left: 16px; right: 16px; bottom: 18px; gap: 8px;}
+.nh-acct {display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 16px;
+  background: rgba(255,255,255,.65); box-shadow: 0 2px 10px rgba(240,113,103,.10);}
+.nh-acct img, .nh-acct > span {width: 36px; height: 36px; border-radius: 50%; flex: none; object-fit: cover;
+  display: grid; place-items: center; background: linear-gradient(135deg, #F07167, #F49CBB); color: #fff; font-weight: 800;}
+.nh-acct.guest > span {background: #FFE1DA; font-size: 18px;}
+.nh-acct div {min-width: 0;}
+.nh-acct b {display: block; font-size: 13.5px; color: #2B2D42; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.nh-acct small {display: block; font-size: 11.5px; color: #8D99AE; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.st-key-acct_box button {border-radius: 12px !important; font-size: 13.5px !important;}
+
 /* Thẻ đăng nhập Google ở trang Hộp thư */
 .st-key-google_card {align-items: center; text-align: center; padding: 26px 18px !important;}
 .nh-login {display: flex; flex-direction: column; align-items: center; gap: 8px;}

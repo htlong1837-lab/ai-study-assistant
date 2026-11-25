@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 
 import streamlit as st
 
-from core import config
-from core.config import SAMPLE_DIR
 from core.contracts import TaskStatus
 from db.repository import Repository
 from modules.scheduler import schedule
@@ -15,13 +13,14 @@ from modules.scheduler.progress import ProgressStore, block_key
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
-from views import _planner, _timeline, _ui
+from views import _account, _planner, _timeline, _ui
 
 now = datetime.now()
 today = now.date()
-repo = Repository(config.DB_PATH)
+ws = _account.current()
+repo = Repository(ws.db_path)
 tasks, _ = tasks_from_b(repo)
-done = ProgressStore(config.DB_PATH).done()
+done = ProgressStore(ws.db_path).done()
 colors = _planner.task_colors(tasks)
 
 # Lịch: dùng kết quả đã xếp ở trang Lập lịch nếu có, không thì xếp nhanh bằng EDF cho 7 ngày.
@@ -30,7 +29,7 @@ if run and isinstance(run.get("settings"), ScheduleSettings):
     result = next(iter(run["results"].values()))
     sessions, settings = run["sessions"], run["settings"]
 else:
-    sessions, _err = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
+    sessions, _err = load_timetable_csv(ws.timetable_source())
     settings = ScheduleSettings(start=today, days=7, not_before=now)
     result = schedule(tasks, sessions, settings, "EDF")
 

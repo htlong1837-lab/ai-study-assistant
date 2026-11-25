@@ -6,7 +6,6 @@ import pandas as pd
 import streamlit as st
 
 from core import mocks
-from core.config import DB_PATH, SAMPLE_DIR
 from core.contracts import TaskStatus
 from db.repository import Repository
 from modules.scheduler import ALGORITHMS, schedule
@@ -19,44 +18,63 @@ from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from modules.scheduler.progress import ProgressStore, block_key
-from views import _planner, _timeline, _ui
+from views import _account, _planner, _timeline, _ui
 from views._shared import module_header
 
 module_header("📅 Lập lịch & nhắc nhở", "C")
+ws = _account.current()
 
 # ---------------------------------------------------------------- 1. Nhiệm vụ
 st.subheader("1. Nhiệm vụ")
-b_tasks, b_skipped = tasks_from_b(Repository(DB_PATH))
+b_tasks, b_skipped = tasks_from_b(Repository(ws.db_path))
 if b_tasks:
     base_tasks = b_tasks
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
                f"Nguồn: {len(b_tasks)} nhiệm vụ từ trang Trích xuất "
                f"({sum(t.status is TaskStatus.CONFIRMED for t in b_tasks)} đã xác nhận).")
-else:
+elif ws.is_guest:
     base_tasks = mocks.tasks()
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
                "Chưa có nhiệm vụ nào từ trang Trích xuất, đang dùng dữ liệu mẫu.")
+else:
+    base_tasks = []
+    st.info("Lịch của bạn chưa có nhiệm vụ nào. Lấy thư ở trang Hộp thư rồi trích xuất, hoặc dùng "
+            "Thêm nhanh ngay dưới đây.", icon="🗂️")
 for s in b_skipped:
     st.warning(f"Không xếp được “{s.title}” ({s.task_id}): {s.reason}")
-_tt_courses, _ = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
-_planner.quick_add(Repository(DB_PATH), sorted({c.course for c in _tt_courses}), key="sched")
-edited = st.data_editor(pd.DataFrame([{
-    "Xác nhận": t.status is TaskStatus.CONFIRMED, "Nhiệm vụ": t.title, "Môn": t.course,
-    "Hạn nộp": t.deadline, "Giờ": t.estimated_hours, "Ưu tiên": t.priority.value,
-    "Nguồn": t.source, "Tin cậy": f"{t.confidence:.0%}",
-} for t in base_tasks]), hide_index=True, width="stretch", key="task_editor",
-    disabled=["Nhiệm vụ", "Môn", "Hạn nộp", "Giờ", "Ưu tiên", "Nguồn", "Tin cậy"],
-    column_config={"Hạn nộp": st.column_config.DatetimeColumn(format="DD/MM HH:mm")})
-tasks = [replace(t, status=TaskStatus.CONFIRMED if ok else TaskStatus.PROPOSED)
-         for t, ok in zip(base_tasks, edited["Xác nhận"])]
+_tt_courses, _ = load_timetable_csv(ws.timetable_source())
+_planner.quick_add(Repository(ws.db_path), sorted({c.course for c in _tt_courses}), key="sched")
+tasks = []
+if base_tasks:
+    edited = st.data_editor(pd.DataFrame([{
+        "Xác nhận": t.status is TaskStatus.CONFIRMED, "Nhiệm vụ": t.title, "Môn": t.course,
+        "Hạn nộp": t.deadline, "Giờ": t.estimated_hours, "Ưu tiên": t.priority.value,
+        "Nguồn": t.source, "Tin cậy": f"{t.confidence:.0%}",
+    } for t in base_tasks]), hide_index=True, width="stretch", key="task_editor",
+        disabled=["Nhiệm vụ", "Môn", "Hạn nộp", "Giờ", "Ưu tiên", "Nguồn", "Tin cậy"],
+        column_config={"Hạn nộp": st.column_config.DatetimeColumn(format="DD/MM HH:mm")})
+    tasks = [replace(t, status=TaskStatus.CONFIRMED if ok else TaskStatus.PROPOSED)
+             for t, ok in zip(base_tasks, edited["Xác nhận"])]
 titles = {t.id: t.title for t in tasks}
 
 # ---------------------------------------------------------------- 2. Thời khoá biểu
 st.subheader("2. Thời khoá biểu")
 upload = st.file_uploader("Tải CSV (cột: thu,bat_dau,ket_thuc,mon,phong)", type="csv")
-sessions, tt_errors = load_timetable_csv(upload if upload else SAMPLE_DIR / "thoi_khoa_bieu.csv")
-st.caption(("Đang dùng file bạn tải lên" if upload else "Đang dùng thời khoá biểu mẫu")
-           + f" · {len(sessions)} buổi/tuần")
+if upload is not None:
+    data = upload.getvalue()
+    if data != (ws.timetable_path.read_bytes() if ws.has_own_timetable() else None):
+        _check, _errs = load_timetable_csv(upload)
+        if _check and not _errs:
+            ws.save_timetable(data)  # lưu theo tài khoản: lần sau mở lại vẫn còn
+            st.toast("Đã lưu thời khoá biểu của bạn.", icon="🗓️")
+        upload.seek(0)
+sessions, tt_errors = load_timetable_csv(upload if upload else ws.timetable_source())
+c_tt, c_reset = st.columns([4, 1], vertical_alignment="center")
+c_tt.caption(("Đang dùng thời khoá biểu của bạn" if (upload or ws.has_own_timetable())
+              else "Đang dùng thời khoá biểu mẫu") + f" · {len(sessions)} buổi/tuần")
+if ws.has_own_timetable() and not upload and c_reset.button("Dùng bản mẫu", key="tt_reset"):
+    ws.reset_timetable()
+    st.rerun()
 for err in tt_errors:
     st.warning(err)
 
@@ -131,7 +149,7 @@ day_label = {d: f"{WEEKDAY_VN[d.weekday()]} {d:%d/%m}" for d in week_days}
 
 used_ids = [t.id for t in r_tasks if t.id in {b.task_id for b in result.blocks}]
 task_color = _planner.task_colors(r_tasks)
-progress = ProgressStore(DB_PATH)
+progress = ProgressStore(ws.db_path)
 done = progress.done()
 default_day = date.today() if date.today() in week_days else week_days[0]
 day = st.segmented_control(
@@ -219,7 +237,7 @@ c1.download_button("Tải lịch (.ics)", to_ics(result.blocks, r_tasks, before_
                    file_name="lich-hoc.ics", mime="text/calendar",
                    help="Mở file để nhập vào Google Calendar, Outlook hoặc lịch điện thoại.")
 if c2.button("Lưu nhắc nhở cho lệnh gửi định kỳ"):
-    save_reminders(reminders)
+    save_reminders(reminders, ws.reminders_path)
     c2.success(f"Đã lưu {len(reminders)} nhắc nhở. Nhắc nhở sẽ gửi qua Telegram khi dịch vụ nhắc đang chạy.")
 
 sender = TelegramSender.from_env()

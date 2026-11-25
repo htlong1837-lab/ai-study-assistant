@@ -61,10 +61,12 @@ def test_only_confirmed_b_tasks_get_scheduled(tmp_path):
 def test_scheduler_page_uses_b_tasks(tmp_path, monkeypatch):
     from streamlit.testing.v1 import AppTest
 
-    import core.config
-    repo = Repository(tmp_path / "b.db")
+    import views._account as account
+    from core.workspace import Workspace
+    ws = Workspace(tmp_path, "sv@gmail.com")  # người đã đăng nhập: dữ liệu nằm trong thư mục riêng
+    repo = Repository(ws.db_path)
     _add(repo, "t-b1", "confirmed", title="Báo cáo từ module B", deadline="2026-12-20T23:59:00")
-    monkeypatch.setattr(core.config, "DB_PATH", tmp_path / "b.db")
+    monkeypatch.setattr(account, "current", lambda: ws)
     page = Path(__file__).resolve().parents[2] / "views" / "scheduler.py"
     at = AppTest.from_file(str(page), default_timeout=60).run()
     assert not at.exception

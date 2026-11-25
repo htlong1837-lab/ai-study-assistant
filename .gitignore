@@ -51,3 +51,6 @@ data/progress.json
 
 # Khóa đăng nhập Google, không commit
 .streamlit/secrets.toml
+
+# Dữ liệu riêng của từng tài khoản (nhiệm vụ, thời khoá biểu, tệp đính kèm)
+data/users/
