@@ -20,10 +20,9 @@ def llm_status() -> bool:
 OWNER_COLOR = {"A": "#4D96FF", "B": "#FFB84C", "C": "#F07167", "D": "#00AFB9"}
 
 
-def module_header(title: str, subtitle: str, code: str) -> None:
-    """Tiêu đề trang: biểu tượng trong ô màu theo module (``code`` A–D chỉ để chọn màu), dòng phụ
-    mô tả trang cho người dùng."""
+def module_header(title: str, code: str) -> None:
+    """Tiêu đề trang: biểu tượng trong ô màu theo module (``code`` A–D chỉ để chọn màu)."""
     icon, _, name = title.partition(" ")
     color = OWNER_COLOR.get(code, "#F07167")
     st.html(f'<div class="nh-head"><div class="ic" style="background:{color}22">{icon}</div>'
-            f'<div><h1>{escape(name)}</h1><p>{escape(subtitle)}</p></div></div>')
+            f'<div><h1>{escape(name)}</h1></div></div>')

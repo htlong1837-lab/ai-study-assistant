@@ -22,9 +22,7 @@ from modules.scheduler.progress import ProgressStore, block_key
 from views import _planner, _timeline, _ui
 from views._shared import module_header
 
-module_header("📅 Lập lịch & nhắc nhở",
-              "Xếp giờ tự học quanh thời khoá biểu, nhắc bạn trước hạn và xuất sang lịch điện thoại.",
-              "C")
+module_header("📅 Lập lịch & nhắc nhở", "C")
 
 # ---------------------------------------------------------------- 1. Nhiệm vụ
 st.subheader("1. Nhiệm vụ")

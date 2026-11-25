@@ -170,9 +170,9 @@ def apply() -> None:
         '<small>Trợ lý AI học tập &amp; lịch trình</small></div></div>')
 
 
-def page_header(icon: str, title: str, subtitle: str, color: str) -> None:
+def page_header(icon: str, title: str, color: str) -> None:
     st.html(f'<div class="nh-head"><div class="ic" style="background:{color}22">{icon}</div>'
-            f'<div><h1>{title}</h1><p>{subtitle}</p></div></div>')
+            f'<div><h1>{title}</h1></div></div>')
 
 
 def ring(done: int, total: int, label: str) -> str:

@@ -23,10 +23,7 @@ def get_safe_attachments() -> list:
 
 
 module_header(
-    "🛡️ Email & bảo mật",
-    "Kiểm tra link và tệp đính kèm, chặn email lừa đảo trước khi chúng vào lịch của bạn.",
-    "D",
-)
+    "🛡️ Email & bảo mật", "D")
 llm_status()
 
 ICON = {

@@ -57,10 +57,7 @@ def _seed_db_from_mocks_if_empty():
 _seed_db_from_mocks_if_empty()
 
 module_header(
-    "📝 Trích xuất bài tập",
-    "Đọc email và đề bài, gợi ý nhiệm vụ kèm hạn nộp. Bạn duyệt trước khi chúng vào lịch.",
-    "B",
-)
+    "📝 Trích xuất bài tập", "B")
 llm_ready = llm_status()
 if msg := st.session_state.pop("extract_flash", None):
     st.toast(msg, icon="📝")

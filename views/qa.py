@@ -58,9 +58,7 @@ def _safe_error(error: Exception) -> str:
     return re.sub(r"AIza[0-9A-Za-z_-]{20,}", "[đã ẩn khóa]", message)
 
 
-_ui.page_header("💬", "Đọc và hỏi đáp tài liệu",
-                "Mở tệp đính kèm đã qua kiểm tra an toàn, đọc theo trang, bôi đen đoạn cần hỏi hoặc hỏi cả tài liệu.",
-                _ui.BLUE)
+_ui.page_header("💬", "Đọc và hỏi đáp tài liệu", _ui.BLUE)
 key_input = st.text_input(
     "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
 )
