@@ -58,7 +58,7 @@ k2.metric("Chờ duyệt", sum(t.status is TaskStatus.PROPOSED for t in tasks))
 k3.metric("Khối học tuần", len(week_blocks), f"{done_week} đã xong" if done_week else None)
 processed = st.session_state.get("processed_list") or []
 k4.metric("Email chặn", sum(not p.can_forward for p in processed) if processed else "—",
-          help="Đếm trong phiên này, sau khi bạn tải email ở trang Email & bảo mật.")
+          help="Đếm trong phiên này, sau khi bạn tải email ở trang Hộp thư.")
 
 # ---------------------------------------------------------------- Hôm nay + sắp đến hạn
 left, right = st.columns([3, 2], gap="large")

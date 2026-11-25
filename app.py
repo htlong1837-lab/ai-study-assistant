@@ -11,7 +11,7 @@ pages = [
     st.Page("views/home.py", title="Hôm nay", icon=":material/wb_sunny:", default=True),
     st.Page("views/scheduler.py", title="Lập lịch & nhắc nhở", icon=":material/calendar_month:"),
     st.Page("views/extraction.py", title="Trích xuất bài tập", icon=":material/task_alt:"),
-    st.Page("views/email_security.py", title="Email & bảo mật", icon=":material/shield:"),
+    st.Page("views/email_security.py", title="Hộp thư", icon=":material/inbox:"),
     st.Page("views/qa.py", title="Hỏi đáp tài liệu", icon=":material/forum:"),
 ]
 

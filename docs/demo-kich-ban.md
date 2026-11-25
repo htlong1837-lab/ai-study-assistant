@@ -26,8 +26,8 @@ python -m scripts.make_demo_emails
 | # | Người nói | Trang | Thao tác | Điều cần thấy (kỳ vọng) | Ý cần nói |
 |---|---|---|---|---|---|
 | 1 | Long | Trang chủ | Giới thiệu luồng | Sơ đồ D → B → C, D → A | Vấn đề: bài tập phân tán, hạn tiếng Việt, email độc. AI chỉ đề xuất |
-| 2 | Minh | Email & bảo mật | Bấm "✨ Thử với email mẫu" (hoặc tải 3 file `data/demo/*.eml`) | `01` và `02`: nhãn bài tập, an toàn. `03`: lừa đảo, **độc hại** — link `bit.ly` nghi ngờ, tệp `.pdf` thật ra là `.exe` | Cổng chặn: email độc không bao giờ sang A/B; tệp chỉ tra VirusTotal bằng SHA-256, không tải lên |
-| 3 | Minh | Email & bảo mật | Bấm "Chuyển sang B/A" cho `01` và `02` | Báo đã chuyển; `03` không có nút chuyển | Người dùng quyết định chuyển tiếp |
+| 2 | Minh | Hộp thư | Mở "Nhập file .eml hoặc dùng email mẫu", bấm "✨ Email mẫu" (hoặc tải 3 file `data/demo/*.eml`) | `01` và `02`: nhãn bài tập, an toàn. `03`: lừa đảo, **độc hại** — link `bit.ly` nghi ngờ, tệp `.pdf` thật ra là `.exe` | Cổng chặn: email độc không bao giờ sang A/B; tệp chỉ tra VirusTotal bằng SHA-256, không tải lên |
+| 3 | Minh | Hộp thư | Bấm "Duyệt & chuyển tiếp" cho `01` và `02` | Báo đã chuyển; `03` không có nút chuyển | Người dùng quyết định chuyển tiếp |
 | 4 | Duy | Trích xuất | Thấy 2 email từ D; bấm "Bắt đầu trích xuất" | Đề xuất "Bài tập lớn số 2", hạn 05/12 kèm câu trích; email dời hạn tạo **đề xuất cập nhật** hạn 12/12 | Chuẩn hoá ngày giờ tiếng Việt; câu trích phải có thật trong email; phát hiện thay đổi |
 | 5 | Duy | Trích xuất | Chấp nhận đề xuất dời hạn, xác nhận nhiệm vụ | Nhiệm vụ chuyển sang "đã xác nhận" | AI chỉ đề xuất — người dùng xác nhận |
 | 6 | Nam | Hỏi đáp | Chọn `de_bai_BTL2.pdf` (từ Module D) | Báo "đã qua cổng Module D"; trình đọc PDF | Chỉ nhận tệp đã quét, kiểm tra SHA-256 |

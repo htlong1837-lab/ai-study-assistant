@@ -1,3 +1,4 @@
+from html import escape
 from pathlib import Path
 
 import pandas as pd
@@ -7,6 +8,7 @@ from core import mocks
 from core.contracts import SafetyStatus
 from modules.email_security import approve_suspicious, process_email
 from modules.email_security.handoff import publish_to_modules
+from modules.email_security.mailbox import MailboxError, fetch_recent
 from views._shared import llm_status, module_header
 
 
@@ -22,8 +24,7 @@ def get_safe_attachments() -> list:
     return list(value.values()) if isinstance(value, dict) else value
 
 
-module_header(
-    "🛡️ Email & bảo mật", "D")
+module_header("📬 Hộp thư", "D")
 llm_status()
 
 ICON = {
@@ -62,28 +63,69 @@ def _ingest(raws: list[bytes]) -> None:
     st.rerun()
 
 
-# ---- Tải file .eml thật, hoặc dùng bộ email mẫu ----
-c_up, c_demo = st.columns([3, 1], vertical_alignment="bottom")
-uploaded_files = c_up.file_uploader(
-    "Tải lên file .eml để kiểm tra",
-    type=["eml"],
-    accept_multiple_files=True,
-)
-demo_files = sorted(DEMO_DIR.glob("*.eml"))
-if demo_files and c_demo.button(
-    "✨ Thử với email mẫu", help="3 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo."
-):
-    _ingest([f.read_bytes() for f in demo_files])
-if uploaded_files and st.button("Xử lý file tải lên", type="primary"):
-    _ingest([f.read() for f in uploaded_files])
+def _sync(address: str, password: str, host: str, days: int) -> None:
+    """Lấy thư mới từ hộp thư thật rồi đưa qua đúng đường quét như file .eml."""
+    with st.spinner(f"Đang lấy thư của {address}…"):
+        try:
+            raws = fetch_recent(address, password, host=host or None, days=days)
+        except MailboxError as exc:
+            st.session_state.pop("mailbox", None)
+            st.session_state["mailbox_error"] = str(exc)
+            st.rerun()
+    st.session_state["mailbox"] = {"address": address, "password": password, "host": host, "days": days}
+    if raws:
+        _ingest(raws)
+    st.session_state["flash"] = f"Không có thư nào trong {days} ngày gần đây."
+    st.rerun()
+
+
+# ---- Kết nối hộp thư (lối chính) ----
+box = st.session_state.get("mailbox")
+if "mailbox_error" in st.session_state:
+    st.error(st.session_state.pop("mailbox_error"), icon="🔐")
+if box:
+    c_who, c_sync, c_out = st.columns([3, 1, 1], vertical_alignment="center")
+    c_who.html(f'<div class="nh-chip" style="margin:0">📬 Đã kết nối <b>&nbsp;{escape(box["address"])}</b>'
+               f'&nbsp;· {box["days"]} ngày gần đây</div>')
+    if c_sync.button("🔄 Lấy thư mới", type="primary", width="stretch"):
+        _sync(box["address"], box["password"], box["host"], box["days"])
+    if c_out.button("Ngắt kết nối", width="stretch"):
+        st.session_state.pop("mailbox", None)
+        st.rerun()
+else:
+    with st.container(border=True):
+        st.markdown("#### 📬 Kết nối hộp thư")
+        with st.form("mailbox_login", border=False):
+            c_mail, c_pw = st.columns(2)
+            address = c_mail.text_input("Email", placeholder="ban@gmail.com")
+            password = c_pw.text_input("Mật khẩu ứng dụng", type="password", placeholder="xxxx xxxx xxxx xxxx")
+            c_days, c_host = st.columns(2)
+            days = c_days.selectbox("Lấy thư trong", [3, 7, 14, 30], index=2,
+                                    format_func=lambda d: f"{d} ngày gần đây")
+            host = c_host.text_input("Máy chủ IMAP", placeholder="tự nhận với Gmail, Yahoo, iCloud",
+                                     help="Email trường chạy trên Gmail thì điền imap.gmail.com.")
+            go = st.form_submit_button("Kết nối", type="primary")
+        st.caption("Chỉ đọc thư, không đánh dấu đã đọc, không lưu mật khẩu. Gmail: bật xác minh 2 bước rồi "
+                   "[tạo mật khẩu ứng dụng](https://myaccount.google.com/apppasswords).")
+        if go:
+            _sync(address, password, host, days)
+
+with st.expander("Nhập file .eml hoặc dùng email mẫu"):
+    c_up, c_demo = st.columns([3, 1], vertical_alignment="bottom")
+    uploaded_files = c_up.file_uploader("File .eml", type=["eml"], accept_multiple_files=True)
+    demo_files = sorted(DEMO_DIR.glob("*.eml"))
+    if demo_files and c_demo.button(
+        "✨ Email mẫu", help="3 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo."
+    ):
+        _ingest([f.read_bytes() for f in demo_files])
+    if uploaded_files and st.button("Kiểm tra các file này", type="primary"):
+        _ingest([f.read() for f in uploaded_files])
 
 if not processed_items:
     st.html(
         '<div style="text-align:center;padding:42px 20px;border-radius:22px;background:#fff;'
         'box-shadow:0 6px 20px rgba(0,175,185,.10)"><div style="font-size:44px">📭</div>'
-        '<div style="font-weight:700;font-size:17px;color:#2B2D42;margin-top:6px">Hộp thư đang trống</div>'
-        '<div style="color:#8D99AE;font-size:13.5px;margin-top:4px">Tải lên file .eml, hoặc bấm '
-        '<b>Thử với email mẫu</b> để xem hệ thống phân loại, quét link và chặn email độc.</div></div>'
+        '<div style="font-weight:700;font-size:17px;color:#2B2D42;margin-top:6px">Hộp thư đang trống</div></div>'
     )
     st.stop()
 
@@ -128,7 +170,7 @@ c2.metric("🟡 Chờ duyệt", n_sus)
 c3.metric("🔴 Bị chặn", n_mal)
 
 # ---- Bảng hộp thư ----
-st.subheader("Hộp thư")
+st.subheader("Thư đã quét")
 df = pd.DataFrame(
     [
         {

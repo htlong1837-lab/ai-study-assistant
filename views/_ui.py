@@ -14,7 +14,7 @@ import streamlit as st
 BRAND = "Nhịp"
 CORAL, TEAL, AMBER, BLUE, VIOLET = "#F07167", "#00AFB9", "#FFB84C", "#4D96FF", "#9D79BC"
 MODULES = [  # (mã, tên, biểu tượng, màu, trang)
-    ("D", "Email & bảo mật", "🛡️", TEAL, "views/email_security.py"),
+    ("D", "Hộp thư", "📬", TEAL, "views/email_security.py"),
     ("B", "Trích xuất bài tập", "📝", AMBER, "views/extraction.py"),
     ("C", "Lập lịch & nhắc nhở", "📅", CORAL, "views/scheduler.py"),
     ("A", "Hỏi đáp tài liệu", "💬", BLUE, "views/qa.py"),

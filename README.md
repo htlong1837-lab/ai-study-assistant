@@ -7,7 +7,7 @@ thành lịch học có nhắc nhở, kèm hỏi đáp có trích dẫn trang. A
 
 1. `streamlit run app.py` → trang **Hôm nay** mở với màn dựng trang bằng 4 con trỏ (mỗi con trỏ là
    một module).
-2. **Email & bảo mật** → bấm **✨ Thử với email mẫu**: 2 email bài tập qua cổng, 1 email lừa đảo bị chặn.
+2. **Hộp thư** → kết nối Gmail (mật khẩu ứng dụng, chỉ đọc), hoặc mở "Nhập file .eml hoặc dùng email mẫu" → **✨ Email mẫu**: 2 email bài tập qua cổng, 1 email lừa đảo bị chặn.
    Chọn từng email bài tập → **Duyệt & chuyển sang B/A**.
 3. **Trích xuất bài tập** → **Bắt đầu trích xuất**: ra nhiệm vụ có hạn nộp, tiêu chí chấm lấy từ đề
    PDF đính kèm, và đề xuất dời hạn từ email thứ hai. Chấp nhận, rồi **Xác nhận vào lịch**.

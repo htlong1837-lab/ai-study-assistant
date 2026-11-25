@@ -72,9 +72,9 @@ c_email, c_doc = st.columns(2)
 with c_email:
     st.markdown("##### 📧 Email đã qua kiểm tra")
     if intake.from_d:
-        st.caption(f"{len(intake.emails)} email đã duyệt ở trang Email & bảo mật.")
+        st.caption(f"{len(intake.emails)} email đã duyệt ở trang Hộp thư.")
     else:
-        st.caption("Chưa có email nào được chuyển từ trang Email & bảo mật, đang dùng dữ liệu mẫu.")
+        st.caption("Chưa có email nào được chuyển từ trang Hộp thư, đang dùng dữ liệu mẫu.")
     for e in intake.emails:
         is_safe = can_forward(e, allow_suspicious=intake.allow_suspicious(e))
         if is_safe and e.safety is SafetyStatus.SUSPICIOUS:

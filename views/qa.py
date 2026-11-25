@@ -126,7 +126,7 @@ else:
 
 document = st.session_state.get("qa_document")
 if document is None:
-    st.info("Vào trang Email & bảo mật, chuyển tiếp email có tệp đính kèm để bắt đầu đọc ở đây.")
+    st.info("Vào trang Hộp thư, chuyển tiếp email có tệp đính kèm để bắt đầu đọc ở đây.")
     st.stop()
 
 empty_pages = sum(len(p.text.strip()) < 20 for p in document.pages)
