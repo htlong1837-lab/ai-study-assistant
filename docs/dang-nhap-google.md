@@ -1,19 +1,19 @@
 # Bật "Đăng nhập bằng Google" cho trang Hộp thư
 
-Người dùng chỉ bấm **Đăng nhập bằng Google**, chọn tài khoản và đồng ý cho Nhịp xem email. Để nút
+Người dùng chỉ bấm **Đăng nhập bằng Google**, chọn tài khoản và đồng ý cho DP xem email. Để nút
 này chạy, người cài app phải tạo khóa OAuth trên Google **một lần** (khoảng 10 phút). Khóa là của
 người cài, nên người cài tự đăng nhập Google Cloud và tự tạo; không đưa khóa cho người khác và không
 commit file khóa.
 
 ## 1. Tạo dự án và bật Gmail API
 
-1. Vào https://console.cloud.google.com/, tạo dự án mới (ví dụ `nhip-hoc-tap`).
+1. Vào https://console.cloud.google.com/, tạo dự án mới (ví dụ `dp-daily-planner`).
 2. **APIs & Services → Library**, tìm **Gmail API**, bấm **Enable**.
 
 ## 2. Màn hình xin quyền (OAuth consent screen)
 
 1. **APIs & Services → OAuth consent screen** (bản mới gọi là **Google Auth Platform**).
-2. Loại người dùng: **External**. Điền tên app `Nhịp`, email hỗ trợ, email liên hệ.
+2. Loại người dùng: **External**. Điền tên app `DP · Daily Planner` (logo: `assets/logo.png`), email hỗ trợ, email liên hệ.
 3. **Data access / Scopes:** thêm `.../auth/gmail.readonly` (chỉ đọc thư), cùng `openid`, `email`,
    `profile`.
 4. **Audience / Test users:** để ở chế độ **Testing** và thêm Gmail của những người sẽ dùng thử

@@ -140,7 +140,7 @@ else:
                     "App chưa được bật đăng nhập Google. Người cài app làm một lần theo "
                     "docs/dang-nhap-google.md.")
                 st.rerun()
-        st.caption("Nhịp chỉ đọc thư và không bao giờ thấy mật khẩu của bạn.")
+        st.caption("DP chỉ đọc thư và không bao giờ thấy mật khẩu của bạn.")
 
 with st.expander("Cách khác: email Yahoo/iCloud, file .eml, email mẫu"):
     with st.form("mailbox_login", border=False):

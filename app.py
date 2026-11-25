@@ -4,7 +4,7 @@ import streamlit as st
 
 from views import _ui
 
-st.set_page_config(page_title="Nhịp · Trợ lý AI học tập", page_icon="✦", layout="wide")
+st.set_page_config(page_title="DP · Daily Planner", page_icon=str(_ui.FAVICON), layout="wide")
 _ui.apply()
 
 pages = [

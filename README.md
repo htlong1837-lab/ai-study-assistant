@@ -1,4 +1,6 @@
-# Nhịp — Trợ lý AI học tập và lịch trình
+<img src="assets/logo.png" width="72" alt="DP"> 
+
+# DP — Daily Planner: trợ lý AI học tập và lịch trình
 
 Bài tập lớn môn Trí tuệ nhân tạo (Application Track). Hệ thống gom email, đề bài và giáo trình
 thành lịch học có nhắc nhở, kèm hỏi đáp có trích dẫn trang. AI chỉ đề xuất, người dùng xác nhận.
@@ -22,7 +24,7 @@ Tính năng nổi bật:
 - **Thêm nhanh bằng tiếng Việt**: gõ “Báo cáo CSDL 23h59 thứ Sáu tuần sau, 3 giờ, gấp” ở trang Hôm
   nay hoặc Lập lịch; hệ thống đọc hạn nộp, số giờ, độ gấp, môn (hiểu cả viết tắt CSDL).
 - **Trang Hôm nay**: dòng thời gian trong ngày với vạch giờ hiện tại, hạn nộp đếm ngược theo độ gấp,
-  vòng tiến độ tuần, biểu đồ “Nhịp tuần”.
+  vòng tiến độ tuần, biểu đồ “Tuần này”.
 - **Đánh dấu đã học** từng khối (pháo giấy khi xong cả ngày) và **đồng hồ Pomodoro** 25/50/5 phút.
 
 | Module | Phụ trách | Thư mục | Trang |

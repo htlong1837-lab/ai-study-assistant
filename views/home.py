@@ -68,7 +68,7 @@ with left:
         st.html(_timeline.render(items, now))
         _ui.link("views/scheduler.py", "Mở lịch đầy đủ", "📅")
     with st.container(border=True):
-        st.markdown("#### 📊 Nhịp tuần")
+        st.markdown("#### 📊 Tuần này")
         days7 = [week_start + timedelta(days=i) for i in range(7)]
         study_h = {d: sum(b.hours for b in week_blocks if b.start.date() == d) for d in days7}
         class_h = {}

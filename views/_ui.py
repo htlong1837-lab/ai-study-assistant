@@ -5,13 +5,19 @@ trong trang chính, nên mỗi đoạn tự chống chạy lặp khi Streamlit c
 """
 from __future__ import annotations
 
+import base64
 import re
+from pathlib import Path
 import time as _time
 from datetime import datetime
 
 import streamlit as st
 
-BRAND = "Nhịp"
+BRAND = "DP"
+BRAND_FULL = "Daily Planner"
+ASSETS = Path(__file__).resolve().parents[1] / "assets"
+LOGO_PNG = ASSETS / "logo.png"
+FAVICON = ASSETS / "favicon.png"
 CORAL, TEAL, AMBER, BLUE, VIOLET = "#F07167", "#00AFB9", "#FFB84C", "#4D96FF", "#9D79BC"
 MODULES = [  # (mã, tên, biểu tượng, màu, trang)
     ("D", "Hộp thư", "📬", TEAL, "views/email_security.py"),
@@ -81,11 +87,12 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 [data-testid="stSidebarNavLink"][aria-current="page"] p,
 [data-testid="stSidebarNavLink"][aria-current="page"] [data-testid="stIconMaterial"] {color: #fff !important;}
 .nh-brand {display: flex; gap: 10px; align-items: center; padding: 4px 6px 10px;}
-.nh-brand .logo {width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
-  font-size: 20px; color: #fff; background: linear-gradient(135deg, #F07167, #F49CBB);
-  box-shadow: 0 6px 14px rgba(240,113,103,.35);}
-.nh-brand b {font-size: 20px; color: #2B2D42; letter-spacing: -0.02em;}
-.nh-brand small {display: block; color: #8D99AE; font-size: 11px; margin-top: -2px;}
+.nh-brand .logo {width: 42px; height: 42px; border-radius: 12px;
+  box-shadow: 0 6px 14px rgba(240,113,103,.35); transition: transform .3s ease;}
+.nh-brand:hover .logo {transform: rotate(-6deg) scale(1.06);}
+.nh-brand b {font-size: 22px; font-weight: 800; color: #2B2D42; letter-spacing: -0.01em; line-height: 1;}
+.nh-brand small {display: block; color: #8D99AE; font-size: 11.5px; font-weight: 600; margin-top: 3px;
+  letter-spacing: .04em; text-transform: uppercase;}
 
 /* Thẻ đăng nhập Google ở trang Hộp thư */
 .st-key-google_card {align-items: center; text-align: center; padding: 26px 18px !important;}
@@ -188,7 +195,13 @@ def apply() -> None:
     """CSS chung + thương hiệu ở thanh bên. Gọi một lần mỗi lần chạy, trước khi chạy trang."""
     st.html(GLOBAL_CSS)
     st.sidebar.html(
-        f'<div class="nh-brand"><div class="logo">✦</div><div><b>{BRAND}</b></div></div>')
+        f'<div class="nh-brand"><img class="logo" src="{logo_data_uri()}" alt="{BRAND}">'
+        f'<div><b>{BRAND}</b><small>{BRAND_FULL}</small></div></div>')
+
+
+def logo_data_uri() -> str:
+    """Logo nhúng thẳng vào HTML (bộ lọc của st.html xoá thẻ SVG nên dùng ảnh PNG)."""
+    return "data:image/png;base64," + base64.b64encode(LOGO_PNG.read_bytes()).decode()
 
 
 def page_header(icon: str, title: str, color: str) -> None:
