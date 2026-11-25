@@ -14,7 +14,7 @@ from modules.qa.messages import rejection_message
 from modules.qa.reader.component import render_reader
 from modules.qa.reader.threads import ThreadStore, export_markdown
 from modules.email_security.handoff import verified_document_batches
-from views import _ui
+from views import _gemini, _ui
 
 
 def _display_name(filename: str) -> str:
@@ -72,6 +72,8 @@ elif "qa_api_key" not in st.session_state and not st.session_state.get(
 api_key = st.session_state.get("qa_api_key", "")
 if api_key:
     st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
+else:
+    _gemini.how_to_get_key()
 
 # ---------------------------------------------------------------------------
 # Nguồn tài liệu: chỉ nhận tệp đính kèm đã qua cổng Module D (quyết định của A,

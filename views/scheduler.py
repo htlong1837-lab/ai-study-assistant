@@ -1,6 +1,9 @@
 from dataclasses import replace
 from datetime import date, datetime, time, timedelta
 
+import hashlib
+import io
+
 import altair as alt
 import pandas as pd
 import streamlit as st
@@ -16,9 +19,14 @@ from modules.scheduler.reminders import (
 )
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
+from core.llm_client import get_client
 from modules.scheduler.timetable import load_timetable_csv
+from modules.scheduler.timetable_image import (
+    FIELDS as TT_FIELDS, TimetableImageError, gemini_generate, read_timetable_image,
+    to_csv as tt_to_csv,
+)
 from modules.scheduler.progress import ProgressStore, block_key
-from views import _account, _planner, _timeline, _ui
+from views import _account, _gemini, _planner, _timeline, _ui
 from views._shared import module_header
 
 module_header("📅 Lập lịch & nhắc nhở", "C")
@@ -58,8 +66,67 @@ if base_tasks:
 titles = {t.id: t.title for t in tasks}
 
 # ---------------------------------------------------------------- 2. Thời khoá biểu
+def _timetable_from_image(upload) -> None:
+    """Ảnh/PDF thời khoá biểu → Gemini đọc → bảng để sửa → lưu làm thời khoá biểu của người dùng."""
+    data = upload.getvalue()
+    sig = hashlib.sha256(data).hexdigest()
+    with st.container(border=True):
+        c_img, c_act = st.columns([1, 2], gap="medium")
+        if upload.name.lower().endswith(".pdf"):
+            c_img.markdown(f"📄 **{upload.name}**")
+        else:
+            try:
+                c_img.image(data, width="stretch")
+            except Exception:  # noqa: BLE001 — HEIC… trình duyệt không xem trước được
+                c_img.markdown(f"🖼️ **{upload.name}**")
+        with c_act:
+            st.markdown("##### 📷 Chuyển ảnh thành thời khoá biểu")
+            api_key = _gemini.key_input("tt_api_key")
+            if st.button("Đọc thời khoá biểu bằng Gemini", type="primary", icon=":material/auto_awesome:",
+                         disabled=not api_key, key="tt_read_image"):
+                with st.spinner("Gemini đang đọc thời khoá biểu…"):
+                    try:
+                        rows, errs = read_timetable_image(
+                            data, upload.name, gemini_generate(api_key, get_client().model))
+                        st.session_state["tt_img"] = {"sig": sig, "rows": rows}
+                    except TimetableImageError as exc:
+                        st.error(str(exc), icon="⚠️")
+        res = st.session_state.get("tt_img")
+        if not res or res["sig"] != sig:
+            return
+        if not res["rows"]:
+            st.info("Không tìm thấy buổi học nào trong ảnh. Thử ảnh rõ hơn, chụp thẳng cả bảng.", icon="🔍")
+            return
+        st.caption("Kiểm tra lại từng buổi: sửa trực tiếp trong bảng, thêm hoặc xoá dòng nếu cần. "
+                   "Thứ: 2–7 hoặc CN; giờ dạng 07:00.")
+        edited = st.data_editor(
+            pd.DataFrame(res["rows"], columns=list(TT_FIELDS)), num_rows="dynamic", hide_index=True,
+            width="stretch", key=f"tt_edit_{sig[:12]}",
+            column_config={"thu": "Thứ", "bat_dau": "Bắt đầu", "ket_thuc": "Kết thúc", "mon": "Môn",
+                           "phong": "Phòng"})
+        rows = [{k: ("" if pd.isna(v) else str(v)) for k, v in r.items()} for r in edited.to_dict("records")]
+        rows = [r for r in rows if any(r.values())]
+        csv_text = tt_to_csv(rows)
+        ok_sessions, errs = load_timetable_csv(io.StringIO(csv_text))
+        for err in errs:
+            st.warning(err)
+        if st.button(f"💾 Lưu {len(ok_sessions)} buổi làm thời khoá biểu của tôi", key="tt_save_image",
+                     disabled=not ok_sessions or bool(errs)):
+            ws.save_timetable(csv_text.encode("utf-8"))
+            st.session_state.pop("tt_img", None)
+            st.toast("Đã lưu thời khoá biểu từ ảnh.", icon="🗓️")
+            st.rerun()
+
+
 st.subheader("2. Thời khoá biểu")
-upload = st.file_uploader("Tải CSV (cột: thu,bat_dau,ket_thuc,mon,phong)", type="csv")
+upload = st.file_uploader(
+    "Tải thời khoá biểu: ảnh chụp, PDF hoặc CSV",
+    type=["png", "jpg", "jpeg", "webp", "heic", "pdf", "csv"],
+    help="Ảnh hoặc PDF: Gemini đọc và chuyển thành lịch, bạn xem lại và sửa trước khi lưu. "
+         "CSV: các cột thu,bat_dau,ket_thuc,mon,phong.")
+if upload is not None and not upload.name.lower().endswith(".csv"):
+    _timetable_from_image(upload)
+    upload = None  # lịch dùng để xếp là bản đã lưu, sau khi bạn duyệt kết quả đọc ảnh
 if upload is not None:
     data = upload.getvalue()
     if data != (ws.timetable_path.read_bytes() if ws.has_own_timetable() else None):
