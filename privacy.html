@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chính sách quyền riêng tư · DP</title>
+<meta name="description" content="Chính sách quyền riêng tư của DP (Daily Planner): dữ liệu Gmail được đọc, dùng và bảo vệ thế nào.">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap doc">
+  <header>
+    <a class="brand" href="./"><img src="logo.png" alt="DP"><span><b>DP</b><small>Daily Planner</small></span></a>
+    <nav><a href="./">Trang chủ</a><a href="https://github.com/htlong1837-lab/ai-study-assistant">Mã nguồn</a></nav>
+  </header>
+
+  <h1>Chính sách quyền riêng tư</h1>
+  <div class="meta">Áp dụng cho ứng dụng DP (Daily Planner). Cập nhật ngày 25/11/2026.</div>
+
+  <p>DP là đồ án môn học của sinh viên, giúp bạn biến email và tài liệu học tập thành lịch tự học. Trang này
+     nói rõ DP đọc gì, dùng vào việc gì và không làm gì với dữ liệu của bạn.</p>
+
+  <h2>1. Dữ liệu DP truy cập</h2>
+  <ul>
+    <li><b>Thông tin tài khoản Google</b> (quyền <code>openid</code>, <code>email</code>, <code>profile</code>):
+        địa chỉ email và tên, để hiện bạn đang đăng nhập bằng tài khoản nào.</li>
+    <li><b>Nội dung Gmail, chỉ đọc</b> (quyền <code>gmail.readonly</code>): tối đa 20 thư gần nhất trong
+        14 ngày ở Hộp thư đến, gồm người gửi, tiêu đề, nội dung và tệp đính kèm. DP chỉ đọc thư khi bạn mở
+        trang Hộp thư hoặc bấm “Lấy thư mới”.</li>
+  </ul>
+  <p>DP <b>không</b> gửi, xoá, sửa, gắn nhãn hay đánh dấu đã đọc bất kỳ thư nào, và không bao giờ thấy mật
+     khẩu Google của bạn (đăng nhập do Google xử lý).</p>
+
+  <h2>2. DP dùng dữ liệu vào việc gì</h2>
+  <ul>
+    <li>Kiểm tra an toàn: phân loại thư, phát hiện link và tệp đáng ngờ, chặn email lừa đảo.</li>
+    <li>Trích xuất bài tập: nhận ra tên bài, hạn nộp, yêu cầu trong thư và tệp đính kèm, rồi đề xuất để
+        bạn duyệt.</li>
+    <li>Xếp lịch tự học và trả lời câu hỏi về tài liệu bạn chọn.</li>
+  </ul>
+  <p>Chỉ những thư bạn chủ động bấm “Duyệt &amp; chuyển tiếp” mới được dùng để trích xuất bài tập và lập lịch.</p>
+
+  <h2>3. Dữ liệu được gửi đến đâu</h2>
+  <ul>
+    <li><b>Google Gemini</b> (chỉ khi người cài DP đã bật khóa AI): nội dung thư và tệp đính kèm cần phân
+        tích được gửi tới Gemini API để tóm tắt, trích hạn nộp, đọc chữ trong ảnh hoặc lời nói trong video.</li>
+    <li><b>VirusTotal</b> (chỉ khi đã bật khóa VirusTotal): các đường link trong thư, và <b>mã băm SHA-256</b>
+        của tệp đính kèm, để tra danh tiếng. Bản thân tệp không bị tải lên.</li>
+  </ul>
+  <p>DP <b>không bán, không cho thuê</b> và không chia sẻ dữ liệu Gmail với bên nào khác, không dùng cho
+     quảng cáo, và không dùng để huấn luyện mô hình AI.</p>
+
+  <h2>4. Lưu trữ và xoá</h2>
+  <ul>
+    <li>Thư đọc được nằm trong phiên làm việc của DP và mất khi bạn đóng trang hoặc đăng xuất.</li>
+    <li>Tệp đính kèm an toàn và các bài tập bạn đã xác nhận được lưu trên máy chủ đang chạy DP để lịch
+        còn lại lần sau. Người cài DP có thể xoá bất cứ lúc nào.</li>
+    <li>Mã truy cập Google chỉ sống khoảng 1 giờ, được giữ trong cookie đã ký và bị xoá khi bạn bấm
+        “Đăng xuất”.</li>
+    <li>Thu hồi quyền của DP bất cứ lúc nào tại
+        <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</li>
+  </ul>
+
+  <h2>5. Tuân thủ chính sách dữ liệu của Google</h2>
+  <div class="note">Việc DP sử dụng và chuyển giao thông tin nhận được từ các API của Google tuân thủ
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Chính sách dữ liệu người dùng
+    của Dịch vụ API Google</a>, bao gồm các yêu cầu về Sử dụng giới hạn (Limited Use).</div>
+
+  <h2>6. Liên hệ</h2>
+  <p>Câu hỏi về quyền riêng tư: mở một
+     <a href="https://github.com/htlong1837-lab/ai-study-assistant/issues">issue trên GitHub</a>.</p>
+
+  <div class="en">
+    <b>English summary.</b> DP (Daily Planner) is a student project. With your permission it reads, read-only,
+    up to 20 recent Inbox messages (<code>gmail.readonly</code>) to detect phishing and extract assignment
+    deadlines into a study schedule. It never sends, deletes or modifies mail. If enabled by the operator,
+    message content is sent to Google Gemini for analysis, and links plus attachment SHA-256 hashes are sent to
+    VirusTotal. Gmail data is not sold, shared for advertising, or used to train AI models. DP's use and transfer
+    of information received from Google APIs adheres to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data
+    Policy</a>, including the Limited Use requirements. Revoke access at
+    <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.
+  </div>
+
+  <footer>DP · Daily Planner — <a href="./">Trang chủ</a></footer>
+</div>
+</body>
+</html>
