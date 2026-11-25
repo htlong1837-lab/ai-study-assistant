@@ -2,8 +2,13 @@
 
 import streamlit as st
 
-from core import workspace
-from views import _account, _ui
+import dp_reload
+
+if dp_reload.check():  # máy chủ vừa kéo code mới: đã nạp lại, chạy lại trang bằng code mới
+    st.rerun()
+
+from core import workspace  # noqa: E402
+from views import _account, _ui  # noqa: E402
 
 st.set_page_config(page_title="DP · Daily Planner", page_icon=str(_ui.FAVICON), layout="wide")
 _ui.apply()

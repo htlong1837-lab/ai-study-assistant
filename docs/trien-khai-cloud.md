@@ -65,10 +65,11 @@ phút để Google cập nhật.
 
 ## Sau mỗi lần cập nhật code
 
-App tắt chế độ tự nạp lại code (`.streamlit/config.toml`: `fileWatcherType = "none"`), vì trên Cloud
-chế độ đó xoá các module đang dùng giữa chừng khi kéo code mới, làm app treo với lỗi kiểu
-`KeyError: 'core'`. Vì vậy sau khi đẩy code lên `main`, vào **Manage app → ⋮ → Reboot app** để app
-chạy bản mới.
+Không cần làm gì: app tự nạp code mới (`dp_reload.py`). Bộ theo dõi tệp của Streamlit đã tắt
+(`.streamlit/config.toml`: `fileWatcherType = "none"`) vì trên Cloud nó xoá các module đang dùng giữa chừng
+khi kéo code mới, làm app treo với lỗi kiểu `KeyError: 'core'`. Thay vào đó, đầu mỗi lần chạy trang app so
+dấu vân tay các tệp `.py`; có code mới thì một luồng duy nhất (có khoá) xoá module cũ và bộ đệm mã trang,
+rồi chạy lại trang bằng code mới. Chỉ khi chính `dp_reload.py` đổi mới cần **Reboot app**.
 
 Nên chọn Python **3.12** khi tạo app (Advanced settings). Muốn đổi phiên bản Python của app đã tạo
 thì phải xoá app rồi tạo lại với cùng tên.
