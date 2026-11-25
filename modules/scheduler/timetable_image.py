@@ -53,13 +53,19 @@ def gemini_generate(api_key: str, model: str = "gemini-2.5-flash") -> Generate:
         from google import genai
         from google.genai import types
 
+        from core.gemini import call_with_fallback
+
         client = genai.Client(api_key=api_key)
-        resp = client.models.generate_content(
-            model=model,
-            contents=[types.Part.from_bytes(data=data, mime_type=mime), prompt],
-            config=types.GenerateContentConfig(temperature=0.0, response_mime_type="application/json"),
-        )
-        return resp.text or ""
+
+        def one(m: str) -> str:
+            resp = client.models.generate_content(
+                model=m,
+                contents=[types.Part.from_bytes(data=data, mime_type=mime), prompt],
+                config=types.GenerateContentConfig(temperature=0.0, response_mime_type="application/json"),
+            )
+            return resp.text or ""
+        return call_with_fallback(client, model, one, key_id=str(hash(api_key)))
+    _call.api_key = api_key  # để che khóa trong thông báo lỗi
     return _call
 
 
@@ -96,12 +102,9 @@ def read_timetable_image(data: bytes, filename: str, generate: Generate) -> tupl
     try:
         raw = generate(data, mime, PROMPT)
     except Exception as exc:  # noqa: BLE001 — lỗi mạng/khóa: báo gọn cho người dùng
-        msg = str(exc)
-        if "API key" in msg or "API_KEY" in msg or "401" in msg or "403" in msg:
-            raise TimetableImageError("Khóa Gemini không hợp lệ hoặc chưa được bật.") from exc
-        if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-            raise TimetableImageError("Khóa Gemini đã hết lượt dùng miễn phí, thử lại sau ít phút.") from exc
-        raise TimetableImageError("Không gọi được Gemini. Kiểm tra mạng rồi thử lại.") from exc
+        from core.gemini import friendly_error
+
+        raise TimetableImageError(friendly_error(exc, getattr(generate, "api_key", ""))) from exc
     rows = [r for r in _json(raw).get("sessions", []) if isinstance(r, dict)]
     rows = [{k: str(r.get(k, "") or "").strip() for k in FIELDS} for r in rows]
     _, errors = load_timetable_csv(io.StringIO(to_csv(rows)))

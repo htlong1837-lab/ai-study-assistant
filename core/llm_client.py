@@ -52,13 +52,18 @@ def _call_gemini(model, system, prompt, temperature, api_key, timeout=None):
         client = genai.Client(
             api_key=api_key, http_options=types.HttpOptions(timeout=int(timeout * 1000))
         )
-    resp = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            system_instruction=system, temperature=temperature
-        ),
-    )
+    from core.gemini import call_with_fallback
+
+    def one(m):
+        return client.models.generate_content(
+            model=m,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system, temperature=temperature
+            ),
+        )
+
+    resp = call_with_fallback(client, model, one, key_id=str(hash(api_key)))
     meta = resp.usage_metadata
     return (
         resp.text or "",
@@ -166,12 +171,14 @@ class LLMClient:
         from google import genai
         from google.genai import types
 
+        from core.gemini import call_with_fallback
+
         client = genai.Client(api_key=self._api_key)
-        resp = client.models.generate_content(
-            model=self.model,
+        resp = call_with_fallback(client, self.model, lambda m: client.models.generate_content(
+            model=m,
             contents=[types.Part.from_bytes(data=data, mime_type=mime), prompt],
             config=types.GenerateContentConfig(temperature=0.0),
-        )
+        ), key_id=str(hash(self._api_key)))
         meta = resp.usage_metadata
         out = LLMResponse(text=resp.text or "",
                           input_tokens=getattr(meta, "prompt_token_count", 0) or 0,
