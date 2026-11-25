@@ -20,7 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PACKAGES = ("core", "db", "modules", "views")
 
-_LOCK = threading.Lock()
+_LOCK = getattr(sys, "_dp_reload_lock", None) or threading.Lock()  # dùng chung kể cả khi module nạp lại
+sys._dp_reload_lock = _LOCK  # type: ignore[attr-defined]
 
 
 def fingerprint(root: Path = ROOT, packages: tuple[str, ...] = PACKAGES) -> str:
@@ -36,7 +37,10 @@ def fingerprint(root: Path = ROOT, packages: tuple[str, ...] = PACKAGES) -> str:
     return h.hexdigest()
 
 
-_current = fingerprint()
+# Trạng thái cất trong ``sys`` để không mất nếu module này bị nạp lại (bộ theo dõi của Streamlit có thể
+# xoá nó khỏi bộ nhớ khi một trang đổi); nếu mất, lần so sánh sau sẽ không thấy code mới.
+_current = getattr(sys, "_dp_code_fingerprint", None) or fingerprint()
+sys._dp_code_fingerprint = _current  # type: ignore[attr-defined]
 
 
 def _clear_streamlit_script_cache() -> None:
@@ -61,6 +65,7 @@ def purge(packages: tuple[str, ...] = PACKAGES) -> int:
 def check(root: Path = ROOT, packages: tuple[str, ...] = PACKAGES) -> bool:
     """Có code mới thì nạp lại (một lần, có khoá). Trả ``True`` nếu vừa nạp lại."""
     global _current
+    _current = getattr(sys, "_dp_code_fingerprint", _current) if root == ROOT else _current
     fp = fingerprint(root, packages)
     if fp == _current:
         return False
@@ -70,4 +75,6 @@ def check(root: Path = ROOT, packages: tuple[str, ...] = PACKAGES) -> bool:
         purge(packages)
         _clear_streamlit_script_cache()
         _current = fp
+        if root == ROOT:
+            sys._dp_code_fingerprint = fp  # type: ignore[attr-defined]
     return True

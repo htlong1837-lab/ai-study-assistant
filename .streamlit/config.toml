@@ -20,8 +20,8 @@ gatherUsageStats = false
 toolbarMode = "minimal"
 
 [server]
-# Không tự nạp lại code khi tệp thay đổi. Trên Streamlit Cloud, mỗi lần kéo code mới, bộ theo dõi tệp xoá
-# các module đang dùng khỏi bộ nhớ trong lúc phiên khác còn nạp chúng → app hỏng (KeyError: 'core').
-# Cập nhật code xong thì Reboot app. Khi phát triển trên máy: streamlit run app.py --server.fileWatcherType auto
-fileWatcherType = "none"
-runOnSave = false
+# Bộ theo dõi tệp của Streamlit, khi một tệp đổi, xoá MỌI module nó theo dõi khỏi bộ nhớ, kể cả lúc phiên
+# khác đang nạp chúng (trên Streamlit Cloud mỗi lần kéo code mới → app hỏng với KeyError: 'core').
+# Không tắt hẳn bộ theo dõi (lớp vỏ Streamlit Cloud cần nó để coi app là đã sẵn sàng), chỉ bỏ các thư
+# mục code ra khỏi danh sách theo dõi; các module đó do dp_reload.py tự nạp lại an toàn khi có code mới.
+folderWatchBlacklist = ["core", "views", "modules", "db", "data", "tests", ".cache"]
