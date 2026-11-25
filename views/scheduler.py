@@ -63,6 +63,11 @@ if base_tasks:
         column_config={"Hạn nộp": st.column_config.DatetimeColumn(format="DD/MM HH:mm")})
     tasks = [replace(t, status=TaskStatus.CONFIRMED if ok else TaskStatus.PROPOSED)
              for t, ok in zip(base_tasks, edited["Xác nhận"])]
+    if b_tasks:  # tích/bỏ tích Xác nhận được ghi vào CSDL của tài khoản, mở lại vẫn còn
+        _repo = Repository(ws.db_path)
+        for old, new in zip(base_tasks, tasks):
+            if old.status is not new.status:
+                _repo.set_task_status(new.id, "confirmed" if new.status is TaskStatus.CONFIRMED else "proposed")
 titles = {t.id: t.title for t in tasks}
 
 # ---------------------------------------------------------------- 2. Thời khoá biểu
@@ -81,7 +86,7 @@ def _timetable_from_image(upload) -> None:
                 c_img.markdown(f"🖼️ **{upload.name}**")
         with c_act:
             st.markdown("##### 📷 Chuyển ảnh thành thời khoá biểu")
-            api_key = _gemini.key_input("tt_api_key")
+            api_key = _gemini.key_input("tt_api_key", ws=ws)
             if st.button("Đọc thời khoá biểu bằng Gemini", type="primary", icon=":material/auto_awesome:",
                          disabled=not api_key, key="tt_read_image"):
                 with st.spinner("Gemini đang đọc thời khoá biểu…"):
@@ -147,19 +152,34 @@ for err in tt_errors:
 
 # ---------------------------------------------------------------- 3. Cài đặt
 st.subheader("3. Cài đặt")
+prefs = ws.read_state("schedule", {}) or {}  # cài đặt lần xếp trước của tài khoản
+
+
+def _pref_time(name: str, default: time) -> time:
+    try:
+        return time.fromisoformat(prefs[name])
+    except (KeyError, TypeError, ValueError):
+        return default
+
+
+MODES = ["So sánh cả hai", *ALGORITHMS]
+BLOCKS = [30, 60, 90, 120]
 c1, c2, c3, c4 = st.columns(4)
 start = c1.date_input("Bắt đầu từ", value=date.today(), format="DD/MM/YYYY")
-days = c2.slider("Số ngày", 7, 35, 21)
+days = c2.slider("Số ngày", 7, 35, int(prefs.get("days", 21)))
 day_start, day_end = c3.slider("Khung giờ học", time(5), time(23, 59),
-                               (time(7), time(22)), step=timedelta(minutes=30), format="HH:mm")
-max_h = c4.number_input("Giờ tối đa/ngày", 0.5, 12.0, 4.0, step=0.5)
+                               (_pref_time("day_start", time(7)), _pref_time("day_end", time(22))),
+                               step=timedelta(minutes=30), format="HH:mm")
+max_h = c4.number_input("Giờ tối đa/ngày", 0.5, 12.0, float(prefs.get("max_h", 4.0)), step=0.5)
 c1, c2 = st.columns([3, 1])
 ALGO_LABEL = {"EDF": "Nhanh", "CP-SAT": "Tối ưu"}
-mode = c1.radio("Cách xếp", ["So sánh cả hai", *ALGORITHMS], horizontal=True,
+mode = c1.radio("Cách xếp", MODES, horizontal=True,
+                index=MODES.index(prefs["mode"]) if prefs.get("mode") in MODES else 0,
                 format_func=lambda a: ALGO_LABEL.get(a, a),
                 help="Nhanh: việc có hạn gần nhất làm trước (EDF). "
                      "Tối ưu: cân giờ học giữa các ngày, hạn chế học khuya (CP-SAT).")
-min_block = c2.selectbox("Khối học tối thiểu", [30, 60, 90, 120], index=1,
+min_block = c2.selectbox("Khối học tối thiểu", BLOCKS,
+                         index=BLOCKS.index(prefs["min_block"]) if prefs.get("min_block") in BLOCKS else 1,
                          format_func=lambda m: f"{m} phút",
                          help="Không chia nhỏ hơn mức này (trừ việc cần ít giờ hơn).")
 
@@ -171,7 +191,14 @@ except ValueError as e:
     st.error(f"Cài đặt không hợp lệ: {e}")
     st.stop()
 
-if st.button("Xếp lịch", type="primary", key="run"):
+clicked = st.button("Xếp lịch", type="primary", key="run")
+# Mở lại trang (hoặc phiên mới) sau khi đã từng xếp: tự xếp lại theo cài đặt đã lưu và dữ liệu mới nhất.
+auto = "sched" not in st.session_state and prefs.get("ran") and bool(tasks)
+if clicked or auto:
+    if clicked:
+        ws.write_state("schedule", {"days": days, "day_start": day_start.strftime("%H:%M"),
+                                    "day_end": day_end.strftime("%H:%M"), "max_h": max_h, "mode": mode,
+                                    "min_block": min_block, "ran": True})
     algos = ALGORITHMS if mode == "So sánh cả hai" else (mode,)
     with st.spinner("Đang xếp lịch..."):
         st.session_state.sched = {

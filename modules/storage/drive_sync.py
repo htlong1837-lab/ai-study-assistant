@@ -26,7 +26,7 @@ FILES = "https://www.googleapis.com/drive/v3/files"
 UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
 NAME = "DP - Daily Planner (du lieu).zip"
 TAG = {"dp": "workspace-v1"}
-SKIP_DIRS = {"attachments"}
+SKIP_DIRS = {"attachments", "inbox"}  # lấy lại được từ Gmail; tránh đưa thư thô lên Drive
 MAX_BYTES = 10 * 1024 * 1024
 MARKER = ".drive.json"  # ghi id tệp và dấu vân tay lần đồng bộ cuối
 

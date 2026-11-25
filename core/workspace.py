@@ -10,6 +10,7 @@ liệu mẫu để dùng thử, không ghi vào dữ liệu của ai và đượ
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import shutil
 import time
@@ -65,6 +66,30 @@ class Workspace:
 
     def reset_timetable(self) -> None:
         self.timetable_path.unlink(missing_ok=True)
+
+    # --- trạng thái giữ lại giữa các lần mở app (cài đặt xếp lịch, quyết định duyệt email, hội thoại…)
+    @property
+    def inbox_dir(self) -> Path:
+        return self.root / "inbox"
+
+    def state_path(self, name: str) -> Path:
+        return self.root / "state" / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', name)}.json"
+
+    def read_state(self, name: str, default=None):
+        try:
+            return json.loads(self.state_path(name).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return default
+
+    def write_state(self, name: str, value) -> None:
+        path = self.state_path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(value, ensure_ascii=False, default=str), encoding="utf-8")
+        tmp.replace(path)
+
+    def clear_state(self, name: str) -> None:
+        self.state_path(name).unlink(missing_ok=True)
 
 
 def user_key(email: str) -> str:

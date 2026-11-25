@@ -14,7 +14,8 @@ from modules.qa.messages import rejection_message
 from modules.qa.reader.component import render_reader
 from modules.qa.reader.threads import ThreadStore, export_markdown
 from modules.email_security.handoff import verified_document_batches
-from views import _gemini, _ui
+from modules.qa.thread_json import threads_from_json, threads_to_json
+from views import _account, _gemini, _ui
 
 
 def _display_name(filename: str) -> str:
@@ -25,7 +26,7 @@ def _display_name(filename: str) -> str:
 def _configured_key() -> str:
     """Khóa theo cấu hình chung (.env: <LLM_PROVIDER>_API_KEY), dự phòng st.secrets."""
     name = f"{config.env('LLM_PROVIDER', 'gemini').upper()}_API_KEY"
-    value = config.env(name).strip()
+    value = config.env(name).strip() or _gemini.saved_key(_account.current())
     if value:
         return value
     try:
@@ -59,6 +60,18 @@ def _safe_error(error: Exception) -> str:
 
 
 _ui.page_header("💬", "Đọc và hỏi đáp tài liệu", _ui.BLUE)
+ws = _account.current()
+
+
+def _save_threads() -> None:
+    """Hội thoại của tài liệu đang mở được lưu theo tài khoản (mở lại tài liệu là thấy lại)."""
+    doc_hash = st.session_state.get("qa_document_hash", "")
+    threads = st.session_state.get("qa_threads")
+    if doc_hash and threads and not ws.is_guest:
+        ws.write_state("qa-" + doc_hash.split(":")[-1][:24], threads_to_json(threads))
+
+
+_save_threads()  # lưu kết quả của lần chạy trước (kể cả khi lần đó kết thúc bằng st.rerun)
 key_input = st.text_input(
     "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
 )
@@ -72,6 +85,8 @@ elif "qa_api_key" not in st.session_state and not st.session_state.get(
 api_key = st.session_state.get("qa_api_key", "")
 if api_key:
     st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
+    if key_input:
+        _gemini.remember_box(ws, key_input, key="qa_remember_key")
 else:
     _gemini.how_to_get_key()
 
@@ -106,7 +121,8 @@ if options:
                 raw if Path(attachment.path).suffix.lower() == ".pdf" else None
             )
             st.session_state.pop("qa_reader_sent_doc_id", None)
-            st.session_state["qa_threads"] = {}
+            st.session_state["qa_threads"] = threads_from_json(
+                ws.read_state("qa-" + attachment.sha256[:24], []) if not ws.is_guest else [])
             st.session_state["qa_seen_events"] = []
             st.session_state["qa_answer_cache"] = {}
         except Exception as exc:

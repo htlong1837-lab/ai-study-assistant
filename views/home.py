@@ -1,7 +1,7 @@
 """Trang chủ: bảng "Hôm nay" — lời chào, tiến độ tuần, dòng thời gian hôm nay, hạn nộp sắp tới,
 thêm nhanh nhiệm vụ, lối vào 4 module."""
 from dataclasses import replace
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 import streamlit as st
 
@@ -30,7 +30,16 @@ if run and isinstance(run.get("settings"), ScheduleSettings):
     sessions, settings = run["sessions"], run["settings"]
 else:
     sessions, _err = load_timetable_csv(ws.timetable_source())
-    settings = ScheduleSettings(start=today, days=7, not_before=now)
+    prefs = ws.read_state("schedule", {}) or {}  # cài đặt đã lưu ở trang Lập lịch
+    try:
+        settings = ScheduleSettings(
+            start=today, days=7, not_before=now,
+            day_start=time.fromisoformat(prefs.get("day_start", "07:00")),
+            day_end=time.fromisoformat(prefs.get("day_end", "22:00")),
+            max_hours_per_day=float(prefs.get("max_h", 4.0)),
+            min_block_minutes=int(prefs.get("min_block", 60)))
+    except (TypeError, ValueError):
+        settings = ScheduleSettings(start=today, days=7, not_before=now)
     result = schedule(tasks, sessions, settings, "EDF")
 
 week_start = today - timedelta(days=today.weekday())

@@ -13,7 +13,8 @@ from core.workspace import Workspace
 # Dữ liệu trong phiên gắn với một người; đổi người thì phải xoá để không lộ sang người sau.
 PERSONAL_KEYS = ("processed_list", "forwarded", "verified_emails", "verified_email_ids", "safe_attachments",
                  "verified_documents", "approved_suspicious_email_ids", "sched", "gmail_synced", "mailbox_error",
-                 "qa_document", "qa_pdf_bytes", "qa_threads", "qa_selected_hash", "extract_flash", "flash")
+                 "qa_document", "qa_pdf_bytes", "qa_threads", "qa_selected_hash", "extract_flash", "flash",
+                 "_raw_of", "qa_document_hash", "qa_api_key", "qa_api_key_input", "tt_img")
 
 
 def google_configured() -> bool:
@@ -88,6 +89,11 @@ def current() -> Workspace:
     if not ws.is_guest and not st.session_state.get("_drive_checked"):
         st.session_state["_drive_checked"] = True
         _drive("restore", ws)  # máy chủ mới khởi động lại: lấy lại lịch từ Drive của người dùng
+    if not ws.is_guest and "processed_list" not in st.session_state:
+        from views import _inbox
+
+        with st.spinner("Đang mở lại hộp thư của bạn…"):
+            _inbox.restore(ws, st.session_state)  # vào thẳng trang nào cũng có thư và tài liệu đã duyệt
     if ws.is_guest and not st.session_state.get("_guest_seeded"):
         from db.repository import Repository
 

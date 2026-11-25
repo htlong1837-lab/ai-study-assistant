@@ -6,15 +6,11 @@ import streamlit as st
 
 from core import mocks
 from core.contracts import SafetyStatus
-from dataclasses import replace as _replace
-
 from modules.email_security import approve_suspicious
-from modules.email_security import process_email as _process_email
-from modules.email_security.config import get_settings
 from modules.email_security.handoff import publish_to_modules
 from modules.email_security import gmail
 from modules.email_security.mailbox import MailboxError, fetch_recent
-from views import _account, _ui
+from views import _account, _inbox, _ui
 from views._shared import llm_status, module_header
 
 
@@ -42,14 +38,15 @@ ICON = {
 
 def process_email(raw):
     """Quét email; tệp đính kèm an toàn lưu vào thư mục riêng của người đang dùng."""
-    return _process_email(raw, settings=_replace(get_settings(), attachments_dir=str(ws.attachments_dir)))
+    return _inbox.process(ws, raw)
 
 
-# ---- Trạng thái phiên (Streamlit chạy lại script sau mỗi lần bấm) ----
+# ---- Trạng thái phiên: thư đã lưu của tài khoản được khôi phục ở _account.current() ----
 if "processed_list" not in st.session_state:
     raws = mocks.emails_raw() if hasattr(mocks, "emails_raw") else []
     st.session_state["processed_list"] = [process_email(raw) for raw in raws]
 st.session_state.setdefault("forwarded", set())  # id email đã chuyển sang B/A
+st.session_state.setdefault("_raw_of", {})  # id email → mã băm thư thô đã lưu
 
 processed_items = st.session_state["processed_list"]
 
@@ -61,13 +58,18 @@ DEMO_DIR = Path(__file__).resolve().parents[1] / "data" / "demo"
 
 def _ingest(raws: list[bytes]) -> None:
     known_ids = {p.email.id for p in processed_items}
+    known_raw = set(st.session_state["_raw_of"].values())
     added = 0
     for raw in raws:
+        if _inbox.raw_hash(raw) in known_raw:  # tránh nạp trùng khi bấm nhiều lần
+            continue
         p = process_email(raw)
-        if p.email.id in known_ids:  # tránh nạp trùng khi bấm nhiều lần
+        if p.email.id in known_ids:
             continue
         processed_items.append(p)
         known_ids.add(p.email.id)
+        st.session_state["_raw_of"][p.email.id] = _inbox.save_raw(ws, raw)  # giữ lại cho lần mở sau
+        known_raw.add(st.session_state["_raw_of"][p.email.id])
         added += 1
     st.session_state["flash"] = (
         f"Đã nạp {added} email mới." if added else "Các email này đã có trong danh sách."
@@ -188,6 +190,7 @@ def do_forward(p) -> None:
         st.error("Email chưa vượt qua cổng an toàn hoặc chưa được người dùng duyệt.")
         return
     st.session_state["forwarded"].add(mail.id)
+    _inbox.remember(ws, st.session_state, mail.id, "forwarded")
 
 
 # ---- Tổng quan ----
@@ -287,6 +290,7 @@ elif state is SafetyStatus.SUSPICIOUS:
         if st.button("Tôi xác nhận muốn chuyển tiếp", key=f"approve_{e.id}"):
             # approve_suspicious trả về đối tượng MỚI → phải ghi đè vào danh sách
             processed_items[row] = approve_suspicious(selected_p)
+            _inbox.remember(ws, st.session_state, e.id, "approved")
             st.rerun()
     else:
         st.info("Bạn đã xác nhận email này.")
