@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -104,7 +105,10 @@ def read_timetable_image(data: bytes, filename: str, generate: Generate) -> tupl
     except Exception as exc:  # noqa: BLE001 — lỗi mạng/khóa: báo gọn cho người dùng
         from core.gemini import friendly_error
 
-        raise TimetableImageError(friendly_error(exc, getattr(generate, "api_key", ""))) from exc
+        text = friendly_error(exc, getattr(generate, "api_key", ""))
+        logging.getLogger(__name__).warning("Đọc ảnh thời khoá biểu lỗi: %s | %s: %s", text,
+                                            type(exc).__name__, friendly_error(exc, "")[:300])
+        raise TimetableImageError(text) from exc
     rows = [r for r in _json(raw).get("sessions", []) if isinstance(r, dict)]
     rows = [{k: str(r.get(k, "") or "").strip() for k in FIELDS} for r in rows]
     _, errors = load_timetable_csv(io.StringIO(to_csv(rows)))
