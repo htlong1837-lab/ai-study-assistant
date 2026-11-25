@@ -85,12 +85,48 @@ def current() -> Workspace:
         for k in PERSONAL_KEYS:
             st.session_state.pop(k, None)
     st.session_state["_ws_owner"] = owner
+    if not ws.is_guest and not st.session_state.get("_drive_checked"):
+        st.session_state["_drive_checked"] = True
+        _drive("restore", ws)  # máy chủ mới khởi động lại: lấy lại lịch từ Drive của người dùng
     if ws.is_guest and not st.session_state.get("_guest_seeded"):
         from db.repository import Repository
 
         _seed_guest(Repository(ws.db_path))
         st.session_state["_guest_seeded"] = True
     return ws
+
+
+def access_token() -> str:
+    user = google_user()
+    return str((getattr(user, "tokens", None) or {}).get("access", "") or "") if user is not None else ""
+
+
+def _drive(action: str, ws: Workspace) -> None:
+    """Khôi phục hoặc sao lưu thư mục dữ liệu qua Google Drive; lỗi chỉ ghi trạng thái, không làm hỏng trang."""
+    from datetime import datetime as _dt
+
+    from modules.storage import drive_sync
+
+    token = access_token()
+    if not token:
+        return
+    try:
+        if action == "restore":
+            if drive_sync.restore(ws.root, token):
+                st.session_state["_drive_status"] = ("ok", f"Đã lấy lịch từ Google Drive lúc {_dt.now():%H:%M}")
+        elif drive_sync.save(ws.root, token):
+            st.session_state["_drive_status"] = ("ok", f"Đã lưu vào Google Drive lúc {_dt.now():%H:%M}")
+    except drive_sync.DriveError as exc:
+        st.session_state["_drive_status"] = ("warn", f"Chưa lưu được vào Drive: {exc}")
+    except Exception as exc:  # noqa: BLE001 — mạng, zip hỏng…: không chặn người dùng
+        st.session_state["_drive_status"] = ("warn", f"Chưa lưu được vào Drive ({type(exc).__name__}).")
+
+
+def backup() -> None:
+    """Gọi sau mỗi lần chạy trang: có gì thay đổi thì lưu lên Drive của người đang đăng nhập."""
+    owner = st.session_state.get("_ws_owner", "")
+    if owner and not owner.startswith("guest:"):
+        _drive("save", workspace.for_user(owner))
 
 
 NOT_CONFIGURED = ("App chưa được bật đăng nhập Google. Người cài app làm một lần theo "
@@ -117,6 +153,9 @@ def sidebar() -> None:
             avatar = (f'<img src="{escape(pic)}" alt="" referrerpolicy="no-referrer">' if pic.startswith("https://")
                       else f'<span>{escape(name[:1].upper() or "?")}</span>')
             st.html(f'<div class="nh-acct">{avatar}<div><b>{escape(name)}</b><small>{escape(email)}</small></div></div>')
+            kind, text = st.session_state.get("_drive_status", ("", ""))
+            if text:
+                st.caption(("☁️ " if kind == "ok" else "⚠️ ") + text)
             if st.button("Đăng xuất", key="acct_logout", icon=":material/logout:", width="stretch"):
                 for k in PERSONAL_KEYS:
                     st.session_state.pop(k, None)

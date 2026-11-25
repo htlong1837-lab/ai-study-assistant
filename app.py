@@ -33,4 +33,7 @@ if previous_page == "qa" and current_page != "qa":
     st.session_state.pop("qa_api_key_input", None)
 st.session_state["app_current_page"] = current_page
 _ui.intro(current_page or "home")
-selected_page.run()
+try:
+    selected_page.run()
+finally:
+    _account.backup()  # chạy cả khi trang gọi st.rerun/st.stop
