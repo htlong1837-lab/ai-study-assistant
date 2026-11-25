@@ -16,7 +16,7 @@
   </header>
 
   <h1>Chính sách quyền riêng tư</h1>
-  <div class="meta">Áp dụng cho ứng dụng DP (Daily Planner). Cập nhật ngày 25/11/2026.</div>
+  <div class="meta">Áp dụng cho ứng dụng DP (Daily Planner). Cập nhật ngày 25/11/2026 (thêm sao lưu Google Drive).</div>
 
   <p>DP là đồ án môn học của sinh viên, giúp bạn biến email và tài liệu học tập thành lịch tự học. Trang này
      nói rõ DP đọc gì, dùng vào việc gì và không làm gì với dữ liệu của bạn.</p>
@@ -28,6 +28,10 @@
     <li><b>Nội dung Gmail, chỉ đọc</b> (quyền <code>gmail.readonly</code>): tối đa 20 thư gần nhất trong
         14 ngày ở Hộp thư đến, gồm người gửi, tiêu đề, nội dung và tệp đính kèm. DP chỉ đọc thư khi bạn mở
         trang Hộp thư hoặc bấm “Lấy thư mới”.</li>
+    <li><b>Một tệp riêng trong Google Drive của bạn</b> (quyền <code>drive.file</code>): DP tạo tệp
+        “DP - Daily Planner (du lieu).zip” để sao lưu lịch, nhiệm vụ, tiến độ và thời khoá biểu của bạn, rồi
+        đọc lại khi bạn đăng nhập ở lần sau. Với quyền này DP <b>chỉ thấy đúng tệp do DP tạo</b>, không xem
+        được tệp nào khác trong Drive.</li>
   </ul>
   <p>DP <b>không</b> gửi, xoá, sửa, gắn nhãn hay đánh dấu đã đọc bất kỳ thư nào, và không bao giờ thấy mật
      khẩu Google của bạn (đăng nhập do Google xử lý).</p>
@@ -54,8 +58,9 @@
   <h2>4. Lưu trữ và xoá</h2>
   <ul>
     <li>Thư đọc được nằm trong phiên làm việc của DP và mất khi bạn đóng trang hoặc đăng xuất.</li>
-    <li>Tệp đính kèm an toàn và các bài tập bạn đã xác nhận được lưu trên máy chủ đang chạy DP để lịch
-        còn lại lần sau. Người cài DP có thể xoá bất cứ lúc nào.</li>
+    <li>Lịch và nhiệm vụ của bạn được lưu trong thư mục riêng theo tài khoản trên máy chủ chạy DP, và sao
+        lưu vào tệp DP tạo trong Google Drive của bạn. Muốn xoá hẳn, xoá tệp đó trong Drive.</li>
+    <li>Tệp đính kèm email chỉ nằm trên máy chủ để đọc và trích xuất, không được đưa vào bản sao lưu Drive.</li>
     <li>Mã truy cập Google chỉ sống khoảng 1 giờ, được giữ trong cookie đã ký và bị xoá khi bạn bấm
         “Đăng xuất”.</li>
     <li>Thu hồi quyền của DP bất cứ lúc nào tại
@@ -74,7 +79,9 @@
   <div class="en">
     <b>English summary.</b> DP (Daily Planner) is a student project. With your permission it reads, read-only,
     up to 20 recent Inbox messages (<code>gmail.readonly</code>) to detect phishing and extract assignment
-    deadlines into a study schedule. It never sends, deletes or modifies mail. If enabled by the operator,
+    deadlines into a study schedule. It never sends, deletes or modifies mail. With <code>drive.file</code> it
+    creates and reads back a single backup file of your own schedule in your Google Drive; it cannot see any
+    other Drive files. If enabled by the operator,
     message content is sent to Google Gemini for analysis, and links plus attachment SHA-256 hashes are sent to
     VirusTotal. Gmail data is not sold, shared for advertising, or used to train AI models. DP's use and transfer
     of information received from Google APIs adheres to the
