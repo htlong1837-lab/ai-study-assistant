@@ -8,6 +8,7 @@ Tuân thủ nguyên tắc:
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
@@ -161,7 +162,11 @@ def process_document(
 
         task_id = f"t-{uuid.uuid4().hex[:8]}"
         title_val = (raw_a.title.value or doc.filename).strip()
-        course_val = (raw_a.course.value or "Chung").strip() if raw_a.course else "Chung"
+        course_val = (raw_a.course.value or "").strip() if raw_a.course else ""
+        if not course_val and linked_email is not None:  # tệp đính kèm: lấy môn từ nhãn [MÔN] của email
+            tag = re.match(r"\s*\[([^\]]{1,20})\]", linked_email.subject or "")
+            course_val = tag.group(1).strip() if tag else ""
+        course_val = course_val or "Chung"
         est_hours = raw_a.estimated_hours if raw_a.estimated_hours and raw_a.estimated_hours > 0 else 3.0
         priority_val = raw_a.priority_suggestion.value if raw_a.priority_suggestion else "medium"
 

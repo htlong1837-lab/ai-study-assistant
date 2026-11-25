@@ -15,7 +15,7 @@ python -m scripts.make_demo_emails
 2. `.env`: có `GEMINI_API_KEY` thì B trích bằng LLM và trang Hỏi đáp trả lời được; không có khóa thì
    B tự dùng bộ trích xuất theo luật (vẫn ra nhiệm vụ cho email mẫu), chỉ phần hỏi đáp không chạy.
    Có `VIRUSTOTAL_API_KEY` thì D tra thêm VirusTotal, không có vẫn chạy.
-3. `streamlit run app.py`. Chuẩn bị sẵn file `data/demo/*.eml` (3 email tự soạn) và
+3. `streamlit run app.py`. Chuẩn bị sẵn file `data/demo/*.eml` (4 email tự soạn) và
    `data/sample/thoi_khoa_bieu.csv`.
 4. Mở trước trang chủ; tắt thông báo máy.
 

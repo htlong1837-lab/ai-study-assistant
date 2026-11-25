@@ -150,6 +150,37 @@ class LLMClient:
             )
         return resp
 
+    def read_media(self, data: bytes, mime: str, prompt: str) -> str:
+        """Gửi ảnh/video/ghi âm cho Gemini kèm lời dặn, trả văn bản. Lưu đệm theo nội dung tệp."""
+        reason = self.not_configured_reason()
+        if reason:
+            raise LLMNotConfigured(reason)
+        if self.provider != "gemini":
+            raise LLMNotConfigured(f"'{self.provider}' không đọc được ảnh/video.")
+        digest = hashlib.sha256(data).hexdigest()
+        path = self.cache_dir / f"media-{self._key(digest + mime, None, prompt)}.json"
+        hit = self._read_cache(path)
+        if hit is not None:
+            self._add_usage(cache_hits=1)
+            return hit.text
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=self._api_key)
+        resp = client.models.generate_content(
+            model=self.model,
+            contents=[types.Part.from_bytes(data=data, mime_type=mime), prompt],
+            config=types.GenerateContentConfig(temperature=0.0),
+        )
+        meta = resp.usage_metadata
+        out = LLMResponse(text=resp.text or "",
+                          input_tokens=getattr(meta, "prompt_token_count", 0) or 0,
+                          output_tokens=getattr(meta, "candidates_token_count", 0) or 0)
+        self._add_usage(calls=1, input_tokens=out.input_tokens, output_tokens=out.output_tokens)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(asdict(out), ensure_ascii=False), encoding="utf-8")
+        return out.text
+
     def usage(self) -> dict:
         try:
             data = json.loads(

@@ -92,4 +92,4 @@ def test_no_cache_wrapper_keeps_cache_clean(tmp_path):
 
 
 def test_demo_emails_exist():
-    assert len(list((Path(__file__).resolve().parents[2] / "data" / "demo").glob("*.eml"))) == 3
+    assert len(list((Path(__file__).resolve().parents[2] / "data" / "demo").glob("*.eml"))) == 4

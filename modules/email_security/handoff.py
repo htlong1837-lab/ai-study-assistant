@@ -36,9 +36,11 @@ def publish_to_modules(
         if attachment.sha256 in documents:
             continue
         path = Path(attachment.path)
-        if path.suffix.lower() not in {".pdf", ".txt", ".md"}:
-            continue
+        from modules.qa.file_readers import READABLE_EXT
         from modules.qa.loader import load_document_bytes
+
+        if path.suffix.lower() not in READABLE_EXT:
+            continue
 
         try:
             documents[attachment.sha256] = load_document_bytes(

@@ -4,6 +4,7 @@ Sinh vào data/demo/ (email tự soạn, không phải email thật):
 - 01_bai_tap_co_de.eml   giảng viên giao bài, kèm đề bài PDF
 - 02_doi_han.eml         email dời hạn bài tập trên (B phải phát hiện thay đổi)
 - 03_lua_dao.eml         email giả mạo phòng đào tạo, link lạ + tệp .exe đổi đuôi
+- 04_lich_nop_excel.eml  lớp trưởng gửi lịch nộp bài bằng Excel + yêu cầu thuyết trình bằng Word
 """
 from __future__ import annotations
 
@@ -32,6 +33,52 @@ def _pdf_bytes(text: str) -> bytes:
     data = doc.tobytes()
     doc.close()
     return data
+
+
+def _xlsx_bytes() -> bytes:
+    import io
+    from datetime import datetime
+
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Lịch nộp CSDL"
+    ws.append(["Việc", "Hạn nộp", "Nộp ở đâu"])
+    ws.append(["Đồ án Cơ sở dữ liệu - thiết kế ERD", datetime(2026, 12, 8, 23, 59), "LMS"])
+    ws.append(["Đồ án Cơ sở dữ liệu - bản cuối", datetime(2026, 12, 20, 23, 59), "LMS"])
+    for col, width in zip("ABC", (38, 18, 14)):
+        ws.column_dimensions[col].width = width
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+def _docx_bytes(paragraphs: list[str]) -> bytes:
+    import io
+    import zipfile
+    from html import escape
+
+    ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    body = "".join(f"<w:p><w:r><w:t xml:space=\"preserve\">{escape(t)}</w:t></w:r></w:p>" for t in paragraphs)
+    files = {
+        "[Content_Types].xml": (
+            '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.'
+            'wordprocessingml.document.main+xml"/></Types>'),
+        "_rels/.rels": (
+            '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+            'Target="word/document.xml"/></Relationships>'),
+        "word/document.xml": f'<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="{ns}"><w:body>{body}</w:body></w:document>',
+    }
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, text in files.items():
+            z.writestr(name, text)
+    return buf.getvalue()
 
 
 def _mail(sender: str, subject: str, body: str, date: str) -> EmailMessage:
@@ -72,8 +119,24 @@ def build() -> list[Path]:
     )
     m3.add_attachment(b"MZ\x90\x00" + b"\x00" * 60, maintype="application", subtype="pdf",
                       filename="huong_dan_xac_minh.pdf")
+    m4 = _mail(
+        "Lớp trưởng CSDL <loptruong.csdl@example.edu.vn>",
+        "[CSDL] Lịch nộp đồ án và thuyết trình",
+        "Chào cả lớp,\n\nMình gửi lịch nộp đồ án (file Excel) và yêu cầu thuyết trình của cô "
+        "(file Word) trong tệp đính kèm.\n\nLớp trưởng.",
+        "Wed, 25 Nov 2026 20:15:00 +0700",
+    )
+    m4.add_attachment(_xlsx_bytes(), maintype="application",
+                      subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename="lich_nop_CSDL.xlsx")
+    m4.add_attachment(_docx_bytes([
+        "YÊU CẦU THUYẾT TRÌNH ĐỒ ÁN CƠ SỞ DỮ LIỆU",
+        "Mỗi nhóm trình bày 10 phút, nộp slide trước 23h59 ngày 15/12/2026 trên LMS.",
+        "Tiêu chí chấm: nội dung, trình bày, trả lời câu hỏi.",
+    ]), maintype="application", subtype="vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="yeu_cau_thuyet_trinh.docx")
     paths = []
-    for name, msg in (("01_bai_tap_co_de.eml", m1), ("02_doi_han.eml", m2), ("03_lua_dao.eml", m3)):
+    for name, msg in (("01_bai_tap_co_de.eml", m1), ("02_doi_han.eml", m2), ("03_lua_dao.eml", m3),
+                      ("04_lich_nop_excel.eml", m4)):
         path = OUT / name
         path.write_bytes(bytes(msg))
         paths.append(path)

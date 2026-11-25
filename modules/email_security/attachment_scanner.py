@@ -91,6 +91,19 @@ LOW_RISK_EXTENSIONS: frozenset[str] = frozenset(
         ".png",
         ".jpg",
         ".jpeg",
+        ".md",
+        ".tsv",
+        ".json",
+        ".webp",
+        ".gif",
+        ".heic",
+        ".mp4",
+        ".mov",
+        ".webm",
+        ".mp3",
+        ".m4a",
+        ".wav",
+        ".ogg",
     }
 )
 
@@ -118,6 +131,20 @@ DOCUMENT_EXTENSIONS: frozenset[str] = frozenset(
         ".jpg",
         ".jpeg",
         ".png",
+        ".csv",
+        ".md",
+        ".tsv",
+        ".json",
+        ".webp",
+        ".gif",
+        ".heic",
+        ".mp4",
+        ".mov",
+        ".webm",
+        ".mp3",
+        ".m4a",
+        ".wav",
+        ".ogg",
     }
 )
 

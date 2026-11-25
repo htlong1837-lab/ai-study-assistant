@@ -9,7 +9,7 @@ from pathlib import Path
 
 from core.contracts import Page, ParsedDocument, SafeAttachment
 
-from . import document_parser
+from . import document_parser, file_readers
 from .document_parser import parse_document
 
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
@@ -71,12 +71,16 @@ def load_document_bytes(
     parse_timeout_seconds: float = PARSE_TIMEOUT_SECONDS,
 ) -> ParsedDocument:
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".pdf", ".txt", ".md"}:
-        raise ValueError("Chỉ hỗ trợ PDF, TXT hoặc Markdown.")
+    if suffix not in file_readers.READABLE_EXT:
+        raise ValueError(f"Chưa hỗ trợ đọc tệp {suffix or 'không có đuôi'}.")
     if not data or len(data) > MAX_UPLOAD_BYTES:
         raise ValueError("Tệp rỗng hoặc vượt giới hạn 50 MB.")
     if suffix == ".pdf" and not data.startswith(b"%PDF-"):
         raise ValueError("Tệp có đuôi PDF nhưng nội dung không phải PDF hợp lệ.")
+    if suffix not in {".pdf", ".txt", ".md"}:  # Word, Excel, PowerPoint, ảnh, video…
+        pages = file_readers.read_pages(filename, data)
+        return ParsedDocument(doc_id=doc_id or hashlib.sha256(data).hexdigest()[:16],
+                              filename=Path(filename).name, pages=pages[:MAX_PAGES])
     if suffix == ".pdf" and document_parser.fitz is None:
         raise RuntimeError("PyMuPDF is required to read PDF documents.")
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:

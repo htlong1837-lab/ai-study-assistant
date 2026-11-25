@@ -7,6 +7,7 @@ ortools>=9.10
 matplotlib>=3.8
 pytest>=8.0
 pymupdf>=1.24.0
+openpyxl>=3.1  # đọc tệp Excel đính kèm
 pyyaml>=6.0
 pydantic>=2.0
 scikit-learn>=1.4

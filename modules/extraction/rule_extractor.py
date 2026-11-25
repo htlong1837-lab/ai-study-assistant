@@ -94,6 +94,11 @@ class RuleBasedLLM:
         if not deadlines:
             return {"assignments": [], "not_assignment": True}
 
+        rows = self._table_rows(pages) if not is_email else []
+        if len(rows) >= 2:  # bảng lịch nộp (Excel/Word/CSV): mỗi dòng có hạn là một nhiệm vụ
+            return {"assignments": [self._row_assignment(loc, row) for loc, row in rows],
+                    "not_assignment": False}
+
         loc0 = pages[0][0]
         title_src = subject or next((s for s in _sentences(pages[0][1]) if len(s) > 6), "")
         title = TAG.sub("", title_src).strip(" -:")
@@ -125,6 +130,39 @@ class RuleBasedLLM:
             "refers_to": refers_to,
         }
         return {"assignments": [a], "not_assignment": False}
+
+    def _table_rows(self, pages: list[tuple[str, str]]) -> list[tuple[str, str]]:
+        """Các dòng bảng (ô cách nhau bằng " | ", như bộ đọc Excel/Word/CSV xuất ra) có hạn nộp."""
+        out = []
+        for loc, text in pages:
+            for line in text.splitlines():
+                cells = [c.strip() for c in line.split(" | ")]
+                if len(cells) < 2 or len(cells[0]) < 3:
+                    continue
+                if any(normalize(c, self.anchor).value is not None for c in cells[1:]):
+                    out.append((loc, line.strip()))
+        return out
+
+    def _row_assignment(self, loc: str, row: str) -> dict:
+        cells = [c.strip() for c in row.split(" | ")]
+        title = cells[0]
+        due = next(c for c in cells[1:] if normalize(c, self.anchor).value is not None)
+        plat = next((c for c in cells[1:] if re.fullmatch(r"LMS|Google Drive|Google Classroom|Classroom|Teams|"
+                                                          r"Moodle|email", c, re.I)), None)
+        empty = _field(None, None, loc)
+        return {
+            "title": _field(title, title, loc),
+            "course": empty,
+            "deadlines": [{"label": None, "raw_text": due, "evidence": _ev(row, loc)}],
+            "submission_platform": _field(plat, plat, loc) if plat else empty,
+            "submission_format": empty,
+            "naming_convention": empty,
+            "grading_criteria": empty,
+            "estimated_hours": None,
+            "priority_suggestion": None,
+            "is_extension_notice": False,
+            "refers_to": None,
+        }
 
 
 class NoCacheRepository:

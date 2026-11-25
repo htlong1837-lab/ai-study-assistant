@@ -8,6 +8,7 @@ from db.repository import Repository
 from modules.extraction import workflow
 from modules.extraction.intake import intake_from_d
 from modules.extraction.rule_extractor import NoCacheRepository, RuleBasedLLM
+from views import _ui
 from views._shared import llm_status, module_header
 
 def _fmt_value(v):
@@ -91,7 +92,7 @@ with c_doc:
     if intake.from_d and not intake.documents:
         st.caption("Email đã duyệt không có tệp đính kèm đọc được.")
     for doc in intake.documents:
-        st.info(f"**{doc.filename}** ({len(doc.pages)} trang)  \n*Nội dung:* {doc.pages[0].text[:80]}...")
+        st.info(f"**{_ui.file_label(doc.filename)}** ({len(doc.pages)} trang)  \n*Nội dung:* {doc.pages[0].text[:80]}...")
 
 # Nút kích hoạt trích xuất & Demo
 c_act1, c_act2 = st.columns(2)

@@ -204,6 +204,17 @@ def logo_data_uri() -> str:
     return "data:image/png;base64," + base64.b64encode(LOGO_PNG.read_bytes()).decode()
 
 
+FILE_ICONS = {".pdf": "📕", ".docx": "📘", ".xlsx": "📊", ".csv": "📊", ".tsv": "📊", ".pptx": "📙",
+              ".png": "🖼️", ".jpg": "🖼️", ".jpeg": "🖼️", ".webp": "🖼️", ".gif": "🖼️", ".heic": "🖼️",
+              ".mp4": "🎬", ".mov": "🎬", ".webm": "🎬", ".mp3": "🎧", ".m4a": "🎧", ".wav": "🎧", ".ogg": "🎧"}
+
+
+def file_label(filename: str) -> str:
+    """Tên tệp cho người dùng: bỏ tiền tố mã băm D thêm khi lưu, kèm biểu tượng theo loại."""
+    name = re.sub(r"^[0-9a-f]{16}_", "", Path(filename).name)
+    return f"{FILE_ICONS.get(Path(name).suffix.lower(), '📄')} {name}"
+
+
 def page_header(icon: str, title: str, color: str) -> None:
     st.html(f'<div class="nh-head"><div class="ic" style="background:{color}22">{icon}</div>'
             f'<div><h1>{title}</h1></div></div>')

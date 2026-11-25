@@ -10,6 +10,7 @@ from modules.email_security import approve_suspicious, process_email
 from modules.email_security.handoff import publish_to_modules
 from modules.email_security import gmail
 from modules.email_security.mailbox import MailboxError, fetch_recent
+from views import _ui
 from views._shared import llm_status, module_header
 
 
@@ -155,7 +156,7 @@ with st.expander("Cách khác: email Yahoo/iCloud, file .eml, email mẫu"):
     uploaded_files = c_up.file_uploader("File .eml", type=["eml"], accept_multiple_files=True)
     demo_files = sorted(DEMO_DIR.glob("*.eml"))
     if demo_files and c_demo.button(
-        "✨ Email mẫu", help="3 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo."
+        "✨ Email mẫu", help="4 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo, lịch nộp bằng Excel và Word."
     ):
         _ingest([f.read_bytes() for f in demo_files])
     if uploaded_files and st.button("Kiểm tra các file này", type="primary"):
@@ -267,8 +268,8 @@ if state is SafetyStatus.MALICIOUS and findings:
     st.write("📎 **File đính kèm:** bị chặn cùng email")
 elif selected_p.safe_attachments:
     st.write("📎 **File đính kèm:**")
-    for a in selected_p.safe_attachments:
-        st.code(f"{a.path}\nsha256: {a.sha256}")
+    st.html("".join(f'<span class="nh-chip" title="sha256: {a.sha256}">{escape(_ui.file_label(a.path))}</span>'
+                    for a in selected_p.safe_attachments))
 elif findings:
     st.write(
         f"📎 **File đính kèm:** {len(findings)} file, sẽ chuyển sau khi bạn duyệt email"
