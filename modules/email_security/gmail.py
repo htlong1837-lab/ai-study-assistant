@@ -10,12 +10,14 @@ Hàm chỉ trả byte thô (RFC 822) của từng thư, giống file .eml; phân
 from __future__ import annotations
 
 import base64
+import logging
 from typing import Any
 
 import requests
 
 API = "https://gmail.googleapis.com/gmail/v1/users/me"
 SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
+log = logging.getLogger(__name__)
 
 
 class GmailError(Exception):
@@ -26,6 +28,20 @@ class TokenExpired(GmailError):
     pass
 
 
+def _error_reason(r: Any) -> str:
+    """Lý do lỗi Google trả về (không chứa mã truy cập), để phân biệt API chưa bật với thiếu quyền."""
+    try:
+        err = r.json().get("error", {})
+    except Exception:  # noqa: BLE001
+        return ""
+    parts = [str(err.get("status", "")), str(err.get("message", ""))]
+    for e in err.get("errors", []) or []:
+        parts.append(str(e.get("reason", "")))
+    for d in err.get("details", []) or []:
+        parts.append(str(d.get("reason", "")))
+    return " | ".join(p for p in parts if p)
+
+
 def _get(http: Any, url: str, token: str, params: dict | None = None) -> dict:
     try:
         r = http.get(url, headers={"Authorization": f"Bearer {token}"}, params=params, timeout=20)
@@ -34,6 +50,11 @@ def _get(http: Any, url: str, token: str, params: dict | None = None) -> dict:
     if r.status_code == 401:
         raise TokenExpired("Phiên đăng nhập Google đã hết hạn. Đăng nhập lại để lấy thư mới.")
     if r.status_code == 403:
+        reason = _error_reason(r)
+        log.warning("Gmail API 403: %s", reason)
+        if any(k in reason for k in ("SERVICE_DISABLED", "accessNotConfigured", "has not been used")):
+            raise GmailError("Gmail API chưa được bật cho app này. Người cài app vào Google Cloud → "
+                             "APIs & Services → Library → Gmail API → Enable, đợi 1–2 phút rồi thử lại.")
         raise GmailError("Tài khoản chưa cho phép app đọc Gmail. Đăng xuất, đăng nhập lại và tích "
                          "ô cho phép xem email.")
     if r.status_code >= 400:

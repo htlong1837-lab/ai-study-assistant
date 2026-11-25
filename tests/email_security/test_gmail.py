@@ -55,3 +55,18 @@ def test_no_token():
 
 def test_empty_inbox():
     assert gmail.fetch_recent("tok", http=FakeHttp(lambda u, p: Resp(200, {}))) == []
+
+
+def test_403_gmail_api_disabled_is_explained():
+    body = {"error": {"code": 403, "status": "PERMISSION_DENIED",
+                      "message": "Gmail API has not been used in project 123 before or it is disabled.",
+                      "details": [{"reason": "SERVICE_DISABLED"}]}}
+    with pytest.raises(gmail.GmailError, match="Gmail API chưa được bật"):
+        gmail.fetch_recent("tok", http=FakeHttp(lambda u, p: Resp(403, body)))
+
+
+def test_403_missing_scope_asks_to_tick_box():
+    body = {"error": {"status": "PERMISSION_DENIED", "message": "Request had insufficient authentication scopes.",
+                      "details": [{"reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}
+    with pytest.raises(gmail.GmailError, match="tích"):
+        gmail.fetch_recent("tok", http=FakeHttp(lambda u, p: Resp(403, body)))
