@@ -87,6 +87,19 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 .nh-brand b {font-size: 20px; color: #2B2D42; letter-spacing: -0.02em;}
 .nh-brand small {display: block; color: #8D99AE; font-size: 11px; margin-top: -2px;}
 
+/* Thẻ đăng nhập Google ở trang Hộp thư */
+.st-key-google_card {align-items: center; text-align: center; padding: 26px 18px !important;}
+.nh-login {display: flex; flex-direction: column; align-items: center; gap: 8px;}
+.nh-login .i {width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; font-size: 30px;
+  background: linear-gradient(135deg, #FDECE7, #E3F6F8); box-shadow: 0 8px 20px rgba(0,175,185,.15);}
+.nh-login b {font-size: 19px; color: #2B2D42;}
+.st-key-google_login button {background: #fff !important; color: #2B2D42 !important;
+  border: 1.5px solid #DADCE0 !important; border-radius: 999px !important; padding: 10px 26px !important;
+  font-weight: 600 !important; min-width: 260px; box-shadow: 0 2px 6px rgba(60,64,67,.12) !important;}
+.st-key-google_login button:hover {border-color: #4285F4 !important; box-shadow: 0 6px 16px rgba(66,133,244,.22) !important;}
+.st-key-google_login [data-testid="stIconMaterial"] {color: #4285F4;}
+.st-key-google_card [data-testid="stCaptionContainer"] {text-align: center;}
+
 /* Ẩn khoảng trống của các khối st.html chỉ chứa CSS/JS */
 [data-testid="stElementContainer"]:has(> [data-testid="stHtml"] > style:only-child),
 [data-testid="stElementContainer"]:has(.nh-invisible) {display: none;}

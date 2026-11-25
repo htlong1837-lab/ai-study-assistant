@@ -97,12 +97,10 @@ def test_inbox_page_connects_and_scans(monkeypatch):
     assert not at.exception
     at.text_input[0].input("sv@gmail.com")
     at.text_input[1].input("abcd efgh ijkl mnop")
-    at.button[0].click().run()
+    next(b for b in at.button if b.label == "Kết nối").click().run()
     assert not at.exception, at.exception
     assert seen["address"] == "sv@gmail.com" and seen["days"] == 14
     assert len(at.session_state["processed_list"]) == len(demo)
-    assert at.session_state["mailbox"]["address"] == "sv@gmail.com"
-    assert any(b.label == "🔄 Lấy thư mới" for b in at.button)
 
 
 def test_inbox_page_shows_login_error(monkeypatch):
@@ -112,7 +110,14 @@ def test_inbox_page_shows_login_error(monkeypatch):
     at = _inbox_app(monkeypatch, fake_fetch)
     at.text_input[0].input("sv@gmail.com")
     at.text_input[1].input("sai")
-    at.button[0].click().run()
+    next(b for b in at.button if b.label == "Kết nối").click().run()
     assert not at.exception
     assert any("Đăng nhập không thành công" in e.value for e in at.error)
-    assert "mailbox" not in at.session_state
+
+
+def test_google_button_explains_missing_setup(monkeypatch):
+    at = _inbox_app(monkeypatch, lambda *a, **k: [])
+    assert not at.exception
+    at.button(key="google_login").click().run()
+    assert not at.exception, at.exception
+    assert any("docs/dang-nhap-google.md" in e.value for e in at.error)

@@ -48,3 +48,6 @@ benchmarks/qa/results/
 data/models/
 # Tiến độ khối học (sinh khi dùng app)
 data/progress.json
+
+# Khóa đăng nhập Google, không commit
+.streamlit/secrets.toml

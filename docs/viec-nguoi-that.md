@@ -26,6 +26,9 @@ Mỗi mục đã có sẵn tư liệu để làm nhanh.*
 3. **Đọc lại và sửa bằng lời mình:** SP1, SP2 mục 4–7 (nháp của Claude, đã đánh dấu trong file).
 4. **Tổng duyệt demo** theo `docs/demo-kich-ban.md` (cần `GEMINI_API_KEY`), ít nhất 1 lần trên máy khác
    cài từ đầu theo README; ghi kết quả vào SP2 mục 6.3.
+- **Khóa "Đăng nhập bằng Google"** cho trang Hộp thư: một người tạo trên Google Cloud theo
+  `docs/dang-nhap-google.md`, thêm Gmail của cả nhóm (và người chấm nếu cần) vào danh sách người dùng
+  thử, rồi đăng nhập thử một lần trên máy demo. Chưa ai thử luồng này với tài khoản thật.
 
 ## Long
 

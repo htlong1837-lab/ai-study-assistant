@@ -8,6 +8,7 @@ from core import mocks
 from core.contracts import SafetyStatus
 from modules.email_security import approve_suspicious, process_email
 from modules.email_security.handoff import publish_to_modules
+from modules.email_security import gmail
 from modules.email_security.mailbox import MailboxError, fetch_recent
 from views._shared import llm_status, module_header
 
@@ -63,54 +64,93 @@ def _ingest(raws: list[bytes]) -> None:
     st.rerun()
 
 
-def _sync(address: str, password: str, host: str, days: int) -> None:
-    """Lấy thư mới từ hộp thư thật rồi đưa qua đúng đường quét như file .eml."""
-    with st.spinner(f"Đang lấy thư của {address}…"):
+GMAIL_DAYS = 14
+
+
+def _google_configured() -> bool:
+    """App đã có khóa "Đăng nhập bằng Google" trong .streamlit/secrets.toml chưa."""
+    try:
+        auth = st.secrets.get("auth")
+    except Exception:  # noqa: BLE001 — chưa có file secrets
+        return False
+    return bool(auth) and "google" in auth
+
+
+def _google_user():
+    """``st.user`` nếu đang đăng nhập Google, ngược lại ``None``."""
+    try:
+        return st.user if st.user.is_logged_in else None
+    except Exception:  # noqa: BLE001 — chưa cấu hình đăng nhập
+        return None
+
+
+def _sync_google(user) -> None:
+    token = (getattr(user, "tokens", None) or {}).get("access", "")
+    with st.spinner("Đang lấy thư Gmail…"):
         try:
-            raws = fetch_recent(address, password, host=host or None, days=days)
-        except MailboxError as exc:
-            st.session_state.pop("mailbox", None)
+            raws = gmail.fetch_recent(token, days=GMAIL_DAYS)
+        except gmail.GmailError as exc:
             st.session_state["mailbox_error"] = str(exc)
+            st.session_state["gmail_synced"] = True
             st.rerun()
-    st.session_state["mailbox"] = {"address": address, "password": password, "host": host, "days": days}
+    st.session_state["gmail_synced"] = True
     if raws:
         _ingest(raws)
-    st.session_state["flash"] = f"Không có thư nào trong {days} ngày gần đây."
+    st.session_state["flash"] = f"Không có thư nào trong {GMAIL_DAYS} ngày gần đây."
     st.rerun()
 
 
-# ---- Kết nối hộp thư (lối chính) ----
-box = st.session_state.get("mailbox")
+def _sync_imap(address: str, password: str, host: str) -> None:
+    with st.spinner(f"Đang lấy thư của {address}…"):
+        try:
+            raws = fetch_recent(address, password, host=host or None, days=GMAIL_DAYS)
+        except MailboxError as exc:
+            st.session_state["mailbox_error"] = str(exc)
+            st.rerun()
+    if raws:
+        _ingest(raws)
+    st.session_state["flash"] = f"Không có thư nào trong {GMAIL_DAYS} ngày gần đây."
+    st.rerun()
+
+
+# ---- Đăng nhập bằng Google (lối chính) ----
 if "mailbox_error" in st.session_state:
     st.error(st.session_state.pop("mailbox_error"), icon="🔐")
-if box:
+user = _google_user()
+if user is not None:
+    if not st.session_state.get("gmail_synced"):  # vừa đăng nhập: tự lấy thư luôn
+        _sync_google(user)
     c_who, c_sync, c_out = st.columns([3, 1, 1], vertical_alignment="center")
-    c_who.html(f'<div class="nh-chip" style="margin:0">📬 Đã kết nối <b>&nbsp;{escape(box["address"])}</b>'
-               f'&nbsp;· {box["days"]} ngày gần đây</div>')
+    c_who.html(f'<div class="nh-chip" style="margin:0">📬 <b>{escape(str(user.get("email", "")))}</b>'
+               f'&nbsp;· {GMAIL_DAYS} ngày gần đây</div>')
     if c_sync.button("🔄 Lấy thư mới", type="primary", width="stretch"):
-        _sync(box["address"], box["password"], box["host"], box["days"])
-    if c_out.button("Ngắt kết nối", width="stretch"):
-        st.session_state.pop("mailbox", None)
-        st.rerun()
+        _sync_google(user)
+    if c_out.button("Đăng xuất", width="stretch"):
+        st.session_state.pop("gmail_synced", None)
+        st.logout()
 else:
-    with st.container(border=True):
-        st.markdown("#### 📬 Kết nối hộp thư")
-        with st.form("mailbox_login", border=False):
-            c_mail, c_pw = st.columns(2)
-            address = c_mail.text_input("Email", placeholder="ban@gmail.com")
-            password = c_pw.text_input("Mật khẩu ứng dụng", type="password", placeholder="xxxx xxxx xxxx xxxx")
-            c_days, c_host = st.columns(2)
-            days = c_days.selectbox("Lấy thư trong", [3, 7, 14, 30], index=2,
-                                    format_func=lambda d: f"{d} ngày gần đây")
-            host = c_host.text_input("Máy chủ IMAP", placeholder="tự nhận với Gmail, Yahoo, iCloud",
-                                     help="Email trường chạy trên Gmail thì điền imap.gmail.com.")
-            go = st.form_submit_button("Kết nối", type="primary")
-        st.caption("Chỉ đọc thư, không đánh dấu đã đọc, không lưu mật khẩu. Gmail: bật xác minh 2 bước rồi "
-                   "[tạo mật khẩu ứng dụng](https://myaccount.google.com/apppasswords).")
-        if go:
-            _sync(address, password, host, days)
+    with st.container(border=True, key="google_card"):
+        st.html('<div class="nh-login"><div class="i">📬</div><b>Kết nối Gmail</b></div>')
+        if st.button("Đăng nhập bằng Google", key="google_login", icon=":material/login:"):
+            if _google_configured():
+                st.session_state.pop("gmail_synced", None)
+                st.login("google")
+            else:
+                st.session_state["mailbox_error"] = (
+                    "App chưa được bật đăng nhập Google. Người cài app làm một lần theo "
+                    "docs/dang-nhap-google.md.")
+                st.rerun()
+        st.caption("Nhịp chỉ đọc thư và không bao giờ thấy mật khẩu của bạn.")
 
-with st.expander("Nhập file .eml hoặc dùng email mẫu"):
+with st.expander("Cách khác: email Yahoo/iCloud, file .eml, email mẫu"):
+    with st.form("mailbox_login", border=False):
+        c_mail, c_pw, c_host = st.columns([2, 2, 1.4])
+        address = c_mail.text_input("Email", placeholder="ban@yahoo.com")
+        password = c_pw.text_input("Mật khẩu ứng dụng", type="password")
+        host = c_host.text_input("Máy chủ IMAP", placeholder="tự nhận")
+        if st.form_submit_button("Kết nối"):
+            _sync_imap(address, password, host)
+    st.divider()
     c_up, c_demo = st.columns([3, 1], vertical_alignment="bottom")
     uploaded_files = c_up.file_uploader("File .eml", type=["eml"], accept_multiple_files=True)
     demo_files = sorted(DEMO_DIR.glob("*.eml"))
