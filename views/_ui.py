@@ -70,7 +70,16 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 [data-testid="stSidebarHeader"] {order: 0;}
 [data-testid="stSidebarUserContent"] {order: 1; padding-top: 0 !important; padding-bottom: 4px !important;}
 [data-testid="stSidebarNav"] {order: 2;}
-[data-testid="stSidebarNav"] a {border-radius: 12px; transition: background .2s ease;}
+[data-testid="stSidebarNavItems"] {padding-top: 6px; gap: 4px; display: flex; flex-direction: column;}
+[data-testid="stSidebarNavLink"] {border-radius: 14px; padding: 10px 12px !important; min-height: 46px;
+  transition: background .2s ease, transform .2s ease, box-shadow .2s ease;}
+[data-testid="stSidebarNavLink"] p {font-size: 15px; font-weight: 600; color: #4A4E69;}
+[data-testid="stSidebarNavLink"] [data-testid="stIconMaterial"] {font-size: 22px; color: #8D99AE;}
+[data-testid="stSidebarNavLink"]:hover {background: rgba(240,113,103,.10); transform: translateX(2px);}
+[data-testid="stSidebarNavLink"][aria-current="page"] {background: linear-gradient(135deg, #F07167, #F49CBB);
+  box-shadow: 0 6px 16px rgba(240,113,103,.32);}
+[data-testid="stSidebarNavLink"][aria-current="page"] p,
+[data-testid="stSidebarNavLink"][aria-current="page"] [data-testid="stIconMaterial"] {color: #fff !important;}
 .nh-brand {display: flex; gap: 10px; align-items: center; padding: 4px 6px 10px;}
 .nh-brand .logo {width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
   font-size: 20px; color: #fff; background: linear-gradient(135deg, #F07167, #F49CBB);
@@ -88,9 +97,9 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
   background: radial-gradient(120% 140% at 0% 0%, #FFE3DC 0%, #FFF4EC 45%, #EAF6FF 100%);
   box-shadow: 0 10px 30px rgba(240,113,103,.12);}
 .nh-hero h1 {margin: 0; font-size: 34px;}
-.nh-hero p {margin: 6px 0 0; color: #5C677D; font-size: 15px;}
+.nh-chips {display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;}
 .nh-chip {display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
-  font-size: 12.5px; font-weight: 600; background: #fff; color: #5C677D; margin: 10px 6px 0 0;
+  font-size: 12.5px; font-weight: 600; background: #fff; color: #5C677D;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);}
 /* Vòng tiến độ vẽ bằng CSS (bộ lọc của st.html xoá thẻ SVG) */
 .nh-ring {position: relative; width: 112px; height: 112px; flex: none; border-radius: 50%;
@@ -166,8 +175,7 @@ def apply() -> None:
     """CSS chung + thương hiệu ở thanh bên. Gọi một lần mỗi lần chạy, trước khi chạy trang."""
     st.html(GLOBAL_CSS)
     st.sidebar.html(
-        f'<div class="nh-brand"><div class="logo">✦</div><div><b>{BRAND}</b>'
-        '<small>Trợ lý AI học tập &amp; lịch trình</small></div></div>')
+        f'<div class="nh-brand"><div class="logo">✦</div><div><b>{BRAND}</b></div></div>')
 
 
 def page_header(icon: str, title: str, color: str) -> None:

@@ -30,12 +30,12 @@ def test_app_entry_runs():
     assert not at.exception, at.exception
     bodies = [e.proto.body for e in at.get("html")]
     assert any("nh-hero" in b for b in bodies)  # trang chủ dựng bảng "Hôm nay"
-    assert any("Trợ lý AI học tập" in b for b in bodies)  # thương hiệu ở thanh bên
+    assert any("nh-brand" in b for b in bodies)  # thương hiệu ở thanh bên
 
 
-def test_home_warns_ai_off():
+def test_home_runs_without_ai():
     at = AppTest.from_file(str(ROOT / "views" / "home.py"), default_timeout=30).run()
-    assert any("đang tắt" in w.value for w in at.warning)
+    assert not at.exception, at.exception
 
 
 def test_scheduler_runs_both_algorithms():

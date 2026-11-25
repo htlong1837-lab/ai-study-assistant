@@ -16,7 +16,6 @@ from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from views import _planner, _timeline, _ui
-from views._shared import llm_status
 
 _ui.intro()
 now = datetime.now()
@@ -31,12 +30,10 @@ run = st.session_state.get("sched")
 if run and isinstance(run.get("settings"), ScheduleSettings):
     result = next(iter(run["results"].values()))
     sessions, settings = run["sessions"], run["settings"]
-    plan_note = "Theo lịch bạn đã xếp."
 else:
     sessions, _err = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
     settings = ScheduleSettings(start=today, days=7, not_before=now)
     result = schedule(tasks, sessions, settings, "EDF")
-    plan_note = "Gợi ý nhanh theo thời khoá biểu mẫu. Mở Lập lịch để xếp tối ưu hơn."
 
 week_start = today - timedelta(days=today.weekday())
 week_blocks = [b for b in result.blocks if week_start <= b.start.date() < week_start + timedelta(days=7)]
@@ -50,19 +47,17 @@ date_vn = f"{WEEKDAY_VN[today.weekday()]}, {today:%d/%m/%Y}"
 chips = [f"📅 {date_vn}", f"📌 {len(due_week)} hạn trong 7 ngày",
          f"📖 {sum(b.hours for b in today_blocks):g} giờ tự học hôm nay"]
 st.html(
-    f'<div class="nh-hero"><div><h1>{_ui.greeting(now)} 👋</h1>'
-    '<p>Email, đề bài và lịch học của bạn — gom lại thành một nhịp học đều đặn. '
-    '<b>AI chỉ đề xuất</b>, bạn là người quyết định.</p>'
-    + "".join(f'<span class="nh-chip">{c}</span>' for c in chips)
-    + f"</div>{_ui.ring(done_week, len(week_blocks), 'tuần này')}</div>")
+    f'<div class="nh-hero"><div><h1>{_ui.greeting(now)}</h1>'
+    '<div class="nh-chips">' + "".join(f'<span class="nh-chip">{c}</span>' for c in chips)
+    + f"</div></div>{_ui.ring(done_week, len(week_blocks), 'tuần này')}</div>")
 
 st.write("")
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("Nhiệm vụ đang theo", sum(t.status is TaskStatus.CONFIRMED for t in tasks))
-k2.metric("Chờ bạn xác nhận", sum(t.status is TaskStatus.PROPOSED for t in tasks))
-k3.metric("Khối học tuần này", len(week_blocks), f"{done_week} đã xong" if done_week else None)
+k1.metric("Đang theo", sum(t.status is TaskStatus.CONFIRMED for t in tasks))
+k2.metric("Chờ duyệt", sum(t.status is TaskStatus.PROPOSED for t in tasks))
+k3.metric("Khối học tuần", len(week_blocks), f"{done_week} đã xong" if done_week else None)
 processed = st.session_state.get("processed_list") or []
-k4.metric("Email đã chặn", sum(not p.can_forward for p in processed) if processed else "—",
+k4.metric("Email chặn", sum(not p.can_forward for p in processed) if processed else "—",
           help="Đếm trong phiên này, sau khi bạn tải email ở trang Email & bảo mật.")
 
 # ---------------------------------------------------------------- Hôm nay + sắp đến hạn
@@ -70,7 +65,6 @@ left, right = st.columns([3, 2], gap="large")
 with left:
     with st.container(border=True):
         st.markdown(f"#### 🗓️ Hôm nay · {date_vn}")
-        st.caption(plan_note)
         items = _planner.day_items(today, result.blocks, tasks, sessions, settings, done, colors)
         st.html(_timeline.render(items, now))
         _ui.link("views/scheduler.py", "Mở lịch đầy đủ", "📅")
@@ -88,35 +82,5 @@ with right:
         st.html(_planner.upcoming_html(tasks, now, colors))
     with st.container(border=True):
         st.markdown("#### ✨ Thêm nhanh")
-        st.caption("Viết như nói chuyện — hệ thống tự đọc hạn nộp, số giờ, độ gấp.")
         _planner.quick_add(repo, sorted({s.course for s in sessions}), key="home")
 
-# ---------------------------------------------------------------- Lối vào các module
-st.markdown("#### Luồng xử lý")
-blurbs = {"D": "Quét link & tệp, chặn email độc", "B": "Đọc email, đề bài → nhiệm vụ có hạn",
-          "C": "Xếp khối tự học quanh thời khoá biểu", "A": "Hỏi tài liệu, trả lời kèm số trang"}
-for col, (code, name, icon, color, page) in zip(st.columns(4), _ui.MODULES):
-    with col:
-        st.html(f'<div class="nh-mod" style="--c:{color}"><div class="i">{icon}</div>'
-                f'<b>{name}</b><span>{blurbs[code]}</span></div>')
-        _ui.link(page, "Mở trang →")
-
-with st.expander("Nhịp hoạt động thế nào?"):
-    llm_status()
-    st.graphviz_chart(
-        """
-        digraph {
-          rankdir=LR; bgcolor="transparent"; node [shape=box, style="rounded,filled",
-          fillcolor="#FFF4EC", color="#F3D9D2", fontname="Helvetica"];
-          mail [label="Email (.eml)"];
-          D [label="Email & bảo mật\\nphân loại, quét link/file"];
-          block [label="Chặn\\n(độc)", shape=octagon, fillcolor="#FFE3E3"];
-          A [label="Hỏi đáp tài liệu\\nđọc PDF theo trang"];
-          B [label="Trích xuất bài tập\\nhạn nộp, yêu cầu"];
-          ok [label="Bạn xác nhận", shape=diamond];
-          C [label="Lập lịch & nhắc nhở\\nquanh thời khoá biểu"];
-          mail -> D; D -> block [style=dashed]; D -> B; D -> A [label="file an toàn"];
-          A -> B [label="văn bản"]; B -> ok; ok -> C;
-        }
-        """
-    )
