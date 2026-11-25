@@ -1,4 +1,6 @@
 """Thành phần giao diện dùng chung giữa các trang."""
+from html import escape
+
 import streamlit as st
 
 from core.llm_client import get_client
@@ -11,17 +13,17 @@ def llm_status() -> bool:
     if reason:
         st.warning(f"Chức năng AI đang tắt. {reason}", icon="⚠️")
         return False
-    st.success(f"LLM sẵn sàng: {client.provider} / {client.model}", icon="✅")
+    st.success(f"AI sẵn sàng · {client.model}", icon="✅")
     return True
 
 
 OWNER_COLOR = {"A": "#4D96FF", "B": "#FFB84C", "C": "#F07167", "D": "#00AFB9"}
 
 
-def module_header(title: str, owner: str, inputs: str, outputs: str) -> None:
-    """Tiêu đề trang: biểu tượng trong ô màu theo module, dòng phụ ghi đầu vào → đầu ra."""
+def module_header(title: str, subtitle: str, code: str) -> None:
+    """Tiêu đề trang: biểu tượng trong ô màu theo module (``code`` A–D chỉ để chọn màu), dòng phụ
+    mô tả trang cho người dùng."""
     icon, _, name = title.partition(" ")
-    code = owner.strip()[-2:-1] if owner.strip().endswith(")") else ""
     color = OWNER_COLOR.get(code, "#F07167")
     st.html(f'<div class="nh-head"><div class="ic" style="background:{color}22">{icon}</div>'
-            f'<div><h1>{name}</h1><p>Phụ trách: {owner} · {inputs} → {outputs}</p></div></div>')
+            f'<div><h1>{escape(name)}</h1><p>{escape(subtitle)}</p></div></div>')

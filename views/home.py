@@ -31,12 +31,12 @@ run = st.session_state.get("sched")
 if run and isinstance(run.get("settings"), ScheduleSettings):
     result = next(iter(run["results"].values()))
     sessions, settings = run["sessions"], run["settings"]
-    plan_note = f"Theo lịch bạn đã xếp ({result.algorithm})."
+    plan_note = "Theo lịch bạn đã xếp."
 else:
     sessions, _err = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
     settings = ScheduleSettings(start=today, days=7, not_before=now)
     result = schedule(tasks, sessions, settings, "EDF")
-    plan_note = "Gợi ý nhanh (EDF, thời khoá biểu mẫu). Mở Lập lịch để tối ưu bằng CP-SAT."
+    plan_note = "Gợi ý nhanh theo thời khoá biểu mẫu. Mở Lập lịch để xếp tối ưu hơn."
 
 week_start = today - timedelta(days=today.weekday())
 week_blocks = [b for b in result.blocks if week_start <= b.start.date() < week_start + timedelta(days=7)]
@@ -101,7 +101,7 @@ for col, (code, name, icon, color, page) in zip(st.columns(4), _ui.MODULES):
                 f'<b>{name}</b><span>{blurbs[code]}</span></div>')
         _ui.link(page, "Mở trang →")
 
-with st.expander("Trạng thái hệ thống & sơ đồ kỹ thuật"):
+with st.expander("Nhịp hoạt động thế nào?"):
     llm_status()
     st.graphviz_chart(
         """
@@ -109,12 +109,12 @@ with st.expander("Trạng thái hệ thống & sơ đồ kỹ thuật"):
           rankdir=LR; bgcolor="transparent"; node [shape=box, style="rounded,filled",
           fillcolor="#FFF4EC", color="#F3D9D2", fontname="Helvetica"];
           mail [label="Email (.eml)"];
-          D [label="D · Email & bảo mật\\nphân loại, quét link/file"];
+          D [label="Email & bảo mật\\nphân loại, quét link/file"];
           block [label="Chặn\\n(độc)", shape=octagon, fillcolor="#FFE3E3"];
-          A [label="A · Hỏi đáp tài liệu\\nđọc PDF theo trang"];
-          B [label="B · Trích xuất bài tập\\nhạn nộp, yêu cầu"];
+          A [label="Hỏi đáp tài liệu\\nđọc PDF theo trang"];
+          B [label="Trích xuất bài tập\\nhạn nộp, yêu cầu"];
           ok [label="Bạn xác nhận", shape=diamond];
-          C [label="C · Lập lịch & nhắc nhở\\nEDF / CP-SAT"];
+          C [label="Lập lịch & nhắc nhở\\nquanh thời khoá biểu"];
           mail -> D; D -> block [style=dashed]; D -> B; D -> A [label="file an toàn"];
           A -> B [label="văn bản"]; B -> ok; ok -> C;
         }

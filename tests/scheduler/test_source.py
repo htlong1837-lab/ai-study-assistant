@@ -68,4 +68,4 @@ def test_scheduler_page_uses_b_tasks(tmp_path, monkeypatch):
     page = Path(__file__).resolve().parents[2] / "views" / "scheduler.py"
     at = AppTest.from_file(str(page), default_timeout=60).run()
     assert not at.exception
-    assert any("Nguồn: 1 nhiệm vụ module B đã lưu (1 đã xác nhận" in c.value for c in at.caption)
+    assert any("Nguồn: 1 nhiệm vụ từ trang Trích xuất (1 đã xác nhận" in c.value for c in at.caption)

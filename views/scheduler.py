@@ -22,9 +22,9 @@ from modules.scheduler.progress import ProgressStore, block_key
 from views import _planner, _timeline, _ui
 from views._shared import module_header
 
-module_header("📅 Lập lịch & nhắc nhở", "Long (C)",
-              "Task đã xác nhận (từ B), thời khoá biểu CSV",
-              "Khối học, nhắc nhở Telegram, file .ics")
+module_header("📅 Lập lịch & nhắc nhở",
+              "Xếp giờ tự học quanh thời khoá biểu, nhắc bạn trước hạn và xuất sang lịch điện thoại.",
+              "C")
 
 # ---------------------------------------------------------------- 1. Nhiệm vụ
 st.subheader("1. Nhiệm vụ")
@@ -32,12 +32,12 @@ b_tasks, b_skipped = tasks_from_b(Repository(DB_PATH))
 if b_tasks:
     base_tasks = b_tasks
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
-               f"Nguồn: {len(b_tasks)} nhiệm vụ module B đã lưu "
+               f"Nguồn: {len(b_tasks)} nhiệm vụ từ trang Trích xuất "
                f"({sum(t.status is TaskStatus.CONFIRMED for t in b_tasks)} đã xác nhận).")
 else:
     base_tasks = mocks.tasks()
     st.caption("AI chỉ đề xuất: chỉ nhiệm vụ được tích **Xác nhận** mới được xếp vào lịch. "
-               "Module B chưa lưu nhiệm vụ nào, đang dùng dữ liệu mẫu.")
+               "Chưa có nhiệm vụ nào từ trang Trích xuất, đang dùng dữ liệu mẫu.")
 for s in b_skipped:
     st.warning(f"Không xếp được “{s.title}” ({s.task_id}): {s.reason}")
 _tt_courses, _ = load_timetable_csv(SAMPLE_DIR / "thoi_khoa_bieu.csv")
@@ -71,11 +71,14 @@ day_start, day_end = c3.slider("Khung giờ học", time(5), time(23, 59),
                                (time(7), time(22)), step=timedelta(minutes=30), format="HH:mm")
 max_h = c4.number_input("Giờ tối đa/ngày", 0.5, 12.0, 4.0, step=0.5)
 c1, c2 = st.columns([3, 1])
-mode = c1.radio("Thuật toán", ["So sánh cả hai", *ALGORITHMS], horizontal=True,
-                help="EDF: hạn gần nhất làm trước (baseline). CP-SAT: tối ưu ràng buộc (OR-Tools).")
+ALGO_LABEL = {"EDF": "Nhanh", "CP-SAT": "Tối ưu"}
+mode = c1.radio("Cách xếp", ["So sánh cả hai", *ALGORITHMS], horizontal=True,
+                format_func=lambda a: ALGO_LABEL.get(a, a),
+                help="Nhanh: việc có hạn gần nhất làm trước (EDF). "
+                     "Tối ưu: cân giờ học giữa các ngày, hạn chế học khuya (CP-SAT).")
 min_block = c2.selectbox("Khối học tối thiểu", [30, 60, 90, 120], index=1,
                          format_func=lambda m: f"{m} phút",
-                         help="CP-SAT không xếp khối ngắn hơn mức này (trừ việc cần ít giờ hơn).")
+                         help="Không chia nhỏ hơn mức này (trừ việc cần ít giờ hơn).")
 
 try:
     settings = ScheduleSettings(
@@ -106,9 +109,11 @@ r_titles = {t.id: t.title for t in r_tasks}
 # ---------------------------------------------------------------- 4. Kết quả
 st.subheader("4. Kết quả")
 st.dataframe(pd.DataFrame([evaluate(r, r_tasks, r_sessions, r_settings)
-                           for r in results.values()]).set_index("Thuật toán").T.astype(str),
+                           for r in results.values()]).set_index("Thuật toán").T.astype(str)
+             .rename(columns=lambda a: ALGO_LABEL.get(a, a)),
              width="stretch")
-shown = st.radio("Xem lịch của", list(results), horizontal=True) if len(results) > 1 \
+shown = st.radio("Xem lịch của", list(results), horizontal=True,
+                 format_func=lambda a: ALGO_LABEL.get(a, a)) if len(results) > 1 \
     else next(iter(results))
 result = results[shown]
 r_deadline = {t.id: t.deadline for t in r_tasks}
@@ -217,7 +222,7 @@ c1.download_button("Tải lịch (.ics)", to_ics(result.blocks, r_tasks, before_
                    help="Mở file để nhập vào Google Calendar, Outlook hoặc lịch điện thoại.")
 if c2.button("Lưu nhắc nhở cho lệnh gửi định kỳ"):
     save_reminders(reminders)
-    c2.success(f"Đã lưu {len(reminders)} nhắc nhở. Chạy `python -m modules.scheduler.notify`.")
+    c2.success(f"Đã lưu {len(reminders)} nhắc nhở. Nhắc nhở sẽ gửi qua Telegram khi dịch vụ nhắc đang chạy.")
 
 sender = TelegramSender.from_env()
 if sender is None:

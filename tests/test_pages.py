@@ -44,5 +44,5 @@ def test_scheduler_runs_both_algorithms():
     at.button(key="run").click().run()
     assert not at.exception, at.exception
     metrics = at.dataframe[1].value  # [0] là bảng xác nhận nhiệm vụ
-    assert list(metrics.columns) == ["EDF", "CP-SAT"]
+    assert list(metrics.columns) == ["Nhanh", "Tối ưu"]
     assert set(metrics.loc["Xung đột"]) == {"0"}

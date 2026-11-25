@@ -24,9 +24,8 @@ def get_safe_attachments() -> list:
 
 module_header(
     "🛡️ Email & bảo mật",
-    "Hoàng Minh (D)",
-    "File .eml",
-    "ClassifiedEmail (cho B), SafeAttachment (cho A)",
+    "Kiểm tra link và tệp đính kèm, chặn email lừa đảo trước khi chúng vào lịch của bạn.",
+    "D",
 )
 llm_status()
 
@@ -201,7 +200,7 @@ else:
 # ---- Nút duyệt theo trạng thái an toàn ----
 st.divider()
 if e.id in st.session_state["forwarded"]:
-    st.success("✅ Đã chuyển sang Module B/A.")
+    st.success("✅ Đã chuyển sang Trích xuất bài tập và Hỏi đáp tài liệu.")
 
 elif state is SafetyStatus.MALICIOUS:
     st.error("🔴 Email độc hại — đã chặn hoàn toàn, không thể chuyển tiếp.")
@@ -218,13 +217,13 @@ elif state is SafetyStatus.SUSPICIOUS:
             st.rerun()
     else:
         st.info("Bạn đã xác nhận email này.")
-        if st.button("➡️ Chuyển sang B/A", key=f"fwd_{e.id}", type="primary"):
+        if st.button("➡️ Chuyển tiếp", key=f"fwd_{e.id}", type="primary"):
             do_forward(selected_p)
             st.rerun()
 
 else:  # SAFE
     if selected_p.can_forward:
-        if st.button("✅ Duyệt & chuyển sang B/A", key=f"fwd_{e.id}", type="primary"):
+        if st.button("✅ Duyệt & chuyển tiếp", key=f"fwd_{e.id}", type="primary"):
             do_forward(selected_p)
             st.rerun()
     else:

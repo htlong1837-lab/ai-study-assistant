@@ -58,9 +58,8 @@ _seed_db_from_mocks_if_empty()
 
 module_header(
     "📝 Trích xuất bài tập",
-    "Duy (B)",
-    "ClassifiedEmail an toàn (từ D), ParsedDocument (từ A), Mocks",
-    "Task trạng thái đề xuất → người dùng xác nhận",
+    "Đọc email và đề bài, gợi ý nhiệm vụ kèm hạn nộp. Bạn duyệt trước khi chúng vào lịch.",
+    "B",
 )
 llm_ready = llm_status()
 if msg := st.session_state.pop("extract_flash", None):
@@ -69,12 +68,12 @@ intake = intake_from_d(st.session_state, mocks.emails, mocks.documents)
 
 # ---------------------------------------------------------------- 1. Cổng tiếp nhận Nguồn dữ liệu (Gate)
 st.subheader("1. Nguồn dữ liệu đầu vào (Email & Tài liệu)")
-st.caption("Cổng an toàn (Nguyên tắc II): Chỉ email an toàn mới được đưa vào phân tích. Email lừa đảo / độc hại bị chặn lập tức.")
+st.caption("🔒 Chỉ email đã qua kiểm tra an toàn mới được phân tích; email lừa đảo hoặc độc hại đã bị chặn từ trước.")
 
 c_email, c_doc = st.columns(2)
 
 with c_email:
-    st.markdown("##### 📧 Email từ Module D")
+    st.markdown("##### 📧 Email đã qua kiểm tra")
     if intake.from_d:
         st.caption(f"{len(intake.emails)} email đã duyệt ở trang Email & bảo mật.")
     else:
@@ -91,7 +90,7 @@ with c_email:
             st.error(f"**[CHẶN - ĐỘC HẠI] {e.subject}**  \n*Từ:* `{e.sender}` (Đã chặn trước khi vào LLM)")
 
 with c_doc:
-    st.markdown("##### 📄 Tài liệu từ Module A")
+    st.markdown("##### 📄 Tài liệu đính kèm")
     if intake.from_d and not intake.documents:
         st.caption("Email đã duyệt không có tệp đính kèm đọc được.")
     for doc in intake.documents:
@@ -141,7 +140,7 @@ conflicts = [c for c in repo.list_conflicts() if not c.get("resolution")]
 if conflicts:
     st.subheader("⚠️ Cảnh báo Mâu thuẫn giữa các Nguồn")
     for cf in conflicts:
-        with st.warning(f"Phát hiện mâu thuẫn về **{cf['kind']}** cho Task `{cf['task_id']}`!"):
+        with st.warning(f"Phát hiện mâu thuẫn về **{cf['kind']}** cho nhiệm vụ **{(repo.get_task(cf['task_id']) or {}).get('title', cf['task_id'])}**!"):
             st.write(f"- Nguồn A (`{cf.get('source_a')}`): **{cf.get('value_a')}**")
             st.write(f"- Nguồn B (`{cf.get('source_b')}`): **{cf.get('value_b')}**")
             if cf.get("suggestion"):
@@ -181,8 +180,8 @@ if proposals:
                 st.rerun()
 
 # ---------------------------------------------------------------- 4. Danh sách Đề xuất Chờ xác nhận (Proposed Tasks)
-st.subheader("2. Đề xuất bài tập chờ sinh viên phê duyệt (Proposed Tasks)")
-st.caption("Nguyên tắc I: AI chỉ đề xuất, người dùng quyết định. Chỉ bài tập được bấm **Xác nhận** mới được chuyển sang Module C lập lịch.")
+st.subheader("2. Chờ bạn duyệt")
+st.caption("AI chỉ gợi ý, bạn là người quyết định. Chỉ bài tập bạn bấm **Xác nhận** mới được đưa vào lịch học.")
 
 proposed_tasks = repo.list_tasks(status="proposed")
 
@@ -263,7 +262,7 @@ else:
                         st.stop()
                 try:
                     confirmed_task = workflow.confirm(tid, repo, overrides=overrides)
-                    st.success(f"Đã xác nhận bài tập '{confirmed_task.title}' vào lịch học (Module C)!")
+                    st.success(f"Đã xác nhận bài tập '{confirmed_task.title}' vào lịch học!")
                     st.rerun()
                 except Exception as ex:
                     st.error(f"Không thể xác nhận: {ex}")
@@ -274,7 +273,7 @@ else:
                 st.rerun()
 
 # ---------------------------------------------------------------- 5. Danh sách Task Đã Xác nhận (Confirmed)
-st.subheader("3. Bài tập đã xác nhận (Chuyển giao cho Module C)")
+st.subheader("3. Đã xác nhận")
 confirmed_tasks = repo.list_tasks(status="confirmed")
 if confirmed_tasks:
     st.dataframe([

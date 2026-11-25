@@ -56,12 +56,12 @@ def test_qa_page_offers_only_safe_attachment_handoff(monkeypatch, tmp_path):
     app.session_state["safe_attachments"] = {attachment.sha256: attachment}
     app.session_state["verified_documents"] = {attachment.sha256: document}
     app.run()
-    assert all("Từ Module D" in option for option in app.selectbox[0].options)
+    assert all("từ email" in option for option in app.selectbox[0].options)
     assert not app.file_uploader  # không cho tải thẳng, chỉ nhận tệp qua D
 
     assert not app.exception
     assert app.session_state["qa_document"].doc_id == document.doc_id
-    assert any("đã qua cổng Module D" in item.value for item in app.success)
+    assert any("đã qua kiểm tra an toàn" in item.value for item in app.success)
 
 
 def test_qa_page_rejects_attachment_changed_after_scan(monkeypatch, tmp_path):

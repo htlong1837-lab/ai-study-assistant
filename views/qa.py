@@ -59,7 +59,7 @@ def _safe_error(error: Exception) -> str:
 
 
 _ui.page_header("💬", "Đọc và hỏi đáp tài liệu",
-                "Mở tệp đính kèm đã qua Module D, đọc theo trang, bôi đen đoạn cần hỏi hoặc hỏi cả tài liệu.",
+                "Mở tệp đính kèm đã qua kiểm tra an toàn, đọc theo trang, bôi đen đoạn cần hỏi hoặc hỏi cả tài liệu.",
                 _ui.BLUE)
 key_input = st.text_input(
     "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
@@ -82,17 +82,17 @@ if api_key:
 # ---------------------------------------------------------------------------
 verified_documents = verified_document_batches(st.session_state)
 options = {
-    f"Từ Module D · {_display_name(parsed.filename)} · {attachment.sha256[:10]}": (attachment, parsed)
+    f"📎 {_display_name(parsed.filename)} · từ email": (attachment, parsed)
     for attachment, parsed in verified_documents
 }
 
 if options:
     st.info(
-        f"📎 Có {len(options)} tệp đính kèm đã qua kiểm tra an toàn từ Module D. "
+        f"📎 Có {len(options)} tệp đính kèm đã qua kiểm tra an toàn từ email. "
         "Chọn tệp để đọc và hỏi đáp.",
         icon="🛡️",
     )
-    choice = st.selectbox("Tài liệu từ Module D", list(options), key="qa_attachment_picker")
+    choice = st.selectbox("Tài liệu", list(options), key="qa_attachment_picker")
     attachment, parsed_document = options[choice]
     selected_hash = f"module-d:{attachment.sha256}"
     if st.session_state.get("qa_document_hash") != selected_hash:
@@ -112,7 +112,7 @@ if options:
         except Exception as exc:
             st.error(f"Không thể mở tệp đính kèm: {_safe_error(exc)}")
     if st.session_state.get("qa_document_hash") == selected_hash:
-        st.success(f"Tài liệu {_display_name(parsed_document.filename)} đã qua cổng Module D.")
+        st.success(f"Tài liệu {_display_name(parsed_document.filename)} đã qua kiểm tra an toàn.")
 else:
     # Không tái sử dụng tài liệu cũ khi D chưa chuyển tệp nào.
     for state_key in (
@@ -128,7 +128,7 @@ else:
 
 document = st.session_state.get("qa_document")
 if document is None:
-    st.info("Chuyển file đính kèm đã qua kiểm tra ở Module D sang đây để bắt đầu đọc.")
+    st.info("Vào trang Email & bảo mật, chuyển tiếp email có tệp đính kèm để bắt đầu đọc ở đây.")
     st.stop()
 
 empty_pages = sum(len(p.text.strip()) < 20 for p in document.pages)
