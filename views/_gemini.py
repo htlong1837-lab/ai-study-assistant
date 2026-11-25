@@ -1,6 +1,8 @@
 """Khóa Gemini của người dùng: hướng dẫn lấy khóa và ô nhập khóa (chỉ giữ trong phiên)."""
 from __future__ import annotations
 
+import re
+
 import streamlit as st
 
 from core import config
@@ -41,34 +43,48 @@ def saved_key(ws) -> str:
     return str((ws.read_state("gemini", {}) or {}).get("key", "") or "")
 
 
-def remember_box(ws, value: str, key: str) -> None:
-    """Ô tích để nhớ khóa theo tài khoản (lưu trong dữ liệu riêng của tài khoản, có sao lưu Drive)."""
-    if ws is None or ws.is_guest or not value:
+def looks_like_key(value: str) -> bool:
+    return bool(re.fullmatch(r"AIza[0-9A-Za-z_-]{20,}", value.strip()))
+
+
+def key_controls(ws, typed: str, prefix: str) -> None:
+    """Nút lưu khóa ngay dưới ô nhập, hoặc trạng thái "đã lưu" kèm nút quên khóa."""
+    saved = saved_key(ws)
+    if ws is None or ws.is_guest:
+        if typed:
+            st.caption("🔒 Đăng nhập Google (nút ở cuối thanh bên) để lưu khóa cho lần sau. "
+                       "Hiện khóa chỉ dùng trong phiên này.")
         return
-    if st.checkbox("Nhớ khóa cho tài khoản này", key=key, value=saved_key(ws) == value,
-                   help="Lưu khóa trong dữ liệu riêng của tài khoản (và bản sao lưu trong Google Drive "
-                        "của bạn) để lần sau không phải nhập lại. Bỏ tích để quên khóa."):
-        if saved_key(ws) != value:
-            ws.write_state("gemini", {"key": value})
-    elif saved_key(ws) == value:
-        ws.clear_state("gemini")
-
-
-def key_input(session_key: str, label: str = "Gemini API key (chỉ lưu trong phiên)", ws=None) -> str:
-    """Khóa để dùng: khóa người cài app đặt sẵn hoặc khóa đã nhớ của tài khoản; không có thì ô nhập kèm
-    hướng dẫn lấy khóa."""
-    preset = configured_key() or saved_key(ws)
-    if preset:
-        if saved_key(ws) and not configured_key():
-            c_note, c_forget = st.columns([3, 1], vertical_alignment="center")
-            c_note.caption("🔑 Đang dùng khóa Gemini đã nhớ cho tài khoản của bạn.")
-            if c_forget.button("Quên khóa", key=f"{session_key}_forget"):
-                ws.clear_state("gemini")
+    if typed and typed != saved:
+        c_btn, c_note = st.columns([1, 3], vertical_alignment="center")
+        if c_btn.button("💾 Lưu khóa", type="primary", key=f"{prefix}_save_key", width="stretch"):
+            if looks_like_key(typed):
+                ws.write_state("gemini", {"key": typed.strip()})
+                st.toast("Đã lưu khóa Gemini cho tài khoản của bạn.", icon="🔑")
                 st.rerun()
+            else:
+                st.error("Khóa này không giống khóa Gemini (thường bắt đầu bằng AIza…). Kiểm tra lại rồi lưu.")
+        c_note.caption("Lưu vào tài khoản của bạn để lần sau, ở mọi trang, không phải nhập lại.")
+    elif saved:
+        c_note, c_btn = st.columns([3, 1], vertical_alignment="center")
+        c_note.caption("✅ Đã lưu khóa Gemini cho tài khoản này · dùng cho Hỏi đáp và đọc ảnh thời khoá biểu.")
+        if c_btn.button("Quên khóa", key=f"{prefix}_forget_key", width="stretch"):
+            ws.clear_state("gemini")
+            for k in ("qa_api_key", "qa_api_key_input"):
+                st.session_state.pop(k, None)
+            st.rerun()
+
+
+def key_input(session_key: str, label: str = "Gemini API key", ws=None) -> str:
+    """Khóa để dùng: khóa người cài app đặt sẵn, khóa đã lưu của tài khoản, hoặc khóa vừa nhập."""
+    preset = configured_key()
+    if preset:
         return preset
-    value = st.text_input(label, type="password", key=session_key, placeholder="AIza…").strip()
-    if value:
-        remember_box(ws, value, key=f"{session_key}_remember")
-    else:
+    saved = saved_key(ws)
+    typed = st.text_input(label, type="password", key=session_key,
+                          placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if saved else "AIza…").strip()
+    key_controls(ws, typed, session_key)
+    value = typed or saved
+    if not value:
         how_to_get_key()
     return value

@@ -73,7 +73,8 @@ def _save_threads() -> None:
 
 _save_threads()  # lưu kết quả của lần chạy trước (kể cả khi lần đó kết thúc bằng st.rerun)
 key_input = st.text_input(
-    "Gemini API key (chỉ lưu trong phiên)", type="password", key="qa_api_key_input"
+    "Gemini API key", type="password", key="qa_api_key_input",
+    placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if _gemini.saved_key(ws) else "AIza…",
 )
 if key_input:
     st.session_state["qa_api_key"] = key_input
@@ -83,10 +84,10 @@ elif "qa_api_key" not in st.session_state and not st.session_state.get(
 ):
     st.session_state["qa_api_key"] = _configured_key()
 api_key = st.session_state.get("qa_api_key", "")
+_gemini.key_controls(ws, key_input, "qa")
 if api_key:
-    st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
-    if key_input:
-        _gemini.remember_box(ws, key_input, key="qa_remember_key")
+    if not _gemini.saved_key(ws) or key_input:
+        st.button("Xóa API key khỏi phiên", key="qa_clear_api_key", on_click=_clear_key)
 else:
     _gemini.how_to_get_key()
 
