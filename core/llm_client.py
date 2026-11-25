@@ -226,6 +226,6 @@ def get_client() -> LLMClient:
     provider = config.env("LLM_PROVIDER", "gemini").lower()
     return LLMClient(
         provider=provider,
-        model=config.env("LLM_MODEL", "gemini-2.5-flash"),
+        model=config.env("LLM_MODEL", "gemini-3.5-flash"),
         api_key=config.env(f"{provider.upper()}_API_KEY"),
     )

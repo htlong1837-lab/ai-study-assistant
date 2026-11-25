@@ -48,7 +48,7 @@ def mime_of(filename: str) -> str | None:
     return MIME.get(Path(filename).suffix.lower())
 
 
-def gemini_generate(api_key: str, model: str = "gemini-2.5-flash") -> Generate:
+def gemini_generate(api_key: str, model: str = "gemini-3.5-flash") -> Generate:
     """Hàm gọi Gemini trực tiếp bằng khóa của người dùng (không qua bộ đệm chung của app)."""
     def _call(data: bytes, mime: str, prompt: str) -> str:
         from google import genai

@@ -97,12 +97,12 @@ def test_overloaded_or_out_of_quota_moves_to_another_model(monkeypatch):
         calls.append(m)
         if m == "gemini-2.5-flash":
             raise RuntimeError("503 UNAVAILABLE. The model is overloaded.")
-        if m == "gemini-flash-latest":
+        if m == "gemini-3.5-flash":
             raise RuntimeError("429 RESOURCE_EXHAUSTED. quota")
         return f"ok from {m}"
     out = gemini.call_with_fallback(FakeClient([]), "gemini-2.5-flash", call, key_id="k")
-    assert out == "ok from gemini-2.0-flash"
-    assert calls == ["gemini-2.5-flash"] * 3 + ["gemini-flash-latest", "gemini-2.0-flash"]
+    assert out == "ok from gemini-flash-latest"
+    assert calls == ["gemini-2.5-flash"] * 3 + ["gemini-3.5-flash", "gemini-flash-latest"]
     assert gemini._resolved == {}  # quá tải là tạm thời: lần sau vẫn thử model chính trước
 
 
@@ -116,3 +116,32 @@ def test_bad_key_is_reported_immediately(monkeypatch):
     with pytest.raises(RuntimeError, match="API key not valid"):
         gemini.call_with_fallback(FakeClient([]), "gemini-2.5-flash", call)
     assert calls == ["gemini-2.5-flash"]
+
+
+RETIRED = ("404 NOT_FOUND. {'error': {'message': 'This model models/gemini-2.5-flash-lite is no longer available "
+           "to new users. Please update your code to use models/gemini-3.5-flash-lite for the latest features.'}}")
+
+
+def test_suggested_model_is_parsed():
+    assert gemini.suggested_model(RuntimeError(RETIRED)) == "gemini-3.5-flash-lite"
+    assert gemini.suggested_model(RuntimeError("503 overloaded")) is None
+
+
+def test_model_google_suggests_is_tried_next(monkeypatch):
+    _no_sleep(monkeypatch)
+    calls = []
+
+    def call(m):
+        calls.append(m)
+        if m == "gemini-3.5-flash-lite":
+            return "ok"
+        raise RuntimeError(RETIRED)
+    assert gemini.call_with_fallback(FakeClient([]), "gemini-2.5-flash-lite", call, key_id="k2") == "ok"
+    assert calls == ["gemini-2.5-flash-lite", "gemini-3.5-flash-lite"]
+
+
+def test_real_models_of_the_key_come_before_the_static_list(monkeypatch):
+    _no_sleep(monkeypatch)
+    client = FakeClient(["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.0-flash", "gemini-flash-latest"])
+    assert gemini.available_flash_models(client)[:2] == ["gemini-flash-latest", "gemini-3.5-flash"]
+    assert gemini.available_flash_models(client)[-1] == "gemini-3.5-flash-lite"

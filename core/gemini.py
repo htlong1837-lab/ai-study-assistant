@@ -9,10 +9,11 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-FALLBACK_MODELS = ("gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash",
-                   "gemini-flash-lite-latest", "gemini-2.5-flash-lite")
+DEFAULT_MODEL = "gemini-3.5-flash"
+# Dùng khi không hỏi được Google danh sách model của khóa (danh sách thật luôn được ưu tiên).
+FALLBACK_MODELS = ("gemini-3.5-flash", "gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-flash-lite-latest")
 _EXCLUDE = ("tts", "image", "live", "audio", "embedding", "thinking-exp", "native")
-MAX_MODELS = 5            # thử tối đa chừng này model mỗi lần gọi
+MAX_MODELS = 6            # thử tối đa chừng này model mỗi lần gọi
 FIRST_MODEL_RETRIES = 2   # model đầu bị quá tải thì thử lại thêm ngần này lần
 BACKOFF_SECONDS = (1.5, 4.0)
 _resolved: dict[str, str] = {}  # model cấu hình đã bị ngừng → model thay thế dùng được (theo khóa băm)
@@ -48,9 +49,17 @@ def available_flash_models(client: Any) -> list[str]:
                 names.append(name)
     except Exception:  # noqa: BLE001
         return []
-    latest = [n for n in names if n.endswith("latest")]
-    rest = sorted((n for n in names if n not in latest), reverse=True)
-    return latest + rest
+    def rank(n: str):
+        version = tuple(int(x) for x in re.findall(r"\d+", n.split("flash")[0])) or (0,)
+        return ("lite" in n, any(x in n for x in ("preview", "exp")), not n.endswith("latest"),
+                tuple(-v for v in version), n)
+    return sorted(dict.fromkeys(names), key=rank)
+
+
+def suggested_model(exc: Exception) -> str | None:
+    """Model Google gợi ý thay thế trong lời báo lỗi ("Please update your code to use models/…")."""
+    m = re.search(r"use models/([A-Za-z0-9._-]*[A-Za-z0-9])", str(exc))
+    return m.group(1) if m else None
 
 
 def call_with_fallback(client: Any, model: str, call: Callable[[str], Any], key_id: str = "") -> Any:
@@ -64,10 +73,14 @@ def call_with_fallback(client: Any, model: str, call: Callable[[str], Any], key_
     cache_key = f"{key_id}|{model}"
     first = _resolved.get(cache_key, model)
 
+    hints: list[str] = []  # model Google gợi ý trong lời báo lỗi
+
     def candidates():
         yield first
+        while hints:
+            yield hints.pop(0)
+        yield from available_flash_models(client)  # model thật của khóa này
         yield from FALLBACK_MODELS
-        yield from available_flash_models(client)
 
     tried: set[str] = set()
     last: Exception | None = None
@@ -84,6 +97,9 @@ def call_with_fallback(client: Any, model: str, call: Callable[[str], Any], key_
                 out = call(m)
             except Exception as exc:  # noqa: BLE001
                 last = exc
+                hint = suggested_model(exc)
+                if hint and hint not in tried:
+                    hints.append(hint)
                 if is_transient(exc) and attempt < retries:
                     _sleep(BACKOFF_SECONDS[min(attempt, len(BACKOFF_SECONDS) - 1)])
                     continue
