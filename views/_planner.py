@@ -9,6 +9,7 @@ from html import escape
 
 import streamlit as st
 
+from core import clock
 from core.contracts import StudyBlock, Task, TaskStatus
 from db.repository import Repository
 from modules.scheduler.model import ClassSession, ScheduleSettings
@@ -82,7 +83,7 @@ def quick_add(repo: Repository, courses: list[str], key: str) -> None:
     if not (text.strip() and (preview or st.session_state.get(f"qa_ready_{key}") == text)):
         return
     st.session_state[f"qa_ready_{key}"] = text
-    q = parse(text, datetime.now(), courses)
+    q = parse(text, clock.now(), courses)
     with st.container(border=True):
         c1, c2, c3, c4 = st.columns([3, 2, 1, 1])
         title = c1.text_input("Nhiệm vụ", q.title, key=f"qa_title_{key}")
@@ -106,7 +107,7 @@ def quick_add(repo: Repository, courses: list[str], key: str) -> None:
             repo.create_task({
                 "id": tid, "title": title.strip(), "course": q.course, "deadline": dl.isoformat(),
                 "estimated_hours": hours, "priority": prio, "confidence": 1.0, "status": "confirmed",
-                "created_at": datetime.now().isoformat()})
+                "created_at": clock.now().isoformat()})
             repo.add_sources(tid, [{"source": "manual:quick-add", "field": "title",
                                     "quote": text.strip(), "kind": "manual"}])
             st.session_state.pop(f"qa_ready_{key}", None)

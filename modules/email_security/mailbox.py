@@ -11,6 +11,8 @@ import imaplib
 from collections.abc import Callable
 from datetime import date, timedelta
 
+from core import clock
+
 # Nhà cung cấp cho phép đăng nhập IMAP bằng mật khẩu ứng dụng. Outlook/Hotmail cá nhân đã bỏ
 # kiểu đăng nhập này (chỉ còn OAuth) nên không có trong danh sách.
 IMAP_HOSTS = {
@@ -64,7 +66,7 @@ def fetch_recent(address: str, app_password: str, *, host: str | None = None, da
         status, _ = conn.select("INBOX", readonly=True)
         if status != "OK":
             raise MailboxError("Không mở được Hộp thư đến.")
-        since = imap_date((today or date.today()) - timedelta(days=days))
+        since = imap_date((today or clock.today()) - timedelta(days=days))
         status, data = conn.search(None, "SINCE", since)
         if status != "OK":
             raise MailboxError("Máy chủ từ chối lệnh tìm thư.")

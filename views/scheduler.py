@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 
 import hashlib
 import io
@@ -8,6 +8,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from core import clock
 from core import mocks
 from core.contracts import TaskStatus
 from db.repository import Repository
@@ -165,7 +166,7 @@ def _pref_time(name: str, default: time) -> time:
 MODES = ["So sánh cả hai", *ALGORITHMS]
 BLOCKS = [30, 60, 90, 120]
 c1, c2, c3, c4 = st.columns(4)
-start = c1.date_input("Bắt đầu từ", value=date.today(), format="DD/MM/YYYY")
+start = c1.date_input("Bắt đầu từ", value=clock.today(), format="DD/MM/YYYY")
 days = c2.slider("Số ngày", 7, 35, int(prefs.get("days", 21)))
 day_start, day_end = c3.slider("Khung giờ học", time(5), time(23, 59),
                                (_pref_time("day_start", time(7)), _pref_time("day_end", time(22))),
@@ -186,7 +187,7 @@ min_block = c2.selectbox("Khối học tối thiểu", BLOCKS,
 try:
     settings = ScheduleSettings(
         start=start, days=days, day_start=day_start, day_end=day_end, max_hours_per_day=max_h,
-        min_block_minutes=min_block, not_before=datetime.now() if start <= date.today() else None)
+        min_block_minutes=min_block, not_before=clock.now() if start <= clock.today() else None)
 except ValueError as e:
     st.error(f"Cài đặt không hợp lệ: {e}")
     st.stop()
@@ -228,7 +229,7 @@ shown = st.radio("Xem lịch của", list(results), horizontal=True,
 result = results[shown]
 r_deadline = {t.id: t.deadline for t in r_tasks}
 for tid, h in result.missing_hours.items():
-    if r_deadline[tid] <= datetime.now():
+    if r_deadline[tid] <= clock.now():
         st.warning(f"**{r_titles[tid]}** đã quá hạn nộp ({r_deadline[tid]:%H:%M %d/%m}) — "
                    "không còn thời gian để xếp.", icon="⌛")
     else:
@@ -245,7 +246,7 @@ used_ids = [t.id for t in r_tasks if t.id in {b.task_id for b in result.blocks}]
 task_color = _planner.task_colors(r_tasks)
 progress = ProgressStore(ws.db_path)
 done = progress.done()
-default_day = date.today() if date.today() in week_days else week_days[0]
+default_day = clock.today() if clock.today() in week_days else week_days[0]
 day = st.segmented_control(
     "Ngày", week_days, default=default_day, key=f"tl_day_{week}",
     format_func=lambda d: f"{WEEKDAY_VN[d.weekday()]} · {d:%d}") or default_day
@@ -270,7 +271,7 @@ with col_side:
     _ui.focus_timer()
 with col_tl:
     items = _planner.day_items(day, result.blocks, r_tasks, r_sessions, r_settings, done, task_color)
-    st.html(_timeline.render(items, datetime.now()))
+    st.html(_timeline.render(items, clock.now()))
 if st.session_state.pop("celebrate", False):
     _ui.confetti()
     st.toast("Xong hết các khối học trong ngày! 🎉", icon="🏆")
@@ -345,7 +346,7 @@ else:
             sender(f"✅ Trợ lý AI học tập: kết nối Telegram thành công ({len(reminders)} nhắc nhở).")
             c1.success("Đã gửi.")
         if c2.button("Gửi nhắc nhở đến hạn"):
-            sent = send_due(reminders, datetime.now(), sender)
+            sent = send_due(reminders, clock.now(), sender)
             c2.success(f"Đã gửi {len(sent)} nhắc nhở.")
     except RuntimeError as e:
         st.error(str(e))

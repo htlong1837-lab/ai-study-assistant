@@ -1,10 +1,11 @@
 """Trang chủ: bảng "Hôm nay" — lời chào, tiến độ tuần, dòng thời gian hôm nay, hạn nộp sắp tới,
 thêm nhanh nhiệm vụ, lối vào 4 module."""
 from dataclasses import replace
-from datetime import datetime, time, timedelta
+from datetime import time, timedelta
 
 import streamlit as st
 
+from core import clock
 from core.contracts import TaskStatus
 from db.repository import Repository
 from modules.scheduler import schedule
@@ -15,7 +16,7 @@ from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from views import _account, _planner, _timeline, _ui
 
-now = datetime.now()
+now = clock.now()
 today = now.date()
 ws = _account.current()
 repo = Repository(ws.db_path)

@@ -8,7 +8,8 @@ lưu gần nhất trên trang "Lập lịch & nhắc nhở"; mỗi nhắc nhở 
 from __future__ import annotations
 
 import sys
-from datetime import datetime
+
+from core import clock
 
 from .reminders import TelegramSender, load_reminders, send_due
 
@@ -22,7 +23,7 @@ def main() -> int:
     if not reminders:
         print("Chưa có lịch nào được lưu. Mở trang Lập lịch, xếp lịch và bấm 'Lưu nhắc nhở'.")
         return 1
-    sent = send_due(reminders, datetime.now(), sender)
+    sent = send_due(reminders, clock.now(), sender)
     print(f"Đã gửi {len(sent)} nhắc nhở.")
     return 0
 

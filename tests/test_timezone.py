@@ -1,13 +1,18 @@
+import os
 import time
 from datetime import datetime, timezone
 
-import pytest
-
-from core import config
+from core import clock
 
 
-@pytest.mark.skipif(not hasattr(time, "tzset"), reason="Windows dùng giờ của máy, không đặt lại múi giờ")
-def test_app_runs_on_vietnam_time_even_on_a_utc_server():
-    config.use_app_timezone()
-    offset = datetime.now() - datetime.now(timezone.utc).replace(tzinfo=None)
+def test_app_clock_is_vietnam_time_whatever_the_server_timezone():
+    offset = clock.now() - datetime.now(timezone.utc).replace(tzinfo=None)
     assert round(offset.total_seconds() / 3600) == 7
+    assert clock.today() == clock.now().date()
+
+
+def test_process_timezone_is_left_alone():
+    """Không đổi múi giờ của cả tiến trình (phần mã Streamlit Cloud chạy chung tiến trình cần giờ gốc)."""
+    import app  # noqa: F401 — nạp như khi chạy thật cũng không được đặt TZ
+    assert os.environ.get("TZ") in (None, "", os.environ.get("TZ_BEFORE_TESTS", os.environ.get("TZ")))
+    assert time.tzname  # vẫn đọc được múi giờ gốc

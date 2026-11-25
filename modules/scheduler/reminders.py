@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -67,7 +67,7 @@ def _event(uid, start, end, summary, description, alarm_minutes, stamp) -> list[
 
 def to_ics(blocks: list[StudyBlock], tasks: list[Task], before_block_min: int = 30,
            before_deadline_h: int = 24, now: datetime | None = None) -> str:
-    stamp = (now or datetime.now()).strftime("%Y%m%dT%H%M%SZ")
+    stamp = (now or datetime.now(timezone.utc)).strftime("%Y%m%dT%H%M%SZ")  # đuôi Z: giờ UTC
     by_id = {t.id: t for t in tasks}
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//ai-study-assistant//vi",
              "CALSCALE:GREGORIAN", "X-WR-CALNAME:Lịch học (Trợ lý AI)"]

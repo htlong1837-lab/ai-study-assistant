@@ -15,6 +15,7 @@ import json
 import re
 from datetime import datetime
 
+from core import clock
 from core.llm_client import LLMResponse
 from modules.extraction.datetime_normalizer import normalize
 
@@ -58,7 +59,7 @@ class RuleBasedLLM:
     model = "rules-v1"
 
     def __init__(self, anchor: datetime | None = None):
-        self.anchor = anchor or datetime.now()
+        self.anchor = anchor or clock.now()
 
     def is_configured(self) -> bool:
         return True
