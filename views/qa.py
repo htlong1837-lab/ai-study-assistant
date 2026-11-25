@@ -74,7 +74,7 @@ def _save_threads() -> None:
 _save_threads()  # lưu kết quả của lần chạy trước (kể cả khi lần đó kết thúc bằng st.rerun)
 key_input = st.text_input(
     "Gemini API key", type="password", key="qa_api_key_input",
-    placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if _gemini.saved_key(ws) else "AIza…",
+    placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if _gemini.saved_key(ws) else "Dán khóa Gemini",
 )
 if key_input:
     st.session_state["qa_api_key"] = key_input

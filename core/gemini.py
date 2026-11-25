@@ -73,7 +73,7 @@ def friendly_error(exc: Exception, api_key: str = "") -> str:
     m = re.search(r"'message':\s*'([^']{0,300})", msg) or re.search(r'"message":\s*"([^"]{0,300})', msg)
     reason = (m.group(1) if m else msg.splitlines()[0] if msg else type(exc).__name__)[:220]
     if "API key not valid" in msg or "API_KEY_INVALID" in msg or "401" in msg:
-        return "Khóa Gemini không hợp lệ. Kiểm tra lại khóa (bắt đầu bằng AIza…) hoặc tạo khóa mới."
+        return "Khóa Gemini không hợp lệ. Sao chép lại cả khóa trong Google AI Studio hoặc tạo khóa mới."
     if "403" in msg or "PERMISSION_DENIED" in msg:
         return f"Khóa Gemini chưa được phép dùng dịch vụ này ({reason})."
     if "429" in msg or "RESOURCE_EXHAUSTED" in msg:

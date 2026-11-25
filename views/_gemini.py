@@ -27,7 +27,7 @@ def how_to_get_key(expanded: bool = True) -> None:
         st.markdown(
             f"1. Mở **[Google AI Studio → API keys]({AI_STUDIO})** và đăng nhập bằng tài khoản Google của bạn.\n"
             "2. Bấm **Create API key** (Tạo khóa API). Nếu được hỏi dự án, chọn **Create API key in new project**.\n"
-            "3. Bấm biểu tượng sao chép cạnh khóa vừa tạo (khóa bắt đầu bằng `AIza…`).\n"
+            "3. Bấm biểu tượng sao chép cạnh khóa vừa tạo (danh sách chỉ hiện vài ký tự cuối; nút sao chép lấy cả khóa).\n"
             "4. Dán vào ô **Gemini API key** ở trên.\n\n"
             "Khóa dùng miễn phí trong giới hạn lượt mỗi ngày của Google. Mặc định DP chỉ giữ khóa trong phiên "
             "làm việc này (đóng trang là mất). Nếu bạn đã đăng nhập và tích **Nhớ khóa cho tài khoản này**, "
@@ -44,7 +44,9 @@ def saved_key(ws) -> str:
 
 
 def looks_like_key(value: str) -> bool:
-    return bool(re.fullmatch(r"AIza[0-9A-Za-z_-]{20,}", value.strip()))
+    """Khóa Gemini: một chuỗi liền, không dấu cách, đủ dài. Không ép tiền tố (khóa mới của Google có thể
+    không bắt đầu bằng AIza); khóa sai thật sẽ bị Google báo khi dùng."""
+    return bool(re.fullmatch(r"[0-9A-Za-z._~+/=-]{20,}", value.strip()))
 
 
 def key_controls(ws, typed: str, prefix: str) -> None:
@@ -63,7 +65,7 @@ def key_controls(ws, typed: str, prefix: str) -> None:
                 st.toast("Đã lưu khóa Gemini cho tài khoản của bạn.", icon="🔑")
                 st.rerun()
             else:
-                st.error("Khóa này không giống khóa Gemini (thường bắt đầu bằng AIza…). Kiểm tra lại rồi lưu.")
+                st.error("Khóa này không giống khóa Gemini (phải là một chuỗi liền, không dấu cách). Kiểm tra lại rồi lưu.")
         c_note.caption("Lưu vào tài khoản của bạn để lần sau, ở mọi trang, không phải nhập lại.")
     elif saved:
         c_note, c_btn = st.columns([3, 1], vertical_alignment="center")
@@ -82,7 +84,7 @@ def key_input(session_key: str, label: str = "Gemini API key", ws=None) -> str:
         return preset
     saved = saved_key(ws)
     typed = st.text_input(label, type="password", key=session_key,
-                          placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if saved else "AIza…").strip()
+                          placeholder="Đã lưu khóa · để trống để dùng khóa đã lưu" if saved else "Dán khóa Gemini").strip()
     key_controls(ws, typed, session_key)
     value = typed or saved
     if not value:

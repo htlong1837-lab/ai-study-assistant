@@ -38,7 +38,7 @@ def test_save_then_reopen_then_forget(tmp_path, monkeypatch):
 def test_wrong_looking_key_is_not_saved(tmp_path, monkeypatch):
     ws = workspace.for_user("sv@gmail.com", base=tmp_path)
     at = _qa(monkeypatch, ws)
-    at.text_input(key="qa_api_key_input").input("sai-khoa").run()
+    at.text_input(key="qa_api_key_input").input("sai khoa co dau cach").run()
     at.button(key="qa_save_key").click().run()
     assert ws.read_state("gemini") is None
     assert any("không giống khóa Gemini" in e.value for e in at.error)
