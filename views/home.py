@@ -17,7 +17,6 @@ from modules.scheduler.source import tasks_from_b
 from modules.scheduler.timetable import load_timetable_csv
 from views import _planner, _timeline, _ui
 
-_ui.intro()
 now = datetime.now()
 today = now.date()
 repo = Repository(config.DB_PATH)

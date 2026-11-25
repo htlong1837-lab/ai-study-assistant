@@ -199,10 +199,10 @@ def greeting(now: datetime) -> str:
 
 # --------------------------------------------------------------------------- màn mở đầu
 INTRO_JS = """
-<div class="nh-invisible"></div>
+<div class="nh-invisible" data-page="__PAGE__"></div>
 <script>
 window.__nhIntroRun = function () {
-  const KEY = 'nhip-intro-v1';
+  const KEY = 'nhip-intro-v2:__PAGE__';
   if (window.__nhIntro || sessionStorage.getItem(KEY)) return;
   window.__nhIntro = true;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -210,8 +210,15 @@ window.__nhIntroRun = function () {
   const main = () => document.querySelector('[data-testid="stMainBlockContainer"]');
 
   // Mục tiêu: từng thẻ nhỏ (hero, ô số liệu, thẻ viền, thẻ module, nhãn mục), chỉ lấy lớp ngoài cùng.
-  const SEL = '.nh-hero, .nh-head, [data-testid="stMetric"], [data-testid="stVerticalBlockBorderWrapper"], ' +
-    '.nh-mod, [data-testid="stHeading"], [data-testid="stExpander"], [data-testid="stPageLink"]';
+  const SEL = ['.nh-hero', '.nh-head', '.tl', '[data-testid="stMetric"]', '[data-testid="stVerticalBlockBorderWrapper"]',
+    '[data-testid="stHeading"]', '[data-testid="stExpander"]', '[data-testid="stPageLink"]', '[data-testid="stAlert"]',
+    '[data-testid="stForm"]', '[data-testid="stDataFrame"]', '[data-testid="stTable"]', '[data-testid="stFileUploader"]',
+    '[data-testid="stButton"]', '[data-testid="stDownloadButton"]', '[data-testid="stTextInput"]',
+    '[data-testid="stTextArea"]', '[data-testid="stSelectbox"]', '[data-testid="stRadio"]',
+    '[data-testid="stSlider"]', '[data-testid="stNumberInput"]', '[data-testid="stDateInput"]',
+    '[data-testid="stCheckbox"]', '[data-testid="stButtonGroup"]', '[data-testid="stCaptionContainer"]',
+    '[data-testid="stArrowVegaLiteChart"]', '[data-testid="stVegaLiteChart"]', '[data-testid="stIFrame"]',
+    '[data-testid="stCustomComponentV1"]', '[data-testid="stCode"]', '[data-testid="stHtml"]'].join(', ');
   function blocks() {
     const m = main();
     if (!m) return [];
@@ -226,7 +233,7 @@ window.__nhIntroRun = function () {
     let last = -1, same = 0, tries = 0;
     const t = setInterval(() => {
       const n = blocks().length; tries++;
-      same = (n === last && n > 2) ? same + 1 : 0; last = n;
+      same = (n === last && n > 0) ? same + 1 : 0; last = n;
       if (same >= 3 || tries > 40) { clearInterval(t); cb(); }
     }, 100);
   }
@@ -318,7 +325,7 @@ window.__nhIntroRun = function () {
         c.el.firstChild.style.transform = 'scale(.82)';
         ripple(x, y, c.color); frame(r, c.color);
         el.style.opacity = '1'; el.style.transform = 'none'; el.style.filter = 'none';
-        const h = el.matches('.nh-hero') ? el.querySelector('h1') : null;
+        const h = el.querySelector('.nh-hero h1');
         if (h) typeText(h);
         await sleep(160);
         c.el.firstChild.style.transform = '';
@@ -337,7 +344,7 @@ window.__nhIntroRun = function () {
       await sleep(700);
       end();
     });
-    setTimeout(end, 9000);  // lưới an toàn
+    setTimeout(end, 12000);  // lưới an toàn
   });
 };
 window.__nhIntroRun();
@@ -345,11 +352,17 @@ window.__nhIntroRun();
 """
 
 
-def intro() -> None:
-    """Màn mở đầu: các con trỏ mang tên module bay vào, bấm dựng từng phần trang. Một lần mỗi phiên."""
+def intro(page: str = "home") -> None:
+    """Màn mở đầu: các con trỏ mang tên công cụ bay vào, bấm dựng từng phần trang.
+
+    Mỗi trang chạy một lần mỗi phiên trình duyệt (khoá theo ``page``). ``page`` cũng làm nội dung
+    khối HTML khác nhau giữa các trang, để Streamlit dựng lại khối và chạy lại script khi chuyển trang.
+    """
+    page = re.sub(r"[^\w-]", "", page) or "home"
     cursors = ", ".join(f'{{label: "{icon} {name}", color: "{color}"}}'
                         for _, name, icon, color, _ in MODULES)
-    st.html(_js(INTRO_JS.replace("__CURSORS__", f"[{cursors}]")), unsafe_allow_javascript=True)
+    st.html(_js(INTRO_JS.replace("__CURSORS__", f"[{cursors}]").replace("__PAGE__", page)),
+            unsafe_allow_javascript=True)
 
 
 # --------------------------------------------------------------------------- pháo giấy
