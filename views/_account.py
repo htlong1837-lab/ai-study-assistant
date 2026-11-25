@@ -148,9 +148,31 @@ def login() -> None:
         st.toast(NOT_CONFIGURED, icon="🔐")
 
 
+def code_version() -> str:
+    """Mã commit đang chạy (đọc thẳng .git, không cần lệnh git), để biết máy chủ đã nhận bản mới chưa."""
+    from pathlib import Path
+
+    git = Path(__file__).resolve().parents[1] / ".git"
+    try:
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
+        if head.startswith("ref: "):
+            ref = head[5:]
+            ref_file = git / ref
+            if ref_file.is_file():
+                return ref_file.read_text(encoding="utf-8").strip()[:7]
+            for line in (git / "packed-refs").read_text(encoding="utf-8").splitlines():
+                if line.endswith(" " + ref):
+                    return line[:7]
+            return "?"
+        return head[:7]
+    except OSError:
+        return "?"
+
+
 def sidebar() -> None:
     """Tài khoản ở cuối thanh bên: ảnh, tên, email và nút đăng xuất; khách thì có nút đăng nhập."""
     user = google_user()
+    st.sidebar.html(f'<div class="nh-ver">Phiên bản {code_version()}</div>')
     with st.sidebar, st.container(key="acct_box"):
         if user is not None:
             name = str(user.get("name", "") or user.get("email", ""))

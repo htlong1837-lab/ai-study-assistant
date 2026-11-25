@@ -94,6 +94,7 @@ button[kind="primary"], button[data-testid="stBaseButton-primary"] {
 .nh-brand small {display: block; color: #8D99AE; font-size: 11.5px; font-weight: 600; margin-top: 3px;
   letter-spacing: .04em; text-transform: uppercase;}
 
+.nh-ver {position: absolute; left: 18px; bottom: 4px; font-size: 10.5px; color: #ADB5BD;}
 /* Tài khoản ở đáy thanh bên */
 [data-testid="stSidebarContent"] {position: relative; min-height: 100%;}
 .st-key-acct_box {position: absolute; left: 16px; right: 16px; bottom: 18px; gap: 8px;}
