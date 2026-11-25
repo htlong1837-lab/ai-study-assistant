@@ -62,3 +62,13 @@ phút để Google cập nhật.
 - Mã truy cập Google sống khoảng 1 giờ; quá giờ thì DP báo chưa lưu được vào Drive và người dùng đăng
   nhập lại.
 - Tệp đính kèm email không được sao lưu (lấy lại được từ Gmail).
+
+## Sau mỗi lần cập nhật code
+
+App tắt chế độ tự nạp lại code (`.streamlit/config.toml`: `fileWatcherType = "none"`), vì trên Cloud
+chế độ đó xoá các module đang dùng giữa chừng khi kéo code mới, làm app treo với lỗi kiểu
+`KeyError: 'core'`. Vì vậy sau khi đẩy code lên `main`, vào **Manage app → ⋮ → Reboot app** để app
+chạy bản mới.
+
+Nên chọn Python **3.12** khi tạo app (Advanced settings). Muốn đổi phiên bản Python của app đã tạo
+thì phải xoá app rồi tạo lại với cùng tên.

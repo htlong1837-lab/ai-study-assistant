@@ -18,3 +18,10 @@ gatherUsageStats = false
 [client]
 # Giao diện sản phẩm: ẩn nút Deploy và các mục dành cho nhà phát triển.
 toolbarMode = "minimal"
+
+[server]
+# Không tự nạp lại code khi tệp thay đổi. Trên Streamlit Cloud, mỗi lần kéo code mới, bộ theo dõi tệp xoá
+# các module đang dùng khỏi bộ nhớ trong lúc phiên khác còn nạp chúng → app hỏng (KeyError: 'core').
+# Cập nhật code xong thì Reboot app. Khi phát triển trên máy: streamlit run app.py --server.fileWatcherType auto
+fileWatcherType = "none"
+runOnSave = false
