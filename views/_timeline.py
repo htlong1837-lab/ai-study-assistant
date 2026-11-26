@@ -9,6 +9,7 @@ from html import escape
 PALETTE = ["#F07167", "#4D96FF", "#6BCB77", "#FFB84C", "#9D79BC", "#00AFB9", "#F49CBB", "#7D8597"]
 CLASS_COLOR = "#ADB5BD"
 DEADLINE_COLOR = "#E63946"
+EXAM_COLOR = "#9D79BC"
 
 CSS = """
 <style>

@@ -57,7 +57,7 @@ with c_email:
 with c_doc:
     st.markdown("##### 📄 Tài liệu đính kèm")
     if intake.from_d and not intake.documents:
-        st.caption("Email đã duyệt không có tệp đính kèm đọc được.")
+        st.caption("Chưa có tệp nào được duyệt là **📝 Bài tập / hạn nộp** ở trang Hộp thư.")
     for doc in intake.documents:
         st.info(f"**{_ui.file_label(doc.filename)}** ({len(doc.pages)} trang)  \n*Nội dung:* {doc.pages[0].text[:80]}...")
 

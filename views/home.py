@@ -13,6 +13,7 @@ from modules.scheduler.model import WEEKDAY_VN, ScheduleSettings
 from modules.scheduler.progress import ProgressStore, block_key
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
+from modules.scheduler.exams import load_exams
 from modules.scheduler.timetable import load_timetable_csv
 from views import _account, _planner, _timeline, _ui
 
@@ -31,6 +32,7 @@ if run and isinstance(run.get("settings"), ScheduleSettings):
     sessions, settings = run["sessions"], run["settings"]
 else:
     sessions, _err = load_timetable_csv(ws.timetable_source())
+    sessions = sessions + load_exams(ws)  # buổi thi đã duyệt ở Hộp thư
     prefs = ws.read_state("schedule", {}) or {}  # cài đặt đã lưu ở trang Lập lịch
     try:
         settings = ScheduleSettings(
@@ -90,5 +92,5 @@ with right:
         st.html(_planner.upcoming_html(tasks, now, colors))
     with st.container(border=True):
         st.markdown("#### ✨ Thêm nhanh")
-        _planner.quick_add(repo, sorted({s.course for s in sessions}), key="home")
+        _planner.quick_add(repo, sorted({s.course for s in sessions if not getattr(s, "is_exam", False)}), key="home")
 

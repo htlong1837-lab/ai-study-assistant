@@ -14,7 +14,7 @@ from core.workspace import Workspace
 PERSONAL_KEYS = ("processed_list", "forwarded", "verified_emails", "verified_email_ids", "safe_attachments",
                  "verified_documents", "approved_suspicious_email_ids", "sched", "gmail_synced", "mailbox_error",
                  "qa_document", "qa_pdf_bytes", "qa_threads", "qa_selected_hash", "extract_flash", "flash",
-                 "_raw_of", "qa_document_hash", "qa_api_key", "qa_api_key_input", "tt_img")
+                 "_raw_of", "qa_document_hash", "qa_api_key", "qa_api_key_input", "tt_img", "attachment_purpose")
 
 
 def google_configured() -> bool:

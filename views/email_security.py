@@ -10,7 +10,7 @@ from modules.email_security import approve_suspicious
 from modules.email_security.handoff import publish_to_modules
 from modules.email_security import gmail
 from modules.email_security.mailbox import MailboxError, fetch_recent
-from views import _account, _inbox, _ui
+from views import _account, _attachments, _inbox, _ui
 from views._shared import llm_status, module_header
 
 
@@ -151,7 +151,7 @@ with st.expander("Cách khác: email Yahoo/iCloud, file .eml, email mẫu"):
     uploaded_files = c_up.file_uploader("File .eml", type=["eml"], accept_multiple_files=True)
     demo_files = sorted(DEMO_DIR.glob("*.eml"))
     if demo_files and c_demo.button(
-        "✨ Email mẫu", help="4 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo, lịch nộp bằng Excel và Word."
+        "✨ Email mẫu", help="5 email tự soạn: giao bài kèm đề PDF, dời hạn, lừa đảo, lịch nộp bằng Excel và Word, lịch thi bằng Excel."
     ):
         _ingest([f.read_bytes() for f in demo_files])
     if uploaded_files and st.button("Kiểm tra các file này", type="primary"):
@@ -205,6 +205,9 @@ c1, c2, c3 = st.columns(3)
 c1.metric("🟢 An toàn", n_safe)
 c2.metric("🟡 Chờ duyệt", n_sus)
 c3.metric("🔴 Bị chặn", n_mal)
+
+# ---- Tệp đính kèm: duyệt từng tệp dùng vào việc gì ----
+_attachments.review(ws, processed_items, do_forward)
 
 # ---- Bảng hộp thư ----
 st.subheader("Thư đã quét")

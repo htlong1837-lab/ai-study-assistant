@@ -21,6 +21,7 @@ from modules.scheduler.reminders import (
 from modules.scheduler.slots import busy_intervals
 from modules.scheduler.source import tasks_from_b
 from core.llm_client import get_client
+from modules.scheduler.exams import load_exams, remove_exam
 from modules.scheduler.timetable import load_timetable_csv
 from modules.scheduler.timetable_image import (
     FIELDS as TT_FIELDS, TimetableImageError, gemini_generate, read_timetable_image,
@@ -150,6 +151,23 @@ if ws.has_own_timetable() and not upload and c_reset.button("Dùng bản mẫu",
     st.rerun()
 for err in tt_errors:
     st.warning(err)
+
+exams = [e for e in load_exams(ws) if e.end >= clock.now()]
+if exams:
+    st.markdown("##### 🧪 Lịch thi")
+    for e in exams:
+        c_e, c_x = st.columns([6, 1], vertical_alignment="center")
+        extra = " · ".join(x for x in (e.room and f"phòng {e.room}", e.kind,
+                                       e.review_hours and f"ôn {e.review_hours:g} giờ") if x)
+        c_e.markdown(f"**{e.course}** · {WEEKDAY_VN[e.start.weekday()]} {e.start:%d/%m %H:%M}–{e.end:%H:%M}"
+                     + (f" · {extra}" if extra else ""))
+        if c_x.button("Xoá", key=f"exam_del_{e.key}"):
+            remove_exam(ws, e.key)
+            Repository(ws.db_path).set_task_status(f"exam-{e.key}", "cancelled")
+            st.session_state.pop("sched", None)
+            st.rerun()
+    st.caption("Thêm lịch thi: ở trang Hộp thư, chọn tệp lịch thi là **🧪 Lịch thi / kiểm tra**.")
+sessions = sessions + exams
 
 # ---------------------------------------------------------------- 3. Cài đặt
 st.subheader("3. Cài đặt")
@@ -282,7 +300,8 @@ def _hour(dt: datetime) -> float:
 
 
 CLASS = "Lên lớp"
-rows = [{"Ngày": day_label[b0.date()], "Từ": _hour(b0), "Đến": _hour(b1), "Màu": CLASS,
+rows = [{"Ngày": day_label[b0.date()], "Từ": _hour(b0), "Đến": _hour(b1),
+         "Màu": "Thi" if getattr(s, "is_exam", False) else CLASS,
          "Nội dung": f"{s.course} ({s.room})" if s.room else s.course, "Giờ": f"{b0:%H:%M}–{b1:%H:%M}"}
         for b0, b1, s in busy_intervals(r_sessions, replace(r_settings, start=week, days=7,
                                                             not_before=None))]
@@ -305,8 +324,8 @@ if rows:
     bars = base.mark_bar(cornerRadius=4).encode(
         y2="Đến:Q",
         color=alt.Color("Màu:N", title=None, legend=alt.Legend(orient="bottom", columns=2),
-                        scale=alt.Scale(domain=[CLASS, *task_names],
-                                        range=[_timeline.CLASS_COLOR,
+                        scale=alt.Scale(domain=[CLASS, "Thi", *task_names],
+                                        range=[_timeline.CLASS_COLOR, _timeline.EXAM_COLOR,
                                                *[task_color[t] for t in used_ids]])))
     labels = base.mark_text(align="left", baseline="top", dx=-38, dy=3, fontSize=10,
                             color="white").encode(text="Nhãn:N")

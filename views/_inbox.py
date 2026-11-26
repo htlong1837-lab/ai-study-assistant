@@ -77,6 +77,9 @@ def restore(ws: Workspace, state: MutableMapping[str, Any]) -> int:
             p = approve_suspicious(p)
         items.append(p)
         raw_of[p.email.id] = path.stem
+    from modules.email_security import purpose
+
+    purpose.sync(ws, state)
     state["processed_list"] = items
     state["_raw_of"] = raw_of
     forwarded = state.setdefault("forwarded", set())

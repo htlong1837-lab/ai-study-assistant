@@ -98,6 +98,12 @@ def read_timetable_image(data: bytes, filename: str, generate: Generate) -> tupl
     mime = mime_of(filename)
     if mime is None:
         raise TimetableImageError("Chỉ đọc được ảnh PNG, JPG, WEBP, HEIC hoặc tệp PDF.")
+    return read_timetable_data(data, mime, generate)
+
+
+def read_timetable_data(data: bytes, mime: str, generate: Generate) -> tuple[list[dict], list[str]]:
+    """Như ``read_timetable_image`` nhưng nhận sẵn kiểu dữ liệu (ví dụ ``text/plain`` cho bảng Excel/Word
+    đã đổi thành chữ)."""
     if not data or len(data) > MAX_BYTES:
         raise TimetableImageError("Tệp rỗng hoặc lớn hơn 15 MB.")
     try:

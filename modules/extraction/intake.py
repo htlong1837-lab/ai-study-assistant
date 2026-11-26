@@ -35,12 +35,18 @@ class Intake:
 def intake_from_d(state: Mapping[str, Any], mock_emails, mock_documents) -> Intake:
     """Email/tài liệu D đã chuyển; nếu D chưa chuyển gì thì dùng dữ liệu mẫu (gọi lười)."""
     emails = list(state.get("verified_emails", {}).values())
-    documents = list(state.get("verified_documents", {}).values())
+    from modules.email_security.purpose import allows
+
+    # Chỉ tệp người dùng đã duyệt là "Bài tập / hạn nộp" ở Hộp thư.
+    documents = [d for sha, d in (state.get("verified_documents", {}) or {}).items()
+                 if allows(state, sha, "extraction")]
     if emails or documents:
         by_id = {e.id: e for e in emails}
         attachments = state.get("safe_attachments", {}) or {}
         doc_email = {}
         for sha, doc in (state.get("verified_documents", {}) or {}).items():
+            if not allows(state, sha, "extraction"):
+                continue
             att = attachments.get(sha) if isinstance(attachments, dict) else None
             if att is not None and att.email_id in by_id:
                 doc_email[doc.doc_id] = by_id[att.email_id]

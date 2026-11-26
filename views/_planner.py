@@ -29,7 +29,10 @@ def day_items(day: date, blocks: list[StudyBlock], tasks: list[Task], sessions: 
               settings: ScheduleSettings, done: set[str], colors: dict[str, str]) -> list[_timeline.Item]:
     titles = {t.id: t.title for t in tasks}
     day_sessions = busy_intervals(sessions, replace(settings, start=day, days=1, not_before=None))
-    items = [_timeline.Item(b0, b1, s.course, f"Lên lớp · {s.room}" if s.room else "Lên lớp", "🏫",
+    items = [_timeline.Item(b0, b1, f"Thi: {s.course}", " · ".join(x for x in ("Thi", s.kind, s.room) if x), "🧪",
+                            _timeline.EXAM_COLOR)
+             if getattr(s, "is_exam", False) else
+             _timeline.Item(b0, b1, s.course, f"Lên lớp · {s.room}" if s.room else "Lên lớp", "🏫",
                             _timeline.CLASS_COLOR) for b0, b1, s in day_sessions]
     items += [_timeline.Item(b.start, b.end, titles.get(b.task_id, b.task_id), "Tự học", "📖",
                              colors.get(b.task_id, _timeline.PALETTE[0]),

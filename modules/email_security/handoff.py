@@ -67,8 +67,11 @@ def verified_email_batches(state: MutableMapping[str, Any]) -> list[tuple[Any, b
     return result
 
 
-def verified_document_batches(state: MutableMapping[str, Any]) -> list[tuple[Any, Any]]:
-    """Return parsed documents only when a matching D-approved SafeAttachment exists."""
+def verified_document_batches(state: MutableMapping[str, Any], use: str = "qa") -> list[tuple[Any, Any]]:
+    """Return parsed documents only when a matching D-approved SafeAttachment exists
+    and the user approved the file for ``use`` in the inbox (see ``purpose.allows``)."""
+    from .purpose import allows
+
     attachments = state.get("safe_attachments", {})
     documents = state.get("verified_documents", {})
     if not isinstance(attachments, dict) or not isinstance(documents, dict):
@@ -76,5 +79,5 @@ def verified_document_batches(state: MutableMapping[str, Any]) -> list[tuple[Any
     return [
         (attachments[sha], document)
         for sha, document in documents.items()
-        if sha in attachments and attachments[sha].sha256 == sha
+        if sha in attachments and attachments[sha].sha256 == sha and allows(state, sha, use)
     ]
