@@ -254,7 +254,7 @@ MOTION_JS = """
 <div class="nh-invisible" data-run="__RUN__"></div>
 <script>
 (function () {
-  const V = 'dp-motion-7';
+  const V = 'dp-motion-8';
   if (!window.__dpMotion || window.__dpMotion.v !== V) {
     if (window.__dpMotion && window.__dpMotion.destroy) window.__dpMotion.destroy();
     window.__dpMotion = install(V, __CURSORS__);
@@ -274,7 +274,7 @@ MOTION_JS = """
       '[data-testid="stArrowVegaLiteChart"]', '[data-testid="stVegaLiteChart"]', '[data-testid="stIFrame"]',
       '[data-testid="stCustomComponentV1"]', '[data-testid="stCode"]', '[data-testid="stHtml"]'].join(', ');
     const S = {page: null, ptr: {x: innerWidth / 2, y: innerHeight / 3}, lastAct: null, lastRunT: 0,
-      collecting: false, full: false, quick: false, act: null, batch: new Set(), hidden: new Set(),
+      collecting: false, full: false, quick: false, act: null, batch: new Set(), hidden: new Set(), frames: new Map(),
       startT: 0, lastMut: 0, done: false, loop: null, queue: [], running: new Set(), cursors: [], overlay: null, gen: 0};
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const mainEl = () => document.querySelector('[data-testid="stMainBlockContainer"]');
@@ -307,6 +307,40 @@ MOTION_JS = """
       S.hidden.add(el); el.style.animation = 'none'; el.style.opacity = '0';
     }
     function show(el) { S.hidden.delete(el); el.style.opacity = ''; }
+    // Khung viền (st.container(border=True)): ẩn viền, để con trỏ vẽ lại viền trước khi mang nội dung vào.
+    const FRAME = '[data-testid="stVerticalBlock"]';
+    function isFrame(el) {
+      const c = getComputedStyle(el);
+      return parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== 'none' && c.borderTopColor !== 'rgba(0, 0, 0, 0)';
+    }
+    function framesIn(node) {
+      if (!node || node.nodeType !== 1) return [];
+      const list = (node.matches(FRAME) ? [node] : []).concat(Array.from(node.querySelectorAll(FRAME)));
+      return list.filter(f => S.frames.has(f) || isFrame(f));
+    }
+    function hideFrame(f) {
+      if (S.frames.has(f) || own(f)) return;
+      const c = getComputedStyle(f);
+      let resolve;
+      const ready = new Promise(r => { resolve = r; });
+      S.frames.set(f, {ready, resolve, radius: parseFloat(c.borderTopLeftRadius) || 0});
+      f.style.transition = 'none'; f.style.borderColor = 'transparent';
+      f.style.backgroundColor = 'transparent'; f.style.boxShadow = 'none';
+    }
+    function showFrame(f) {
+      const info = S.frames.get(f);
+      if (!info) return;
+      S.frames.delete(f);
+      f.style.transition = 'border-color .3s ease, background-color .3s ease, box-shadow .3s ease';
+      f.style.borderColor = ''; f.style.backgroundColor = ''; f.style.boxShadow = '';
+      setTimeout(() => { f.style.transition = ''; }, 400);
+      info.resolve();
+    }
+    function framesReady(el) {
+      const waits = [];
+      S.frames.forEach((info, f) => { if (f !== el && f.contains(el)) waits.push(info.ready); });
+      return waits.length ? Promise.race([Promise.all(waits), sleep(3000)]) : null;
+    }
     function add(el) {
       if (!el || own(el) || typing(el)) return;
       S.batch.add(el); hide(el);
@@ -324,6 +358,7 @@ MOTION_JS = """
         for (const n of nodes) {
           const b = topBlock(n);
           (b ? [b] : blocksIn(n)).forEach(add);
+          if (mu.type === 'childList') framesIn(n).forEach(hideFrame);
           touched = true;
         }
       }
@@ -358,7 +393,7 @@ MOTION_JS = """
       S.full = S.full || changed;
       if (act) { S.act = act; S.quick = S.quick || act.busy; }
       S.lastMut = now; S.done = false;
-      if (changed) allBlocks().forEach(add);
+      if (changed) { allBlocks().forEach(add); framesIn(mainEl()).forEach(hideFrame); }
       if (!S.loop) S.loop = setInterval(check, 60);
     }
 
@@ -385,13 +420,18 @@ MOTION_JS = """
       let vis = targets.filter(inView);
       if (!vis.length) { const b = actBlock(); if (b && inView(b)) vis = [b]; }
       Array.from(S.hidden).forEach(el => { if (!vis.includes(el) && !S.queue.includes(el)) show(el); });
-      if (!vis.length) return;
+      const frames = S.quick ? [] : Array.from(S.frames.keys()).filter(f => f.isConnected && sized(f) && inView(f));
+      Array.from(S.frames.keys()).forEach(f => { if (!frames.includes(f)) showFrame(f); });
+      if (!vis.length && !frames.length) return;
       vis.forEach(hide);
-      if (S.quick) drop(vis); else carry(vis);
+      if (S.quick) drop(vis); else carry(vis, frames);
       setTimeout(safety, 9000);
     }
     function onDone() { S.done = true; S.lastMut = Date.now(); }
-    function safety() { if (!animating() && !S.collecting) Array.from(S.hidden).forEach(show); }
+    function safety() {
+      if (animating() || S.collecting) return;
+      Array.from(S.hidden).forEach(show); Array.from(S.frames.keys()).forEach(showFrame);
+    }
 
     // ---- lớp phủ + các con trỏ
     function overlay() {
@@ -436,10 +476,13 @@ MOTION_JS = """
     function animating() { return S.cursors.some(c => c.busy); }
 
     // ---- mang khối từ ngoài màn hình vào
-    function carry(els) {
+    function carry(els, frames) {
       overlay();
-      els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-      els.forEach(el => { if (!S.queue.includes(el)) S.queue.push(el); });
+      const byTop = (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+      // Vẽ khung trước, rồi mới mang nội dung vào.
+      (frames || []).sort(byTop).concat(els.sort(byTop)).forEach(el => {
+        if (!S.queue.includes(el) && !S.cursors.some(c => c.holding === el)) S.queue.push(el);
+      });
       let k = 0;
       S.cursors.forEach(c => {
         if (!c.busy && S.queue.length > k) { worker(c, k * 90, S.gen); k++; }
@@ -450,9 +493,14 @@ MOTION_JS = """
       await sleep(delay);
       while (S.queue.length && gen === S.gen) {
         const el = S.queue.shift();
-        if (!el.isConnected) { show(el); continue; }
+        if (!el.isConnected) { show(el); showFrame(el); continue; }
         c.holding = el;
-        await carryOne(c, el, gen);
+        if (S.frames.has(el)) await drawFrame(c, el, gen);
+        else {
+          const wait = framesReady(el);
+          if (wait) { await wait; if (gen !== S.gen) return; }
+          await carryOne(c, el, gen);
+        }
         if (gen !== S.gen) return;
         c.holding = null;
       }
@@ -489,6 +537,50 @@ MOTION_JS = """
       await sleep(120);
     }
 
+    // Con trỏ vẽ viền khung: chạy dọc theo viền, nét vẽ hiện ra theo sau.
+    async function drawFrame(c, f, gen) {
+      const info = S.frames.get(f);
+      const r = f.getBoundingClientRect();
+      const w = r.width, h = r.height, rr = Math.min(info.radius, w / 2, h / 2);
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'dp-draw');
+      svg.setAttribute('width', String(w + 2)); svg.setAttribute('height', String(h + 2));
+      svg.style.cssText = 'position:absolute;overflow:visible;left:' + (r.left - 1) + 'px;top:' + (r.top - 1) + 'px';
+      const path = document.createElementNS(NS, 'path');
+      const x0 = 1, y0 = 1, x1 = w, y1 = h;
+      path.setAttribute('d', ['M', x0 + rr, y0, 'H', x1 - rr, 'A', rr, rr, 0, 0, 1, x1, y0 + rr, 'V', y1 - rr,
+        'A', rr, rr, 0, 0, 1, x1 - rr, y1, 'H', x0 + rr, 'A', rr, rr, 0, 0, 1, x0, y1 - rr, 'V', y0 + rr,
+        'A', rr, rr, 0, 0, 1, x0 + rr, y0, 'Z'].join(' '));
+      path.setAttribute('fill', 'none'); path.setAttribute('stroke', c.color);
+      path.setAttribute('stroke-width', '2.2'); path.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(path); overlay().appendChild(svg);
+      const len = path.getTotalLength();
+      path.style.strokeDasharray = String(len); path.style.strokeDashoffset = String(len);
+      const at = d => { const q = path.getPointAtLength(d); return [r.left - 1 + q.x, r.top - 1 + q.y]; };
+      const [sx, sy] = at(0);
+      if (offscreen(c)) place(c, sx < innerWidth / 2 ? -60 : innerWidth + 60, sy - 60);
+      await move(c, sx, sy, 340, 'cubic-bezier(.3,.7,.3,1)');
+      if (gen !== S.gen) { svg.remove(); return; }
+      c.el.firstChild.animate([{transform: 'scale(1)'}, {transform: 'scale(.8)'}], {duration: 120, fill: 'forwards'});
+      const D = Math.min(1100, 420 + len * .15), t0 = performance.now();
+      for (;;) {
+        const k = Math.min(1, (performance.now() - t0) / D);
+        const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        path.style.strokeDashoffset = String(len - e * len);
+        const [x, y] = at(e * len);
+        place(c, x, y);
+        if (k >= 1) break;
+        await sleep(16);
+        if (gen !== S.gen) { svg.remove(); return; }
+      }
+      c.el.firstChild.animate([{transform: 'scale(.8)'}, {transform: 'scale(1)'}], {duration: 160, fill: 'forwards'});
+      ripple(sx, sy, c.color);
+      showFrame(f);
+      svg.animate([{opacity: 1}, {opacity: 0}], {duration: 380, fill: 'forwards'})
+        .finished.then(() => svg.remove(), () => svg.remove());
+    }
+
     // ---- đổi tác vụ gấp: khối rơi nhanh ra từ vị trí con trỏ chuột
     function drop(els) {
       overlay();
@@ -518,7 +610,9 @@ MOTION_JS = """
       });
       S.running.forEach(a => a.finish());
       S.running.clear();
-      const live = rest.filter(el => el.isConnected);
+      if (S.overlay) S.overlay.querySelectorAll('.dp-draw').forEach(x => x.remove());
+      Array.from(S.frames.keys()).forEach(showFrame);
+      const live = rest.filter(el => el.isConnected && !S.frames.has(el) && el.matches(SEL));
       if (live.length) drop(live);
     }
 
@@ -530,6 +624,7 @@ MOTION_JS = """
       if (S.loop) clearInterval(S.loop);
       S.gen++;
       Array.from(S.hidden).forEach(show);
+      Array.from(S.frames.keys()).forEach(showFrame);
       if (S.overlay) S.overlay.remove();
     }
     return {v, onRun, onDone, destroy, state: S};
