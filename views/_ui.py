@@ -36,12 +36,6 @@ html, body, p, li, label, input, textarea, select, td, th, h1, h2, h3, h4, h5, h
 h1 {font-weight: 800 !important; letter-spacing: -0.02em;}
 h2, h3 {font-weight: 700 !important; letter-spacing: -0.01em;}
 
-/* Xuất hiện dần khi phần tử mới được gắn vào trang */
-@keyframes nh-rise {from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: none;}}
-[data-testid="stMainBlockContainer"] [data-testid="stElementContainer"],
-[data-testid="stMainBlockContainer"] [data-testid="stHorizontalBlock"] {
-  animation: nh-rise .45s cubic-bezier(.2,.7,.2,1) both;
-}
 
 /* Thẻ */
 [data-testid="stMetric"] {
@@ -248,171 +242,317 @@ def greeting(now: datetime) -> str:
         "Chào buổi chiều" if h < 18 else "Chào buổi tối"
 
 
-# --------------------------------------------------------------------------- màn mở đầu
-INTRO_JS = """
-<div class="nh-invisible" data-page="__PAGE__"></div>
+# --------------------------------------------------------------------------- con trỏ dựng giao diện
+# Bộ điều khiển cài một lần vào trang (giữ qua các lần chạy lại). Mỗi lần Streamlit chạy lại, khối
+# script nhỏ (có mã lần chạy riêng nên luôn chạy lại) báo cho bộ điều khiển:
+#   - đổi trang / mở lần đầu: mọi khối đang thấy được các con trỏ mang từ ngoài màn hình vào;
+#   - tương tác thường: các khối vừa thay đổi được mang vào (không khối nào đổi thì mang lại chính
+#     khối vừa bấm), để tương tác nào cũng có hiệu ứng;
+#   - đổi tác vụ gấp (bấm tiếp khi con trỏ còn đang mang, hoặc hai lần bấm sát nhau): các khối
+#     rơi nhanh ra từ vị trí con trỏ chuột thật.
+MOTION_JS = """
+<div class="nh-invisible" data-run="__RUN__"></div>
 <script>
-window.__nhIntroRun = function () {
-  const KEY = 'nhip-intro-v2:__PAGE__';
-  if (window.__nhIntro || sessionStorage.getItem(KEY)) return;
-  window.__nhIntro = true;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const CURSORS = __CURSORS__;
-  const main = () => document.querySelector('[data-testid="stMainBlockContainer"]');
-
-  // Mục tiêu: từng thẻ nhỏ (hero, ô số liệu, thẻ viền, thẻ module, nhãn mục), chỉ lấy lớp ngoài cùng.
-  const SEL = ['.nh-hero', '.nh-head', '.tl', '[data-testid="stMetric"]', '[data-testid="stVerticalBlockBorderWrapper"]',
-    '[data-testid="stHeading"]', '[data-testid="stExpander"]', '[data-testid="stPageLink"]', '[data-testid="stAlert"]',
-    '[data-testid="stForm"]', '[data-testid="stDataFrame"]', '[data-testid="stTable"]', '[data-testid="stFileUploader"]',
-    '[data-testid="stButton"]', '[data-testid="stDownloadButton"]', '[data-testid="stTextInput"]',
-    '[data-testid="stTextArea"]', '[data-testid="stSelectbox"]', '[data-testid="stRadio"]',
-    '[data-testid="stSlider"]', '[data-testid="stNumberInput"]', '[data-testid="stDateInput"]',
-    '[data-testid="stCheckbox"]', '[data-testid="stButtonGroup"]', '[data-testid="stCaptionContainer"]',
-    '[data-testid="stArrowVegaLiteChart"]', '[data-testid="stVegaLiteChart"]', '[data-testid="stIFrame"]',
-    '[data-testid="stCustomComponentV1"]', '[data-testid="stCode"]', '[data-testid="stHtml"]'].join(', ');
-  function blocks() {
-    const m = main();
-    if (!m) return [];
-    const all = Array.from(m.querySelectorAll(SEL)).filter(el => {
-      const r = el.getBoundingClientRect();
-      return r.height > 8 && r.width > 8;
-    });
-    return all.filter(el => !all.some(o => o !== el && o.contains(el)));
+(function () {
+  const V = 'dp-motion-7';
+  if (!window.__dpMotion || window.__dpMotion.v !== V) {
+    if (window.__dpMotion && window.__dpMotion.destroy) window.__dpMotion.destroy();
+    window.__dpMotion = install(V, __CURSORS__);
   }
+  window.__dpMotion.onRun('__PAGE__');
 
-  function waitStable(cb) {
-    let last = -1, same = 0, tries = 0;
-    const t = setInterval(() => {
-      const n = blocks().length; tries++;
-      same = (n === last && n > 0) ? same + 1 : 0; last = n;
-      if (same >= 3 || tries > 40) { clearInterval(t); cb(); }
-    }, 100);
-  }
-
-  function finish(els, overlay) {
-    els.forEach(el => { el.style.opacity = ''; el.style.transform = ''; el.style.filter = '';
-      el.style.animation = ''; el.style.transition = ''; });
-    if (overlay) { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 500); }
-    sessionStorage.setItem(KEY, '1');
-    window.__nhIntro = false;
-  }
-
-  waitStable(() => {
-    const els = blocks();
-    if (reduce || !els.length) { finish(els, null); return; }
-    const vh = window.innerHeight;
-    const visible = els.filter(el => el.getBoundingClientRect().top < vh - 40);
-    els.forEach(el => {
-      el.style.animation = 'none';  // hiệu ứng CSS "xuất hiện dần" sẽ đè lên lệnh ẩn nếu không tắt
-      el.style.transition = 'opacity .55s ease, transform .6s cubic-bezier(.2,.8,.2,1), filter .6s ease';
-      el.style.opacity = '0'; el.style.transform = 'translateY(26px) scale(.97)'; el.style.filter = 'blur(4px)';
-    });
-
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;transition:opacity .5s';
-    document.body.appendChild(overlay);
-    const skip = document.createElement('button');
-    skip.textContent = 'Bỏ qua ›';
-    skip.style.cssText = 'position:fixed;right:22px;bottom:22px;pointer-events:auto;border:none;' +
-      'border-radius:999px;padding:8px 16px;background:#2B2D42;color:#fff;font:600 13px "Be Vietnam Pro",sans-serif;' +
-      'cursor:pointer;opacity:.85;box-shadow:0 6px 18px rgba(0,0,0,.2)';
-    overlay.appendChild(skip);
-    let done = false;
-    const end = () => { if (done) return; done = true; finish(els, overlay); };
-    skip.onclick = end;
-
-    const W = window.innerWidth, H = window.innerHeight;
-    const starts = [[-60, H * .25], [W + 40, H * .15], [W * .3, H + 50], [W + 40, H * .8]];
-    const cs = CURSORS.map((c, i) => {
-      const el = document.createElement('div');
-      el.style.cssText = 'position:fixed;left:0;top:0;will-change:transform;' +
-        'transition:transform .75s cubic-bezier(.65,0,.35,1)';
-      el.innerHTML = '<svg width="22" height="24" viewBox="0 0 22 24" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))">' +
-        '<path d="M2 2 L2 20 L7 15.5 L10.5 22.5 L13.5 21 L10 14 L17 14 Z" fill="' + c.color + '" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>' +
-        '<span style="position:absolute;left:16px;top:20px;white-space:nowrap;padding:3px 9px;border-radius:999px;' +
-        'background:' + c.color + ';color:#fff;font:600 12px \\'Be Vietnam Pro\\',sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15)">' +
-        c.label + '</span>';
-      const s = starts[i % starts.length];
-      el.style.transform = 'translate(' + s[0] + 'px,' + s[1] + 'px)';
-      overlay.appendChild(el);
-      return {el, color: c.color};
-    });
-
-    function ripple(x, y, color) {
-      const r = document.createElement('div');
-      r.style.cssText = 'position:fixed;left:' + (x - 6) + 'px;top:' + (y - 6) + 'px;width:12px;height:12px;' +
-        'border-radius:50%;border:2px solid ' + color + ';opacity:.9;transition:transform .5s ease,opacity .5s ease';
-      overlay.appendChild(r);
-      requestAnimationFrame(() => { r.style.transform = 'scale(4)'; r.style.opacity = '0'; });
-      setTimeout(() => r.remove(), 600);
-    }
-    function frame(rect, color) {
-      const f = document.createElement('div');
-      f.style.cssText = 'position:fixed;left:' + (rect.left - 4) + 'px;top:' + (rect.top - 4) + 'px;width:' +
-        (rect.width + 8) + 'px;height:' + (rect.height + 8) + 'px;border:2px dashed ' + color +
-        ';border-radius:14px;opacity:0;transition:opacity .25s ease';
-      overlay.appendChild(f);
-      requestAnimationFrame(() => f.style.opacity = '1');
-      setTimeout(() => { f.style.opacity = '0'; setTimeout(() => f.remove(), 300); }, 520);
-    }
+  function install(v, CURSORS) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const SEL = ['.nh-hero', '.nh-head', '.tl', '[data-testid="stMetric"]', '[data-testid="stVerticalBlockBorderWrapper"]',
+      '[data-testid="stHeading"]', '[data-testid="stExpander"]', '[data-testid="stPageLink"]', '[data-testid="stAlert"]',
+      '[data-testid="stForm"]', '[data-testid="stDataFrame"]', '[data-testid="stTable"]', '[data-testid="stFileUploader"]',
+      '[data-testid="stButton"]', '[data-testid="stDownloadButton"]', '[data-testid="stTextInput"]',
+      '[data-testid="stTextArea"]', '[data-testid="stSelectbox"]', '[data-testid="stRadio"]', '[data-testid="stTabs"]',
+      '[data-testid="stSlider"]', '[data-testid="stNumberInput"]', '[data-testid="stDateInput"]',
+      '[data-testid="stCheckbox"]', '[data-testid="stButtonGroup"]', '[data-testid="stCaptionContainer"]',
+      '[data-testid="stMarkdown"]', '[data-testid="stImage"]', '[data-testid="stChatMessage"]',
+      '[data-testid="stArrowVegaLiteChart"]', '[data-testid="stVegaLiteChart"]', '[data-testid="stIFrame"]',
+      '[data-testid="stCustomComponentV1"]', '[data-testid="stCode"]', '[data-testid="stHtml"]'].join(', ');
+    const S = {page: null, ptr: {x: innerWidth / 2, y: innerHeight / 3}, lastAct: null, lastRunT: 0,
+      collecting: false, full: false, quick: false, act: null, batch: new Set(), hidden: new Set(),
+      startT: 0, lastMut: 0, done: false, loop: null, queue: [], running: new Set(), cursors: [], overlay: null, gen: 0};
     const sleep = ms => new Promise(r => setTimeout(r, ms));
-    function typeText(h) {
-      const full = Array.from(h.textContent); let i = 0;
-      h.textContent = '';
-      const t = setInterval(() => { h.textContent = full.slice(0, ++i).join(''); if (i >= full.length) clearInterval(t); }, 38);
+    const mainEl = () => document.querySelector('[data-testid="stMainBlockContainer"]');
+
+    function sized(el) { const r = el.getBoundingClientRect(); return r.width > 8 && r.height > 8; }
+    function own(el) { return el.classList.contains('nh-invisible') || !!el.querySelector('.nh-invisible'); }
+    function typing(el) {
+      const a = document.activeElement;
+      if (!a || !el.contains(a)) return false;
+      return a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.getAttribute('role') !== 'combobox' &&
+        /^(text|password|search|email|number|url|tel)$/.test(a.type));
+    }
+    // Khối ngoài cùng (trong vùng nội dung chính) chứa nút này.
+    function topBlock(node) {
+      const m = mainEl();
+      let el = node && (node.nodeType === 1 ? node : node.parentElement), best = null;
+      if (!m || !el) return null;
+      while (el && el !== m) { if (el.matches && el.matches(SEL)) best = el; el = el.parentElement; }
+      return el === m ? best : null;
+    }
+    function blocksIn(node) {
+      if (!node || node.nodeType !== 1) return [];
+      const all = node.matches(SEL) ? [node] : Array.from(node.querySelectorAll(SEL));
+      return all.filter(el => !all.some(o => o !== el && o.contains(el)));
+    }
+    function allBlocks() { const m = mainEl(); return m ? blocksIn(m).filter(el => sized(el) && !own(el)) : []; }
+
+    function hide(el) {
+      if (S.hidden.has(el)) return;
+      S.hidden.add(el); el.style.animation = 'none'; el.style.opacity = '0';
+    }
+    function show(el) { S.hidden.delete(el); el.style.opacity = ''; }
+    function add(el) {
+      if (!el || own(el) || typing(el)) return;
+      S.batch.add(el); hide(el);
     }
 
-    async function work(ci, queue) {
-      const c = cs[ci];
-      await sleep(ci * 160);
-      for (const el of queue) {
-        if (done) return;
-        const r = el.getBoundingClientRect();
-        const x = r.left + Math.min(r.width * (.25 + Math.random() * .5), r.width - 30);
-        const y = r.top + Math.min(Math.max(r.height * .4, 14), 60);
-        c.el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
-        await sleep(780);
-        if (done) return;
-        c.el.firstChild.style.transform = 'scale(.82)';
-        ripple(x, y, c.color); frame(r, c.color);
-        el.style.opacity = '1'; el.style.transform = 'none'; el.style.filter = 'none';
-        const h = el.querySelector('.nh-hero h1');
-        if (h) typeText(h);
-        await sleep(160);
-        c.el.firstChild.style.transform = '';
-        await sleep(220);
+    // Ghi lại mọi khối thay đổi trong lúc Streamlit đang chạy lại, ẩn ngay để khỏi chớp.
+    const obs = new MutationObserver(muts => {
+      if (!S.collecting) return;
+      const m = mainEl();
+      if (!m) return;
+      let touched = false;
+      for (const mu of muts) {
+        if (!m.contains(mu.target) || (S.overlay && S.overlay.contains(mu.target))) continue;
+        const nodes = mu.type === 'childList' && mu.addedNodes.length ? Array.from(mu.addedNodes) : [mu.target];
+        for (const n of nodes) {
+          const b = topBlock(n);
+          (b ? [b] : blocksIn(n)).forEach(add);
+          touched = true;
+        }
       }
+      if (touched) S.lastMut = Date.now();
+    });
+    obs.observe(document.body, {childList: true, subtree: true, characterData: true});
+
+    function onAct(e) {
+      if (S.overlay && S.overlay.contains(e.target)) return;
+      const now = Date.now();
+      const busy = animating() || S.collecting || (S.lastAct && now - S.lastAct.t < 900);
+      if (e.clientX !== undefined && e.type === 'pointerdown') S.ptr = {x: e.clientX, y: e.clientY};
+      S.lastAct = {t: now, target: e.target, busy: !!busy};
+      if (animating()) interrupt();
+    }
+    const onMove = e => { S.ptr = {x: e.clientX, y: e.clientY}; };
+    const onKey = e => { if (e.key === 'Enter' || e.key === ' ') onAct(e); };
+    document.addEventListener('pointerdown', onAct, true);
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('pointermove', onMove, {capture: true, passive: true});
+
+    function onRun(page) {
+      const now = Date.now();
+      const act = S.lastAct && S.lastAct.t > S.lastRunT - 50 ? S.lastAct : null;
+      S.lastRunT = now;
+      const changed = page !== S.page;
+      S.page = page;
+      if (reduce) return;
+      if (!S.collecting) {
+        S.collecting = true; S.batch = new Set(); S.full = false; S.quick = false; S.act = null; S.startT = now;
+      }
+      S.full = S.full || changed;
+      if (act) { S.act = act; S.quick = S.quick || act.busy; }
+      S.lastMut = now; S.done = false;
+      if (changed) allBlocks().forEach(add);
+      if (!S.loop) S.loop = setInterval(check, 60);
     }
 
-    const queues = cs.map(() => []);
-    // Chia theo cột: con trỏ gần mục nào thì dựng mục đó, để các con trỏ không bay chéo nhau.
-    visible.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-    visible.forEach((el, i) => queues[i % cs.length].push(el));
-    Promise.all(cs.map((_, i) => work(i, queues[i]))).then(async () => {
-      if (done) return;
-      els.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; el.style.filter = 'none'; });
-      cs.forEach((c, i) => { c.el.style.transform = 'translate(' + (i % 2 ? W + 80 : -80) + 'px,' + (H * (.2 + i * .2)) + 'px)'; });
-      await sleep(700);
-      end();
-    });
-    setTimeout(end, 12000);  // lưới an toàn
-  });
-};
-window.__nhIntroRun();
+    function check() {
+      const now = Date.now();
+      // Chờ Streamlit chạy xong cả trang (tín hiệu onDone), rồi thêm một nhịp yên để các khối kịp vẽ.
+      const quiet = now - S.lastMut;
+      if (!((S.done && quiet >= 150) || quiet >= 1500 || now - S.startT > 6000)) return;
+      clearInterval(S.loop); S.loop = null; S.collecting = false;
+      settle();
+    }
+
+    function inView(el) { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight - 10; }
+    function actBlock() {
+      // Khối vừa được bấm (để tương tác nào cũng có hiệu ứng, kể cả khi phần thay đổi nằm ngoài màn hình).
+      const t = S.act && Date.now() - S.act.t < 6000 ? S.act.target : null;
+      if (!t || !t.isConnected) return null;
+      const b = topBlock(t) || (t.closest && t.closest('[data-testid="stSidebar"] [data-testid="stElementContainer"]'));
+      return b && sized(b) && !own(b) && !typing(b) ? b : null;
+    }
+    function settle() {
+      let targets = S.full ? allBlocks() : Array.from(S.batch).filter(el => el.isConnected && sized(el));
+      targets = targets.filter(el => !own(el) && !typing(el));
+      let vis = targets.filter(inView);
+      if (!vis.length) { const b = actBlock(); if (b && inView(b)) vis = [b]; }
+      Array.from(S.hidden).forEach(el => { if (!vis.includes(el) && !S.queue.includes(el)) show(el); });
+      if (!vis.length) return;
+      vis.forEach(hide);
+      if (S.quick) drop(vis); else carry(vis);
+      setTimeout(safety, 9000);
+    }
+    function onDone() { S.done = true; S.lastMut = Date.now(); }
+    function safety() { if (!animating() && !S.collecting) Array.from(S.hidden).forEach(show); }
+
+    // ---- lớp phủ + các con trỏ
+    function overlay() {
+      if (S.overlay && S.overlay.isConnected) return S.overlay;
+      const o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;overflow:hidden';
+      document.body.appendChild(o);
+      S.overlay = o;
+      S.cursors = CURSORS.map(c => {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;left:0;top:0;will-change:transform;transform:translate(-200px,-200px)';
+        el.innerHTML = '<svg width="22" height="24" viewBox="0 0 22 24" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))">' +
+          '<path d="M2 2 L2 20 L7 15.5 L10.5 22.5 L13.5 21 L10 14 L17 14 Z" fill="' + c.color +
+          '" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>' +
+          '<span style="position:absolute;left:16px;top:20px;white-space:nowrap;padding:3px 9px;border-radius:999px;' +
+          'background:' + c.color + ';color:#fff;font:600 12px Be Vietnam Pro,sans-serif;box-shadow:0 3px 8px rgba(0,0,0,.15)">' +
+          c.label + '</span>';
+        o.appendChild(el);
+        return {el, color: c.color, x: -200, y: -200, busy: false, holding: null};
+      });
+      return o;
+    }
+    function place(c, x, y) {
+      c.el.getAnimations().forEach(a => a.cancel());
+      c.x = x; c.y = y; c.el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    }
+    function move(c, x, y, ms, ease) {
+      const a = c.el.animate([{transform: 'translate(' + c.x + 'px,' + c.y + 'px)'},
+        {transform: 'translate(' + x + 'px,' + y + 'px)'}], {duration: ms, easing: ease, fill: 'forwards'});
+      c.x = x; c.y = y; c.el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+      return a.finished.catch(() => {});
+    }
+    function offscreen(c) { return c.x < -20 || c.y < -20 || c.x > innerWidth + 20 || c.y > innerHeight + 20; }
+    function ripple(x, y, color, size) {
+      const r = document.createElement('div');
+      r.style.cssText = 'position:absolute;left:' + (x - 6) + 'px;top:' + (y - 6) + 'px;width:12px;height:12px;' +
+        'border-radius:50%;border:2px solid ' + color;
+      overlay().appendChild(r);
+      r.animate([{transform: 'scale(1)', opacity: .9}, {transform: 'scale(' + (size || 4) + ')', opacity: 0}],
+        {duration: 480, easing: 'ease-out', fill: 'forwards'}).finished.then(() => r.remove(), () => r.remove());
+    }
+    function animating() { return S.cursors.some(c => c.busy); }
+
+    // ---- mang khối từ ngoài màn hình vào
+    function carry(els) {
+      overlay();
+      els.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      els.forEach(el => { if (!S.queue.includes(el)) S.queue.push(el); });
+      let k = 0;
+      S.cursors.forEach(c => {
+        if (!c.busy && S.queue.length > k) { worker(c, k * 90, S.gen); k++; }
+      });
+    }
+    async function worker(c, delay, gen) {
+      c.busy = true;
+      await sleep(delay);
+      while (S.queue.length && gen === S.gen) {
+        const el = S.queue.shift();
+        if (!el.isConnected) { show(el); continue; }
+        c.holding = el;
+        await carryOne(c, el, gen);
+        if (gen !== S.gen) return;
+        c.holding = null;
+      }
+      if (gen !== S.gen) return;
+      await move(c, c.x < innerWidth / 2 ? -90 : innerWidth + 90, c.y + 50, 360, 'cubic-bezier(.5,0,.75,0)');
+      if (gen === S.gen) c.busy = false;
+    }
+    async function carryOne(c, el, gen) {
+      const W = innerWidth, H = innerHeight;
+      const r = el.getBoundingClientRect();
+      const gx = r.left + Math.min(36, r.width * .3), gy = r.top + Math.min(16, r.height * .4);
+      let dx, dy = (Math.random() - .5) * 140;
+      if (r.top > H * .62) { dx = (Math.random() - .5) * 200; dy = H - r.top + 50; }
+      else if (r.left + r.width / 2 < W / 2) dx = -(r.right + 60);
+      else dx = W - r.left + 60;
+      // Ra ngoài lấy khối (con trỏ đang khuất thì đặt luôn ở chỗ lấy).
+      if (offscreen(c)) place(c, gx + dx, gy + dy);
+      else await move(c, gx + dx, gy + dy, 300, 'cubic-bezier(.55,0,.8,.2)');
+      if (gen !== S.gen) return;
+      const rot = (dx > 0 ? 1 : -1) * (2 + Math.random() * 4);
+      const D = 520, ease = 'cubic-bezier(.22,.8,.25,1)';
+      const a = el.animate([{transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg)'},
+        {transform: 'translate(0,0) rotate(0deg)'}], {duration: D, easing: ease});
+      S.running.add(a);
+      show(el);
+      move(c, gx, gy, D, ease);
+      await a.finished.catch(() => {});
+      S.running.delete(a);
+      if (gen !== S.gen) return;
+      // Thả khối: nhấn chuột, gợn sóng, khối nảy nhẹ.
+      ripple(gx, gy, c.color);
+      c.el.firstChild.animate([{transform: 'scale(.78)'}, {transform: 'scale(1)'}], {duration: 180, easing: 'ease-out'});
+      el.animate([{transform: 'translateY(-5px)'}, {transform: 'translateY(0)'}], {duration: 200, easing: 'cubic-bezier(.3,1.6,.5,1)'});
+      await sleep(120);
+    }
+
+    // ---- đổi tác vụ gấp: khối rơi nhanh ra từ vị trí con trỏ chuột
+    function drop(els) {
+      overlay();
+      const p = S.ptr;
+      ripple(p.x, p.y, '#F07167', 6);
+      const dist = el => { const r = el.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - p.x, r.top - p.y); };
+      els.sort((a, b) => dist(a) - dist(b));
+      els.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const dx = p.x - (r.left + r.width / 2), dy = p.y - (r.top + Math.min(20, r.height / 2));
+        el.style.animation = 'none';
+        el.animate([{transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.1)', opacity: 0},
+          {opacity: 1, offset: .3}, {transform: 'translate(0,0) scale(1)', opacity: 1}],
+          {duration: 330, delay: Math.min(i * 26, 320), easing: 'cubic-bezier(.3,1.25,.55,1)', fill: 'backwards'});
+        show(el);
+      });
+    }
+
+    // Bấm tiếp khi con trỏ đang mang: dừng mang, phần còn lại rơi ra từ chỗ con trỏ chuột.
+    function interrupt() {
+      S.gen++;
+      const rest = S.queue.splice(0);
+      S.cursors.forEach(c => {
+        if (c.holding) { rest.push(c.holding); c.holding = null; }
+        c.busy = false;
+        place(c, -200, -200);
+      });
+      S.running.forEach(a => a.finish());
+      S.running.clear();
+      const live = rest.filter(el => el.isConnected);
+      if (live.length) drop(live);
+    }
+
+    function destroy() {
+      obs.disconnect();
+      document.removeEventListener('pointerdown', onAct, true);
+      document.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('pointermove', onMove, {capture: true});
+      if (S.loop) clearInterval(S.loop);
+      S.gen++;
+      Array.from(S.hidden).forEach(show);
+      if (S.overlay) S.overlay.remove();
+    }
+    return {v, onRun, onDone, destroy, state: S};
+  }
+})();
 </script>
 """
 
 
 def intro(page: str = "home") -> None:
-    """Màn mở đầu: các con trỏ mang tên công cụ bay vào, bấm dựng từng phần trang.
-
-    Mỗi trang chạy một lần mỗi phiên trình duyệt (khoá theo ``page``). ``page`` cũng làm nội dung
-    khối HTML khác nhau giữa các trang, để Streamlit dựng lại khối và chạy lại script khi chuyển trang.
-    """
+    """Các con trỏ mang tên công cụ dựng giao diện sau mỗi lần trang chạy lại (xem MOTION_JS)."""
     page = re.sub(r"[^\w-]", "", page) or "home"
     cursors = ", ".join(f'{{label: "{icon} {name}", color: "{color}"}}'
                         for _, name, icon, color, _ in MODULES)
-    st.html(_js(INTRO_JS.replace("__CURSORS__", f"[{cursors}]").replace("__PAGE__", page)),
+    st.html(_js(MOTION_JS.replace("__CURSORS__", f"[{cursors}]").replace("__PAGE__", page)
+                .replace("__RUN__", str(_time.time_ns()))),
+            unsafe_allow_javascript=True)
+
+
+def motion_done() -> None:
+    """Báo cho bộ điều khiển hiệu ứng là trang đã chạy xong (gọi sau khi trang chạy, kể cả khi st.stop)."""
+    st.html(_js(f'<div class="nh-invisible" data-run="{_time.time_ns()}"></div><script>'
+                'if (window.__dpMotion && window.__dpMotion.onDone) window.__dpMotion.onDone();</script>'),
             unsafe_allow_javascript=True)
 
 

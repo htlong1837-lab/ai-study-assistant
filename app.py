@@ -41,4 +41,5 @@ _ui.intro(current_page or "home")
 try:
     selected_page.run()
 finally:
+    _ui.motion_done()
     _account.backup()  # chạy cả khi trang gọi st.rerun/st.stop

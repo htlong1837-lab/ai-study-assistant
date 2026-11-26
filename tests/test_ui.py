@@ -19,7 +19,7 @@ def test_style_blocks_have_no_tag_like_text():
 
 
 def test_scripts_are_escaped_before_rendering():
-    for html in (_ui.INTRO_JS, _ui.FOCUS_HTML):
+    for html in (_ui.MOTION_JS, _ui.FOCUS_HTML):
         for js in _blocks(_ui._js(html), "script"):
             assert not TAG_LIKE.search(js)
 
